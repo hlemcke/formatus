@@ -11,7 +11,9 @@ and the Flutter guide for
 [developing packages and plugins](https://flutter.dev/developing-packages).
 -->
 
-A plain Flutter Rich-Text-Editor without any dependencies.
+# FORMATUS
+
+A Flutter plain Rich-Text-Editor without any dependencies.
 
 ## Features
 
