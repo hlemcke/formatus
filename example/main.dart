@@ -37,7 +37,9 @@ class _MyHomePageState extends State<MyHomePage> {
   late FormatusController controller;
   final FocusNode _formatusFocus = FocusNode(debugLabel: 'formatus');
   final String htmlText = '<h1>Formatus Features</h1>'
-      '<p>Text with <b>bold</b>, <i>italic</i> and <u>underlined</u> words</p>';
+      '<p>Text with <b>bold</b>, <i>italic</i> and <u>underlined</u> words</p>.'
+      '<p>Second paragraph <i>contains <s>nested</s> and</i>'
+      ' <u>under<b>line</b>d</u> formats.</p>';
   String _editedText = '';
 
   @override

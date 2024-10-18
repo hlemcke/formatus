@@ -127,7 +127,11 @@ enum Formatus {
     ),
   ),
 
-  /// Link to a URL. Contains a text node and the URL as an attribute.
+  /// An html anchor element:
+  /// ```
+  /// <a href="url">displayed text</a>
+  /// ```
+  /// Text is displayed purple and underlined.
   /// The URL is displayed as a tooltip when hovering above the text.
   link(
     'a',

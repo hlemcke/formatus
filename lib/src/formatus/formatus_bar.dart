@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'formatus_anchor.dart';
 import 'formatus_controller.dart';
 import 'formatus_document.dart';
 import 'formatus_model.dart';
@@ -117,7 +118,10 @@ class _FormatusBarState extends State<FormatusBar> {
   /// Only one top-level format may be active at any time.
   ///
   void _onToggleAction(Formatus formatus) {
-    if (formatus.isTopLevel) {
+    if (formatus == Formatus.link) {
+      showFormatusAnchorDialog(context, _ctrl);
+      return;
+    } else if (formatus.isTopLevel) {
       _deactivateTopLevelActions();
       _activeFormats.add(formatus);
     } else if (_activeFormats.contains(formatus)) {
@@ -149,7 +153,6 @@ class _FormatusButton extends StatelessWidget {
   final VoidCallback? onPressed;
 
   const _FormatusButton({
-    super.key,
     required this.action,
     this.isSelected = false,
     this.onPressed,
@@ -162,7 +165,6 @@ class _FormatusButton extends StatelessWidget {
         key: ValueKey<String>(action.formatus.name),
         onPressed: onPressed,
         style: isSelected ? _formatusButtonStyleActive : _formatusButtonStyle,
-        // TODO tooltip: 'format.${action.formatus.name}.tooltip'.i18n,
       );
 }
 
@@ -175,9 +177,11 @@ final List<FormatusAction> _defaultActions = [
   FormatusAction(formatus: Formatus.bold),
   FormatusAction(formatus: Formatus.underline),
   FormatusAction(formatus: Formatus.strikeThrough),
+  FormatusAction(formatus: Formatus.link),
 ];
 
 final ButtonStyle _formatusButtonStyle = ButtonStyle(
+  iconSize: WidgetStateProperty.all(kMinInteractiveDimension * 0.7),
   shape: WidgetStateProperty.all<RoundedRectangleBorder>(
     const RoundedRectangleBorder(
       borderRadius: BorderRadius.only(
@@ -189,15 +193,7 @@ final ButtonStyle _formatusButtonStyle = ButtonStyle(
   ),
 );
 
-final ButtonStyle _formatusButtonStyleActive = ButtonStyle(
+final ButtonStyle _formatusButtonStyleActive =
+    _formatusButtonStyle.merge(ButtonStyle(
   backgroundColor: WidgetStateProperty.all<Color>(Colors.amberAccent),
-  shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-    const RoundedRectangleBorder(
-      borderRadius: BorderRadius.only(
-        topLeft: Radius.circular(6),
-        topRight: Radius.circular(6),
-      ),
-      side: BorderSide(color: Colors.grey),
-    ),
-  ),
-);
+));
