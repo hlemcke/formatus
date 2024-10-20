@@ -3,11 +3,11 @@ import 'package:formatus/formatus.dart';
 
 /// Entry point for example application
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  MyApp({super.key});
+  const MyApp({super.key});
 
   // This widget is the root of your application.
   @override
@@ -29,8 +29,11 @@ class MyApp extends StatelessWidget {
 
 ///
 class MyHomePage extends StatefulWidget {
+  const MyHomePage({super.key});
+
   @override
-  _MyHomePageState createState() => _MyHomePageState();
+  State<StatefulWidget> createState()  => _MyHomePageState();
+
 }
 
 class _MyHomePageState extends State<MyHomePage> {

@@ -178,7 +178,7 @@ final List<FormatusAction> _defaultActions = [
 ];
 
 final ButtonStyle _formatusButtonStyle = ButtonStyle(
-  shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+  shape: MaterialStateProperty.all<RoundedRectangleBorder>(
     const RoundedRectangleBorder(
       borderRadius: BorderRadius.only(
         topLeft: Radius.circular(6),
@@ -190,8 +190,8 @@ final ButtonStyle _formatusButtonStyle = ButtonStyle(
 );
 
 final ButtonStyle _formatusButtonStyleActive = ButtonStyle(
-  backgroundColor: WidgetStateProperty.all<Color>(Colors.amberAccent),
-  shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+  backgroundColor: MaterialStateProperty.all<Color>(Colors.amberAccent),
+  shape: MaterialStateProperty.all<RoundedRectangleBorder>(
     const RoundedRectangleBorder(
       borderRadius: BorderRadius.only(
         topLeft: Radius.circular(6),
