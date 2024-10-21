@@ -69,14 +69,14 @@ class FormatusDocument {
     for (int i = 0; i < textNodes.length; i++) {
       FormatusNode textNode = textNodes[i];
       FormatusNode currentTopLevelNode = textNode.topLevelTag;
-      //--- Add one char (LF) between top-level elements
+      //--- Count for one char (LF) between top-level elements
       if (topLevelNode != currentTopLevelNode) {
         topLevelNode = currentTopLevelNode;
         charCount++;
       }
       int textLen = textNode.text.length;
       if (charIndex < charCount + textLen) {
-        textNode.offset = charIndex - charCount;
+        textNode.offset = charCount;
         return textNode;
       }
       charCount += textLen;
@@ -169,7 +169,7 @@ class FormatusNode {
 
   bool get isTopLevel => format.type == FormatusType.topLevel;
 
-  /// Index into plain text of this nodes text
+  /// This nodes text starts at `offset` in whole text
   int offset = -1;
 
   /// Top-level tags have the single body element as parent
