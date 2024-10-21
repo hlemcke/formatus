@@ -1,26 +1,36 @@
 import 'package:flutter/material.dart';
 
 import 'formatus_model.dart';
-import 'text_helper.dart';
+import 'formatus_parser.dart';
 
 ///
 /// HTML formatted document parsed into a tree-like structure.
 ///
-/// Essentially the root node. All children are top-level elements.
+/// Essentially the `body` tag of an html text.
+/// All children are top-level elements like `h1` or `p`.
 /// Top-level elements cannot contain other top-level elements.
 ///
-/// Structure of [htmlBody]:
-/// * always starts with an opening top-level element like "<p>" or "<h1>"
+/// ### Structure of [htmlBody]:
+///
+/// * always starts with an opening top-level element like "\<p>" or "\<h1>"
 /// * always ends with a closing top-level element like "</p>"
-/// * a top-level contains a list of inline elements like text-nodes
+/// * children of a top-level element are a list of inline elements
+/// * inline elements could be text-nodes or formats like `<b>` for bold
 /// * inline elements can be nested
+///
+/// ### Structure of an html element
+/// * opening element starts with `<` followed by name, optional attributes
+///   and the closing `>`
+/// * multiple attributes are separated by a single space
+/// * an `attribute` is a key value pair like `color="#00a400"`
+/// * a closing element has no attributes
 ///
 class FormatusDocument {
   /// List of text nodes in sequence of occurrence
   List<FormatusNode> textNodes = [];
 
-  /// List of top-level html tags -> children
-  List<FormatusNode> topLevelTags = [];
+  /// Single root element. All children are top-level html elements
+  FormatusNode root = FormatusNode();
 
   /// Creates a new instance from the given html-text
   factory FormatusDocument.fromHtml({
@@ -31,12 +41,11 @@ class FormatusDocument {
       text = '<p>$text';
     }
     FormatusDocument doc = FormatusDocument._();
-    doc._parse(text);
+    doc.root = FormatusParser().parse(htmlBody, doc.textNodes);
     return doc;
   }
 
   // TODO factory FormatusDocument.fromMarkdown({ required String markdownBody, })
-  // Parse markdown internally into the node structure
 
   /// Internal constructor
   FormatusDocument._();
@@ -53,20 +62,21 @@ class FormatusDocument {
       .replaceAll('\t', ' ')
       .replaceAll('  ', ' ');
 
-  /// Returns text node and index to raw text of that node
+  /// Returns text node and index to raw text within that node
   FormatusNode textNodeByCharIndex(int charIndex) {
     int charCount = 0;
-    FormatusNode topLevelNode = topLevelTags[0];
+    FormatusNode topLevelNode = root.children[0];
     for (int i = 0; i < textNodes.length; i++) {
       FormatusNode textNode = textNodes[i];
       FormatusNode currentTopLevelNode = textNode.topLevelTag;
+      //--- Add one char (LF) between top-level elements
       if (topLevelNode != currentTopLevelNode) {
         topLevelNode = currentTopLevelNode;
         charCount++;
       }
       int textLen = textNode.text.length;
       if (charIndex < charCount + textLen) {
-        textNode.offset = charCount;
+        textNode.offset = charIndex - charCount;
         return textNode;
       }
       charCount += textLen;
@@ -79,7 +89,7 @@ class FormatusDocument {
   ///
   String toHtml() {
     String html = '';
-    for (FormatusNode node in topLevelTags) {
+    for (FormatusNode node in root.children) {
       html += node.toHtml();
     }
     return html;
@@ -93,7 +103,7 @@ class FormatusDocument {
   String toPlainText() {
     String plain = '';
     bool isFirst = true;
-    for (FormatusNode topLevelNode in topLevelTags) {
+    for (FormatusNode topLevelNode in root.children) {
       if (isFirst) {
         isFirst = false;
       } else {
@@ -103,99 +113,45 @@ class FormatusDocument {
     }
     return plain;
   }
-
-  void _parse(String htmlBody) {
-    if (htmlBody.isEmpty) {
-      FormatusNode node = FormatusNode()..format = Formatus.paragraph;
-      topLevelTags.add(node);
-      FormatusNode textNode = FormatusNode()..format = Formatus.text;
-      node.addChild(textNode);
-      return;
-    }
-
-    int offset = 0;
-    while (offset < htmlBody.length) {
-      FormatusNode node = FormatusNode();
-      topLevelTags.add(node);
-      offset = _parseTag(node, htmlBody, offset);
-    }
-  }
-
-  int _parseTag(FormatusNode node, String htmlBody, int offset) {
-    if (htmlBody[offset] == '<') {
-      offset++;
-    }
-    String tagName = TextHelper.extractWord(htmlBody, offset);
-    node.format = Formatus.find(tagName);
-    offset += tagName.length;
-    while ((offset < htmlBody.length) && (htmlBody[offset] != '>')) {
-      // TODO parse attributes into map
-      node.attrText += htmlBody[offset];
-      offset++;
-    }
-    offset++;
-
-    //--- Text or nested inline tag
-    while (offset < htmlBody.length) {
-      if (htmlBody[offset] == '<') {
-        offset++;
-
-        if (htmlBody[offset] == '/') {
-          //--- Closing tag
-          while (offset < htmlBody.length && htmlBody[offset] != '>') {
-            offset++;
-          }
-          offset++;
-          return offset;
-        } else {
-          //--- Opening tag -> must be a nested inline tag
-          FormatusNode inlineTag = FormatusNode();
-          node.addChild(inlineTag);
-          offset = _parseTag(inlineTag, htmlBody, offset);
-        }
-      } else {
-        offset = _parseText(node, htmlBody, offset);
-      }
-    }
-    return offset;
-  }
-
-  ///
-  /// Creates a new text node and attaches it to given `node`.
-  /// Advances offset to next `<`.
-  ///
-  int _parseText(FormatusNode node, String htmlBody, int offset) {
-    int initialOffset = offset;
-    while ((offset < htmlBody.length) && (htmlBody[offset] != '<')) {
-      offset++;
-    }
-    FormatusNode textNode = FormatusNode()..format = Formatus.text;
-    textNode.text = htmlBody.substring(initialOffset, offset);
-    node.addChild(textNode);
-    textNodes.add(textNode);
-    return offset;
-  }
 }
 
 ///
-/// Node of document resembles an element with optional attributes.
+/// Node in document resembles an html-element with optional attributes.
 ///
-/// Text is always a leaf node without style.
+/// Text is always a leaf node without style. Style is taken from its parent.
 ///
 /// Cannot extend [TextSpan] here because its immutable and we need `parent`.
 ///
 class FormatusNode {
-  FormatusNode();
+  /// Format of this node
+  Formatus format;
+
+  /// Style of this node
+  TextStyle style = const TextStyle();
+
+  /// Non empty only if this is a text-node
+  String text = '';
+
+  ///
+  /// Creates a new node
+  ///
+  FormatusNode({
+    this.format = Formatus.paragraph,
+    this.style = const TextStyle(),
+    this.text = '',
+  }) {
+    if (text.isNotEmpty) {
+      format = Formatus.text;
+    }
+  }
 
   /// The _empty_ node is used as placeholder.
   static FormatusNode get placeHolder => _placeHolder;
   static final FormatusNode _placeHolder = FormatusNode();
 
-  /// Tag attributes like url or color
+  /// Tag attributes like href or color
   final Map<String, dynamic> attributes = {};
   String attrText = '';
-
-  Formatus format = Formatus.paragraph;
 
   List<FormatusNode> get children => _children;
   final List<FormatusNode> _children = [];
@@ -213,10 +169,10 @@ class FormatusNode {
 
   bool get isTopLevel => format.type == FormatusType.topLevel;
 
-  /// Index into plain text to start of this nodes text
+  /// Index into plain text of this nodes text
   int offset = -1;
 
-  /// Top-level tags have no parent
+  /// Top-level tags have the single body element as parent
   FormatusNode? parent;
 
   void cleanup() {
@@ -237,17 +193,12 @@ class FormatusNode {
     return path;
   }
 
-  /// Style of this node
-  TextStyle style = const TextStyle();
-
-  /// Non empty only if this is a text-node
-  String text = '';
-
   FormatusNode get topLevelTag => hasParent ? parent!.topLevelTag : this;
 
   ///
   String toHtml() {
     if (isTextNode) return text;
+    if (format == Formatus.lineBreak) return '<br/>';
     String html = '';
     for (FormatusNode node in children) {
       html += node.toHtml();

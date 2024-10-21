@@ -45,6 +45,14 @@ enum Formatus {
     null,
   ),
 
+  /// Single root element in a [FormatusDocument]
+  body(
+    'body',
+    FormatusType.body,
+    null,
+    TextStyle(fontSize: kDefaultFontSize),
+  ),
+
   /// Inline format to display bold text
   bold(
     'b',
@@ -125,6 +133,15 @@ enum Formatus {
       color: Colors.deepPurpleAccent,
       decoration: TextDecoration.underline,
     ),
+  ),
+
+  /// The html line break element `<br/>`.
+  /// Can be used within text-elements.
+  lineBreak(
+    'br/',
+    FormatusType.inline,
+    null,
+    null,
   ),
 
   /// An html anchor element:
@@ -220,6 +237,9 @@ enum FormatusType {
 
   /// Inline elements can be nested
   inline,
+
+  /// Only used for the body element in [FormatusDocument]
+  body,
 
   /// Top level elements can only contain `inline` elements
   topLevel,

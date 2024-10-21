@@ -1,5 +1,3 @@
-
-
 class TextHelper {
   ///
   /// Splits `name` into parts separated by space.
@@ -9,7 +7,7 @@ class TextHelper {
     name = name.trim();
     List<String> parts = name.split(' ');
     String initials =
-    name.isEmpty ? '?' : parts[0].substring(0, 1).toUpperCase();
+        name.isEmpty ? '?' : parts[0].substring(0, 1).toUpperCase();
     if (parts.length > 1) {
       initials += parts[1].substring(0, 1).toUpperCase();
     }
@@ -33,11 +31,11 @@ class TextHelper {
   /// Finds an enumeration item either by its name or by its key
   ///
   static dynamic findEnum(
-      String? text,
-      List<dynamic> values, {
-        dynamic defaultValue,
-        bool withKey = true,
-      }) {
+    String? text,
+    List<dynamic> values, {
+    dynamic defaultValue,
+    bool withKey = true,
+  }) {
     if (text != null) {
       if (withKey) {
         for (dynamic enumItem in values) {
@@ -74,5 +72,13 @@ class TextHelper {
       httpParams.remove(key);
     }
     return restPath;
+  }
+
+  static String stripQuotes(String text) {
+    if (text.length > 2) {
+      text = text.startsWith("\"") ? text.substring(1) : text;
+      text = text.endsWith("\"") ? text.substring(0, text.length - 1) : text;
+    }
+    return text;
   }
 }

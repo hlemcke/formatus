@@ -59,7 +59,7 @@ class FormatusController extends TextEditingController {
       TextStyle? style,
       required bool withComposing}) {
     List<TextSpan> spans = [];
-    for (FormatusNode topLevelNode in document.topLevelTags) {
+    for (FormatusNode topLevelNode in document.root.children) {
       spans.add(topLevelNode.toTextSpan());
       spans.add(const TextSpan(text: '\n'));
     }
