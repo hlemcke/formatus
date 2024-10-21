@@ -181,7 +181,9 @@ final List<FormatusAction> _defaultActions = [
 ];
 
 final ButtonStyle _formatusButtonStyle = ButtonStyle(
-  iconSize: WidgetStateProperty.all(kMinInteractiveDimension * 0.7),
+//  iconSize: WidgetStateProperty.all(kMinInteractiveDimension * 0.7),
+  fixedSize: WidgetStateProperty.all(
+      const Size.square(kMinInteractiveDimension * 0.7)),
   shape: WidgetStateProperty.all<RoundedRectangleBorder>(
     const RoundedRectangleBorder(
       borderRadius: BorderRadius.only(

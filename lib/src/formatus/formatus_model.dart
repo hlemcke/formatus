@@ -61,7 +61,7 @@ enum Formatus {
     TextStyle(fontWeight: FontWeight.bold),
   ),
 
-  /// Attribute of any top-level or inline element sets color
+  /// Action to set color of any top-level or inline element
   color(
     'color=',
     FormatusType.attribute,
@@ -187,6 +187,18 @@ enum Formatus {
     TextStyle(decoration: TextDecoration.lineThrough),
   ),
 
+  /// TODO implement subscript
+  // subscript requires a suitable icon for the formatting action
+  // Example for H_2_O: TextSpan( text: 'H'),
+  // WidgetSpan(child: Transform.translate(
+  //  offset: Offset(2, 5), child: Text('2', style: TextStyle(fontSize: 20 )))
+
+  /// TODO implement superscript
+  // superscript requires a suitable icon for the formatting action
+  // Example for x^y: TextSpan( text: 'x'),
+  // WidgetSpan(child: Transform.translate(
+  //  offset: Offset(2, -10), child: Text('y', style: TextStyle(fontSize: 20 )))
+
   /// plain text node -> format derived from parent nodes
   text('', FormatusType.inline, null, null),
 
@@ -243,4 +255,44 @@ enum FormatusType {
 
   /// Top level elements can only contain `inline` elements
   topLevel,
+}
+
+///
+/// HTML attribute names used in [Formatus]
+///
+enum FormatusAttribute {
+  /// TextStyle.backgroundColor
+  bgcolor,
+
+  /// TextStyle.color
+  color,
+
+  /// only usable in link element
+  href,
+}
+
+///
+/// HTML color names used in [Formatus]
+///
+enum FormatusColor {
+  black('000000'),
+  blue('0000ff'),
+  cyan('00ffff'),
+  darkOrange('ff8c00'),
+  gold('ffd700'),
+  green('008000'),
+  orange('ffa500'),
+  red('ff0000'),
+  white('ffffff'),
+  yellow('ffff00');
+
+  final String hexCode;
+
+  const FormatusColor(this.hexCode);
+
+  String toHtml() => 'color:"$name"';
+
+  static FormatusColor find(String text) =>
+      TextHelper.findEnum(text, FormatusColor.values,
+          defaultValue: FormatusColor.black, withKey: true);
 }

@@ -199,11 +199,15 @@ class FormatusNode {
   String toHtml() {
     if (isTextNode) return text;
     if (format == Formatus.lineBreak) return '<br/>';
-    String html = '';
+    String html = '<${format.key}';
+    for (String key in attributes.keys) {
+      html += ' $key="${attributes[key]}"';
+    }
+    html += '>';
     for (FormatusNode node in children) {
       html += node.toHtml();
     }
-    return '<${format.key}>$html</${format.key}>';
+    return '$html</${format.key}>';
   }
 
   ///

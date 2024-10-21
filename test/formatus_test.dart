@@ -36,5 +36,17 @@ void main() {
           FormatusController.fromHtml(initialHtml: html);
       expect(textController.toHtml(), html.replaceAll('\n', ''));
     });
+
+    //---
+    test('Parse tags with attributes', () {
+      String html = '''
+<h1>Formatus Features</h1>
+<p color="orange">Orange Text with <i>italic, <b>bold and <u>underlined</u></b> words</i></p>
+<p>Second paragraph references <a href="media:42">media object</a></p>
+''';
+      FormatusController textController =
+          FormatusController.fromHtml(initialHtml: html);
+      expect(textController.toHtml(), html.replaceAll('\n', ''));
+    });
   });
 }
