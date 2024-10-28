@@ -25,4 +25,6 @@ On character insert the following algorithm is executed:
 2. Obtain path from root to modified text node
 3. Compute difference of formats in path and formats selected by user
 4. If there is no format difference then just insert the character into the current text node
-5. If there is a difference then 
+5. If there is a format difference then:
+   a) the current text must be splitted into two text nodes (if not at start or end of current text)
+   b) if a format 
