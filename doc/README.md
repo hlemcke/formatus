@@ -23,13 +23,13 @@ The formatted text
 ## Use Cases at Cursor Position
 
 1. Cursor placed somewhere in formatted text => formatting buttons are activated accordingly
-2. Entering characters => inserted into text node of cursor position
+2. Entering characters => inserted into text node at cursor position
 3. Entering `newline` => if within `<p>` then insert `<br/>`, else create a new paragraph after
    current top-level element
-4. Deleting characters => deleted from text node of cursor position. If text node becomes empty then
-   it will be deleted. If parent node only contained the deleted text node then it will be deleted
-   also (up to top-level element)
-5. Changing top-level format => not possible
+4. Deleting characters => remove character from text node at cursor position.
+   If text node becomes empty then it will be deleted.
+   If parent node has no more children then it will be deleted also (up to top-level node).
+5. Changing top-level format => replaces current format with new one
 6. Changing inline format => Remember setting for newly entered characters
 
 ## Use Cases at Range Selection
