@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'formatus_document.dart';
 import 'text_helper.dart';
 
 const double kDefaultFontSize = 14.0;
@@ -135,15 +136,6 @@ enum Formatus {
     ),
   ),
 
-  /// The html line break element `<br/>`.
-  /// Can be used within text-elements.
-  lineBreak(
-    'br/',
-    FormatusType.inline,
-    null,
-    null,
-  ),
-
   /// An html anchor element:
   /// ```
   /// <a href="url">displayed text</a>
@@ -250,7 +242,7 @@ enum FormatusType {
   /// Inline elements can be nested
   inline,
 
-  /// Only used for the body element in [FormatusDocument]
+  /// The single root element in [FormatusDocument]
   body,
 
   /// Top level elements can only contain `inline` elements

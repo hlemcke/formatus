@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'formatus_anchor.dart';
 import 'formatus_controller.dart';
-import 'formatus_document.dart';
 import 'formatus_model.dart';
 
 ///
@@ -39,10 +37,7 @@ class FormatusAction {
 ///
 /// Actions to format text.
 ///
-/// The allowed actions can be supplied. They default to all actions.
-///
-/// `condense: true` will condense top-level formats and alignments
-/// into a dropdown selection.
+/// The bar itself is a [Wrap] of [_FormatusButton] widgets.
 ///
 class FormatusBar extends StatefulWidget {
   late final List<FormatusAction> actions;
@@ -53,14 +48,17 @@ class FormatusBar extends StatefulWidget {
 
   ///
   /// Creates action bar to format text in a [TextField] or [TextFormField].
-  /// The same [FormatusController] must be supplied to the [TextField]
+  /// The same [FormatusController] must be supplied both to the [TextField]
   /// and to this `FormatusBar`.
   ///
   /// To automatically switch back the focus from this `FormatusBar` the
-  /// same [FocusNode] must be supplied to both the [TextField]
+  /// same [FocusNode] must be supplied also both to the [TextField]
   /// and to this `FormatusBar`.
   ///
-  /// The bar itself is a [Wrap] of [_FormatusButton] widgets.
+  /// The allowed actions can be supplied. They default to all actions.
+  ///
+  /// `condense: true` will condense top-level formats and alignments
+  /// into dropdown selections.
   ///
   FormatusBar({
     super.key,
@@ -77,9 +75,13 @@ class FormatusBar extends StatefulWidget {
   State<StatefulWidget> createState() => _FormatusBarState();
 }
 
+///
+/// `selectedFormats` are managed in [FormatusController].
+///
 class _FormatusBarState extends State<FormatusBar> {
   late final FormatusController _ctrl;
-  final Set<Formatus> _activeFormats = {};
+
+  Set<Formatus> get _selectedFormats => _ctrl.selectedFormats;
 
   @override
   void initState() {
@@ -96,18 +98,18 @@ class _FormatusBarState extends State<FormatusBar> {
           for (FormatusAction action in widget.actions)
             _FormatusButton(
               action: action,
-              isSelected: _activeFormats.contains(action.formatus),
+              isSelected: _selectedFormats.contains(action.formatus),
               onPressed: () => _onToggleAction(action.formatus),
             ),
         ],
       );
 
-  void _deactivateActions() => _activeFormats.clear();
+  void _deactivateActions() => _selectedFormats.clear();
 
   void _deactivateTopLevelActions() {
     for (FormatusAction action in widget.actions) {
       if (action.isTopLevel) {
-        _activeFormats.remove(action);
+        _selectedFormats.remove(action);
       }
     }
   }
@@ -119,26 +121,24 @@ class _FormatusBarState extends State<FormatusBar> {
   ///
   void _onToggleAction(Formatus formatus) {
     if (formatus == Formatus.link) {
-      showFormatusAnchorDialog(context, _ctrl);
+      // TODO invoke method "onLinkTap"
       return;
     } else if (formatus.isTopLevel) {
       _deactivateTopLevelActions();
-      _activeFormats.add(formatus);
-    } else if (_activeFormats.contains(formatus)) {
-      _activeFormats.remove(formatus);
+      _selectedFormats.add(formatus);
+    } else if (_selectedFormats.contains(formatus)) {
+      _selectedFormats.remove(formatus);
     } else {
-      _activeFormats.add(formatus);
+      _selectedFormats.add(formatus);
     }
     setState(() => widget.textFieldFocus?.requestFocus());
   }
 
   void _updateActivatedActions() {
-    FormatusNode textNode =
-        _ctrl.document.textNodeByCharIndex(_ctrl.cursorPosition);
-    List<FormatusNode> path = textNode.path;
+    Set<Formatus> formatsInPath = _ctrl.formatsInPath;
     _deactivateActions();
-    for (FormatusNode node in path) {
-      _activeFormats.add(node.format);
+    for (Formatus format in formatsInPath) {
+      _selectedFormats.add(format);
     }
     setState(() {});
   }

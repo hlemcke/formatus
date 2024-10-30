@@ -70,9 +70,6 @@ class FormatusParser {
     FormatusNode node = parsedNode.node;
     parent.addChild(node);
 
-    //--- Completed if this is "<br/>"
-    if (node.format == Formatus.lineBreak) return parsedNode.offset;
-
     //--- loop all content into text or nested inline until closing element
     offset = parsedNode.offset;
     while (offset < htmlBody.length) {

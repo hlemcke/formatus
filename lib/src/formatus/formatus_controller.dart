@@ -8,27 +8,23 @@ import 'formatus_model.dart';
 /// [FormatusDocument] into [TextSpan]s to be displayed in a [TextFormField].
 ///
 class FormatusController extends TextEditingController {
-  /// Current index of cursor into content
-  int get cursorPosition => _cursorPosition;
-  int _cursorPosition = 0;
-
-  /// Current text node
-  FormatusNode? get currentTextNode => _currentTextNode;
-  FormatusNode? _currentTextNode;
-
   /// Tree-like structure with nodes for formatting and text leaf nodes
   late FormatusDocument document;
 
-  List<Formatus> activeFormats = [];
+  /// Formats set by cursor positioning and modifiable by user selection.
+  Set<Formatus> selectedFormats = {};
 
-  /// Called on text changes
-  final VoidCallback? onListen;
+  /// Current text node
+  FormatusNode _currentTextNode = FormatusNode();
 
+  /// Plain text before any change like insert, replace or delete
   String _previousText = '';
 
-  FormatusController._({
-    this.onListen,
-  });
+  /// Selection before any change
+  TextSelection _previousSelection =
+      TextSelection(baseOffset: 0, extentOffset: 0);
+
+  FormatusController._();
 
   // TODO implement factory FormatusController.fromMarkdown
 
@@ -39,9 +35,7 @@ class FormatusController extends TextEditingController {
     required String initialHtml,
     VoidCallback? onListen,
   }) {
-    FormatusController ctrl = FormatusController._(
-      onListen: onListen,
-    );
+    FormatusController ctrl = FormatusController._();
     ctrl.document = FormatusDocument.fromHtml(htmlBody: initialHtml);
     debugPrint(ctrl.document.toHtml());
     ctrl.text = ctrl.document.toPlainText();
@@ -54,10 +48,11 @@ class FormatusController extends TextEditingController {
   /// Formatting of text. Invoked on every change of text content
   ///
   @override
-  TextSpan buildTextSpan(
-      {required BuildContext context,
-      TextStyle? style,
-      required bool withComposing}) {
+  TextSpan buildTextSpan({
+    required BuildContext context,
+    TextStyle? style,
+    required bool withComposing,
+  }) {
     List<TextSpan> spans = [];
     for (FormatusNode topLevelNode in document.root.children) {
       spans.add(topLevelNode.toTextSpan());
@@ -66,55 +61,22 @@ class FormatusController extends TextEditingController {
     return TextSpan(children: spans);
   }
 
+  Set<Formatus> get formatsInPath => _currentTextNode.formatsInPath;
+
   /// Returns current text as a html formatted string
   String toHtml() => document.toHtml();
 
-  /// Internal workhorse
+  ///
+  /// This closure will be called by the underlying system whenever the
+  /// content of the text field changes.
+  ///
   void _onListen() {
-    _cursorPosition = selection.baseOffset;
-    FormatusNode node = document.textNodeByCharIndex(_cursorPosition);
-    _currentTextNode = node;
-    debugPrint('=== $_cursorPosition-${selection.end} node=$_currentTextNode');
-
-    //--- initial computations
-    int prevLength = _previousText.length;
-    int nextLength = text.length;
-
-    if (prevLength != nextLength) {
-      int trailingCount = _previousText.length - node.offset - node.text.length;
-      String middle = (trailingCount > 0)
-          ? text.substring(node.offset, text.length - trailingCount)
-          : text.substring(node.offset);
-
-      //--- Handle deletion
-      if (prevLength > nextLength) {
-        //--- Remove tag
-        if (middle.isEmpty) {
-          _currentTextNode!.cleanup();
-          _currentTextNode = null;
-        } else {
-          node.text = middle;
-        }
-      }
-
-      //--- Handle insertion
-      else if (prevLength < nextLength) {
-// TODO consider current format settings
-        node.text = middle;
-      }
-      _previousText = text;
+    //--- Selection has changed
+    if (_previousText != text) {
+      document.update(text);
+      return;
     }
-    //--- length unchanged -> check range selection
-    else {
-      debugPrint(
-          '=== length equal -> range ${selection.start} - ${selection.end}');
-      //--- Format changed?
-    }
-
-    //--- Invoke callback if set
-    if (onListen != null) {
-      onListen!();
-    }
+    debugPrint('=== range: ${selection.baseOffset} ${selection.extentOffset}');
   }
 }
 
@@ -127,6 +89,37 @@ class FormatusContext {
   int rangeEnd = -1;
 
   bool get isRange => rangeStart >= 0;
-  FormatusNode startingNode = FormatusNode.placeHolder;
-  FormatusNode endingNode = FormatusNode.placeHolder;
+  FormatusNode startingNode = FormatusNode();
+  FormatusNode endingNode = FormatusNode();
+}
+
+///
+/// Difference of formats at cursor position and selected formats (added and removed)
+///
+class DeltaFormat {
+  Set<Formatus> added = {};
+  Set<Formatus> removed = {};
+  Set<Formatus> same = {};
+
+  /// Constructor builds both sets
+  DeltaFormat({
+    required FormatusNode textNode,
+    required Set<Formatus> selectedFormats,
+  }) {
+    Set<Formatus> formatsInPath = textNode.formatsInPath;
+    for (Formatus formatus in selectedFormats) {
+      if (formatsInPath.contains(formatus)) {
+        formatsInPath.remove(formatus);
+        same.add(formatus);
+      } else {
+        added.add(formatus);
+      }
+    }
+    removed.addAll(formatsInPath);
+  }
+
+  bool get isEmpty => added.isEmpty && removed.isEmpty;
+
+  @override
+  String toString() => '+: $added, =:$same, -:$removed';
 }

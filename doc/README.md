@@ -2,15 +2,16 @@
 
 ## Architecture
 
-1. [FormatusController] must be used for a [TextFormField] controller
+1. [FormatusController] must be used as a [TextFormField] controller
 2. [FormatusActionBar] provides the formatting actions
 3. `FormatusActionBar` must be given the `FormatusController` on creation
 4. `FormatusController` manages a tree-like document [FormatusDocument]
-5. `FormatusDocument` contains a list of top-level formatting elements
-6. Top-level formatting elements are h1, h2, h3, p
-7. Top-level elements contain nested elements like plain text or formatting elements like `<b>`
-8. Formatting elements can be nested
-9. Plain text elements are leaves of the tree. They cannot contain any nested element
+5. `FormatusDocument` manages the formatting tree and all text nodes
+6. Supported top-level tags are h1, h2, h3, p
+7. Top-level tags are separated by a line-break. There are no other line-breaks.
+8. Top-level tags contain nested elements like plain text or formatting elements like `<b>`
+9. Formatting elements can be nested
+10. Plain text elements are leaves of the tree. They cannot contain any nested element
 
 ## Storage Format
 
@@ -20,39 +21,28 @@ The formatted text
 * starts with an opening top-level tag like `<h1>` or `<p>`
 * ends with a closing top-level tag like `/p`
 
-## Use Cases at Cursor Position
+## Additional Information
 
-1. Cursor placed somewhere in formatted text => formatting buttons are activated accordingly
-2. Entering characters => inserted into text node at cursor position
-3. Entering `newline` => if within `<p>` then insert `<br/>`, else create a new paragraph after
-   current top-level element
-4. Deleting characters => remove character from text node at cursor position.
-   If text node becomes empty then it will be deleted.
-   If parent node has no more children then it will be deleted also (up to top-level node).
-5. Changing top-level format => replaces current format with new one
-6. Changing inline format => Remember setting for newly entered characters
-
-## Use Cases at Range Selection
-
-1. Changing inline format =>
+* See `use cases at cursor position` in formatus_uc_cursor.md
+* See `use cases at range selection` in formatus_uc_range.md
 
 ## TODOs
 
 * publish to _pub.dev_
 * write documentation
 
-## TODOs on Single Cursor
+## TODOs for Cursor Position
 
+* change top level format => update format of current top level node
 * change inline formats => display formats => OK
 * change alignment of top-level format to: left (default), center, right
 * insert character => consider formats
-* delete + text node gets empty => delete text node
-* insert emoji from selectables => insert into current text node
+* delete + text node gets empty => rearrange whole tree
+* insert emoji from some list => insert into current text node
 * convert emoji name into emoji inline => insert into current text node
 
-## TODOs at Range Selection
+## TODOs for Range Selection
 
-* activate inline format => change format of selected text
-* activate top-level format => if top-level completely selected then change it else
-  do nothing
-* delete => delete all text and nodes in range
+* change inline format => change format of selected text
+* change top-level format => disabled if a range is selected
+* delete => delete all text and nodes within selected range
