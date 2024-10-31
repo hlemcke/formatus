@@ -17,9 +17,6 @@ class FormatusController extends TextEditingController {
   /// Current text node
   FormatusNode _currentTextNode = FormatusNode();
 
-  /// Plain text before any change like insert, replace or delete
-  String _previousText = '';
-
   /// Selection before any change
   TextSelection _previousSelection =
       TextSelection(baseOffset: 0, extentOffset: 0);
@@ -39,9 +36,14 @@ class FormatusController extends TextEditingController {
     ctrl.document = FormatusDocument.fromHtml(htmlBody: initialHtml);
     debugPrint(ctrl.document.toHtml());
     ctrl.text = ctrl.document.toPlainText();
-    ctrl._previousText = ctrl.text;
     ctrl.addListener(ctrl._onListen);
     return ctrl;
+  }
+
+  /// Returns element at cursor position or creates a new one
+  FormatusAnchor get anchorAtCursor {
+    FormatusAnchor anchor = FormatusAnchor();
+    return anchor;
   }
 
   ///
@@ -61,7 +63,7 @@ class FormatusController extends TextEditingController {
     return TextSpan(children: spans);
   }
 
-  Set<Formatus> get formatsInPath => _currentTextNode.formatsInPath;
+  Set<Formatus> get formatsAtCursor => _currentTextNode.formatsInPath;
 
   /// Returns current text as a html formatted string
   String toHtml() => document.toHtml();
@@ -71,11 +73,10 @@ class FormatusController extends TextEditingController {
   /// content of the text field changes.
   ///
   void _onListen() {
-    //--- Selection has changed
-    if (_previousText != text) {
-      document.update(text);
+    if (document.update(text).hasDelta) {
       return;
     }
+    //--- Selection has changed
     debugPrint('=== range: ${selection.baseOffset} ${selection.extentOffset}');
   }
 }

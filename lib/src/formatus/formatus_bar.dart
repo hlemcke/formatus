@@ -34,6 +34,14 @@ class FormatusAction {
   bool get isTopLevel => formatus.type == FormatusType.topLevel;
 }
 
+/// Signature for action `onEditAnchor`
+typedef AnchorEditor = Future<FormatusAnchor?> Function(
+    BuildContext context, FormatusAnchor anchorElement);
+
+/// Signature for action `onTapAnchor`
+typedef AnchorActivity = Future<void> Function(
+    BuildContext context, FormatusAnchor anchorElement);
+
 ///
 /// Actions to format text.
 ///
@@ -44,6 +52,8 @@ class FormatusBar extends StatefulWidget {
   final bool condense;
   final Axis direction;
   final FormatusController formatusController;
+  final AnchorEditor? onEditAnchor;
+  final AnchorActivity? onTapAnchor;
   final FocusNode? textFieldFocus;
 
   ///
@@ -66,9 +76,14 @@ class FormatusBar extends StatefulWidget {
     List<FormatusAction>? actions,
     this.condense = false,
     this.direction = Axis.horizontal,
+    this.onEditAnchor,
+    this.onTapAnchor,
     this.textFieldFocus,
   }) {
     this.actions = actions ?? _defaultActions;
+    if (onEditAnchor != null) {
+      this.actions.add(FormatusAction(formatus: Formatus.anchor));
+    }
   }
 
   @override
@@ -120,8 +135,10 @@ class _FormatusBarState extends State<FormatusBar> {
   /// Only one top-level format may be active at any time.
   ///
   void _onToggleAction(Formatus formatus) {
-    if (formatus == Formatus.link) {
-      // TODO invoke method "onLinkTap"
+    if (formatus == Formatus.anchor) {
+      // invoke method "onEditAnchor"
+      FormatusAnchor anchor = widget.formatusController.anchorAtCursor;
+      widget.onEditAnchor!(context, anchor);
       return;
     } else if (formatus.isTopLevel) {
       _deactivateTopLevelActions();
@@ -135,7 +152,8 @@ class _FormatusBarState extends State<FormatusBar> {
   }
 
   void _updateActivatedActions() {
-    Set<Formatus> formatsInPath = _ctrl.formatsInPath;
+    Set<Formatus> formatsInPath = _ctrl.formatsAtCursor;
+    debugPrint('_updateActivatedActions path: $formatsInPath');
     _deactivateActions();
     for (Formatus format in formatsInPath) {
       _selectedFormats.add(format);
@@ -177,7 +195,6 @@ final List<FormatusAction> _defaultActions = [
   FormatusAction(formatus: Formatus.bold),
   FormatusAction(formatus: Formatus.underline),
   FormatusAction(formatus: Formatus.strikeThrough),
-  FormatusAction(formatus: Formatus.link),
 ];
 
 final ButtonStyle _formatusButtonStyle = ButtonStyle(

@@ -1,12 +1,11 @@
 import 'formatus_document.dart';
 import 'formatus_model.dart';
-import 'text_helper.dart';
 
 class FormatusParser {
   ///
   /// Parses `htmlBody` and returns a root-node.
   ///
-  FormatusNode parse(String htmlBody, List<FormatusNode> textNodes) {
+  FormatusNode parse(String htmlBody, FormatusTextNodes textNodes) {
     FormatusNode body = FormatusNode(format: Formatus.body);
     if (htmlBody.isEmpty) {
       FormatusNode node = FormatusNode()..format = Formatus.paragraph;
@@ -20,6 +19,16 @@ class FormatusParser {
       }
     }
     return body;
+  }
+
+  String extractWord(String text, int offset) {
+    RegExp regExp = RegExp(r'[a-zA-Z0-9]');
+    int index = offset;
+    while (index < text.length) {
+      if (!text[index].contains(regExp)) break;
+      index++;
+    }
+    return text.substring(offset, index);
   }
 
   ///
@@ -41,7 +50,7 @@ class FormatusParser {
 
     String nodeText = htmlBody.substring(i + 1, j);
     nodeText = nodeText.trim();
-    String tagName = TextHelper.extractWord(htmlBody, i + 1);
+    String tagName = extractWord(htmlBody, i + 1);
     List<String> parts = nodeText.split(' ');
     parts.removeAt(0); // remove tagName
 
@@ -51,7 +60,13 @@ class FormatusParser {
     //--- parse attributes
     for (String part in parts) {
       List<String> kv = part.split("=");
-      newNode.attributes[kv[0]] = TextHelper.stripQuotes(kv[1]);
+      String value = kv[1];
+      if (value.length > 2) {
+        value = value.startsWith("\"") ? value.substring(1) : value;
+        value =
+            value.endsWith("\"") ? value.substring(0, value.length - 1) : value;
+      }
+      newNode.attributes[kv[0]] = value;
     }
 
     return _ParsedNode(node: newNode, offset: j + 1);
@@ -64,7 +79,7 @@ class FormatusParser {
   /// closing element.
   ///
   int _parseTag(String htmlBody, int offset, FormatusNode parent,
-      List<FormatusNode> textNodes) {
+      FormatusTextNodes textNodes) {
     _ParsedNode? parsedNode = _parseElement(htmlBody, offset);
     if (parsedNode == null) return htmlBody.length;
     FormatusNode node = parsedNode.node;
@@ -95,7 +110,7 @@ class FormatusParser {
   /// Advances offset to next `<`.
   ///
   int _parseText(String htmlBody, int offset, FormatusNode parent,
-      List<FormatusNode> textNodes) {
+      FormatusTextNodes textNodes) {
     int initialOffset = offset;
     while ((offset < htmlBody.length) && (htmlBody[offset] != '<')) {
       offset++;

@@ -31,3 +31,6 @@
 
 Q: Should insert and update be handled identically?
 A: No because insert always adds text to only one single text-node
+
+Q: How to determine if it's an insert?
+A: Insert has: `added.isNotEmpty` AND `leading.length + trailing.length == previous.length`

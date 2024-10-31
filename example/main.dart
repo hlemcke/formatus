@@ -12,9 +12,9 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) => MaterialApp(
-        home: MyHomePage(),
+        home: const MyHomePage(),
         darkTheme: ThemeData(
-            brightness: Brightness.light,
+            brightness: Brightness.dark,
             colorSchemeSeed: Colors.amber,
             fontFamily: 'Roboto',
             useMaterial3: true),
@@ -32,8 +32,7 @@ class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
 
   @override
-  State<StatefulWidget> createState()  => _MyHomePageState();
-
+  State<StatefulWidget> createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {

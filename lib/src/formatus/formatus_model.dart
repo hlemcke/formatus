@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'formatus_document.dart';
-import 'text_helper.dart';
 
 const double kDefaultFontSize = 14.0;
 
@@ -44,6 +43,21 @@ enum Formatus {
     FormatusType.alignment,
     Icon(Icons.format_align_right),
     null,
+  ),
+
+  /// An html anchor element:
+  /// ```
+  /// <a href="url">displayed text</a>
+  /// ```
+  /// Text is displayed purple and underlined.
+  /// The URL is displayed as a tooltip when hovering above the text.
+  ///
+  /// See [FormatusAnchor]
+  anchor(
+    'a',
+    FormatusType.inline,
+    Icon(Icons.link),
+    TextStyle(color: Colors.purpleAccent, decoration: TextDecoration.underline),
   ),
 
   /// Single root element in a [FormatusDocument]
@@ -136,19 +150,6 @@ enum Formatus {
     ),
   ),
 
-  /// An html anchor element:
-  /// ```
-  /// <a href="url">displayed text</a>
-  /// ```
-  /// Text is displayed purple and underlined.
-  /// The URL is displayed as a tooltip when hovering above the text.
-  link(
-    'a',
-    FormatusType.inline,
-    Icon(Icons.link),
-    TextStyle(color: Colors.purpleAccent, decoration: TextDecoration.underline),
-  ),
-
   /// Essentially one of the `li` elements of the enclosing `ol` element
   orderedList(
     'ol',
@@ -224,29 +225,23 @@ enum Formatus {
 
   bool get isTopLevel => type == FormatusType.topLevel;
 
-  static Formatus find(String text) =>
-      TextHelper.findEnum(text, Formatus.values,
-          defaultValue: Formatus.text, withKey: true);
+  static Formatus find(String text) => findEnum(text, Formatus.values,
+      defaultValue: Formatus.text, withKey: true);
 }
 
-///
-/// Type of a [Formatus] action / style
-///
-enum FormatusType {
-  /// Alignment will be applied to full text
-  alignment,
+class FormatusAnchor {
+  String href;
+  String name;
 
-  /// Attribute are applied to an element
-  attribute,
+  FormatusAnchor({
+    this.href = '',
+    this.name = '',
+  });
 
-  /// Inline elements can be nested
-  inline,
+  String toHtml() => '<href="$href">$name</a>';
 
-  /// The single root element in [FormatusDocument]
-  body,
-
-  /// Top level elements can only contain `inline` elements
-  topLevel,
+  @override
+  String toString() => toHtml();
 }
 
 ///
@@ -284,7 +279,58 @@ enum FormatusColor {
 
   String toHtml() => 'color:"$name"';
 
-  static FormatusColor find(String text) =>
-      TextHelper.findEnum(text, FormatusColor.values,
-          defaultValue: FormatusColor.black, withKey: true);
+  static FormatusColor find(String text) => findEnum(text, FormatusColor.values,
+      defaultValue: FormatusColor.black, withKey: true);
+}
+
+///
+/// Type of a [Formatus] action / style
+///
+enum FormatusType {
+  /// Alignment will be applied to full text
+  alignment,
+
+  /// Attribute are applied to an element
+  attribute,
+
+  /// Inline elements can be nested
+  inline,
+
+  /// The single root element in [FormatusDocument]
+  body,
+
+  /// Top level elements can only contain `inline` elements
+  topLevel,
+}
+
+///
+/// Finds an enumeration item either by its name or by its key
+///
+dynamic findEnum(
+  String? text,
+  List<dynamic> values, {
+  dynamic defaultValue,
+  bool withKey = true,
+}) {
+  if (text != null) {
+    if (withKey) {
+      for (dynamic enumItem in values) {
+        if (enumItem.key == text) {
+          return enumItem;
+        }
+      }
+    }
+    if (!text.contains('.')) {
+      String name = values[0].toString();
+      name = name.substring(0, name.indexOf('.'));
+      text = '$name.$text';
+    }
+    text = text.toLowerCase();
+    for (dynamic enumItem in values) {
+      if (enumItem.toString().toLowerCase() == text) {
+        return enumItem;
+      }
+    }
+  }
+  return defaultValue;
 }
