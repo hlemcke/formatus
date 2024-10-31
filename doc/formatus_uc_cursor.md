@@ -16,15 +16,22 @@ This initiates a redraw.
 
 [FormatusBar] remembers current selection and updates the display of the format-keys.
 
-## Insert a Character
+## Insert a line-break
 
-The system knows about a character insert if the new text is longer than the old one.
-On character insert the following algorithm is executed:
+If the user hits the enter key then the current top-level node will be split.
+The part left of cursor position remains in current top-level node.
+The part right of cursor will be moved into a new top-level node of format "paragraph".
 
-1. Determine text node at cursor position minus one (before character entering)
-2. Obtain path from root to modified text node
-3. Compute difference of formats in path and formats selected by user
-4. If there is no format difference then just insert the character into the current text node
-5. If there is a format difference then:
-   a) the current text must be splitted into two text nodes (if not at start or end of current text)
-   b) if a format 
+## Insert Characters
+
+By keyboard only single characters can be inserted but a whole string can be pasted.
+
+## Delete Characters
+
+By keyboard only a single character can be deleted.
+Left of cursor with backspace-key or right of cursor with delete-key.
+If a text-range is selected then any of both keys will remove the whole range.
+
+## Update Characters
+
+Can be done by selecting a text-range and pasting a string.

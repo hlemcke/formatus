@@ -14,9 +14,6 @@ class FormatusController extends TextEditingController {
   /// Formats set by cursor positioning and modifiable by user selection.
   Set<Formatus> selectedFormats = {};
 
-  /// Current text node
-  FormatusNode _currentTextNode = FormatusNode();
-
   /// Selection before any change
   TextSelection _previousSelection =
       TextSelection(baseOffset: 0, extentOffset: 0);
@@ -63,7 +60,10 @@ class FormatusController extends TextEditingController {
     return TextSpan(children: spans);
   }
 
-  Set<Formatus> get formatsAtCursor => _currentTextNode.formatsInPath;
+  Set<Formatus> get formatsAtCursor {
+    int nodeIndex = document.indexOfCharIndex(selection.baseOffset);
+    return document.textNodes[nodeIndex].formatsInPath;
+  }
 
   /// Returns current text as a html formatted string
   String toHtml() => document.toHtml();

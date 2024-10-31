@@ -24,13 +24,13 @@
 | End    - Del |      lead |         "" |      "" |
 | End    - Upd |      lead |         "" |   added |
 
-## Conclusion
+## Conclusions
 
-`added.isEmpty` -> delete
-`added.isNotEmpty` -> insert or update
+* `added.isEmpty` -> delete
+* `added.isNotEmpty` -> insert or update
 
 Q: Should insert and update be handled identically?
-A: No because insert always adds text to only one single text-node
+A: No because insert always adds text to only one single text-node without modifying the tree
 
 Q: How to determine if it's an insert?
 A: Insert has: `added.isNotEmpty` AND `leading.length + trailing.length == previous.length`

@@ -72,6 +72,12 @@ class FormatusDocument {
       .replaceAll('  ', ' ');
 
   ///
+  /// Returns index of text-node which contains given `charIndex`
+  ///
+  int indexOfCharIndex(int charIndex) =>
+      textNodes.indexOfCharIndex(charIndex, _previousText);
+
+  ///
   /// Optimizes the tree by combining sibling nodes of same format into one.
   ///
   void optimize() {
@@ -150,7 +156,7 @@ class FormatusDocument {
       } else {
         handleUpdate(diff);
       }
-      optimize();
+//      optimize();
       _previousText = toPlainText();
     }
     return diff;
@@ -159,12 +165,12 @@ class FormatusDocument {
   /// Handle cases for `delete`. Deletion can include multiple nodes
   void handleDelete(DeltaText diff) {
     if (diff.isAtStart) {
-      int nodeIndex = textNodes.indexOfCharIndex(diff.trailingStartIndex);
+      int nodeIndex = indexOfCharIndex(diff.trailingStartIndex);
       FormatusNode textNode = textNodes[nodeIndex];
       textNodes.removeBefore(nodeIndex);
       textNode.text = textNode.text.substring(textNode.textOffset);
     } else if (diff.isAtEnd) {
-      int nodeIndex = textNodes.indexOfCharIndex(diff.leadingEndIndex);
+      int nodeIndex = indexOfCharIndex(diff.leadingEndIndex);
       FormatusNode textNode = textNodes[nodeIndex];
       textNodes.removeAfter(nodeIndex);
       textNode.text = textNode.text.substring(0, textNode.textOffset);
@@ -187,7 +193,7 @@ class FormatusDocument {
       textNode.text += diff.added;
     } else {
       debugPrint(diff.toString());
-      int nodeIndex = textNodes.indexOfCharIndex(diff.leadingEndIndex);
+      int nodeIndex = indexOfCharIndex(diff.leadingEndIndex);
       textNode = textNodes[nodeIndex];
       textNode.text = textNode.text.substring(0, textNode.textOffset) +
           diff.added +
@@ -200,12 +206,12 @@ class FormatusDocument {
   /// TODO handle different start and end node
   void handleUpdate(DeltaText diff) {
     if (diff.isAtStart) {
-      int nodeIndex = textNodes.indexOfCharIndex(diff.trailingStartIndex);
+      int nodeIndex = indexOfCharIndex(diff.trailingStartIndex);
       FormatusNode textNode = textNodes[nodeIndex];
       textNodes.removeBefore(nodeIndex);
       textNode.text = diff.added + textNode.text;
     } else if (diff.isAtEnd) {
-      int nodeIndex = textNodes.indexOfCharIndex(diff.leadingEndIndex);
+      int nodeIndex = indexOfCharIndex(diff.leadingEndIndex);
       FormatusNode textNode = textNodes[nodeIndex];
       textNodes.removeAfter(nodeIndex);
       textNode.text =
@@ -295,12 +301,13 @@ class FormatusNode {
   /// Top-level tags have the single body element as parent
   FormatusNode? parent;
 
-  /// Gets path from root node (`body`) down to this one
+  /// Gets path from top-level down to this one.
+  /// The `body` element is removed from start of path.
   List<FormatusNode> get path {
     List<FormatusNode> path = [];
     FormatusNode? node = this;
     while (node != null) {
-      path.insert(0, node);
+      if (node.format != Formatus.body) path.insert(0, node);
       node = node.parent;
     }
     return path;
@@ -309,7 +316,7 @@ class FormatusNode {
   /// Offset into this nodes `text` of cursor position.
   int textOffset = -1;
 
-  FormatusNode get topLevelTag => isTopLevel ? this : parent!.topLevelTag;
+  FormatusNode get topLevelNode => isTopLevel ? this : parent!.topLevelNode;
 
   ///
   String toHtml() {
@@ -368,21 +375,23 @@ class FormatusTextNodes {
   FormatusNode get first => textNodes.first;
 
   ///
-  /// Returns index to text-node
-  /// where `charIndex` <= sum of previous text-nodes length.
+  /// Returns index to text-node where `charIndex` <= sum of previous
+  /// text-nodes length.
   ///
-  int indexOfCharIndex(int charIndex) {
+  int indexOfCharIndex(int charIndex, String previousText) {
     int charCount = 0;
     for (int i = 0; i < textNodes.length; i++) {
       FormatusNode textNode = textNodes[i];
-      //--- Adjust node based on following space char
-      if ((i > 0) &&
-          (charIndex == charCount) &&
-          (textNode.text.startsWith(' '))) {
-        i--;
-        textNode = textNodes[i];
-        textNode.textOffset = textNode.text.length;
-        return i;
+
+      //--- Adjust node
+      if ([' ', ',', '\n'].contains(previousText[charCount])) {
+        if (charIndex < charCount + 1) {
+          i--;
+          textNode = textNodes[i];
+          textNode.textOffset = textNode.text.length;
+          return i;
+        }
+        charCount++;
       }
       int textLen = textNode.text.length;
       if (charIndex < charCount + textLen) {
