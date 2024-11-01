@@ -60,6 +60,12 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       );
 
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
   PreferredSizeWidget _buildAppBar() => AppBar(
         title: const Text('Formatus Rich-Text-Editor'),
       );
@@ -67,12 +73,18 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget _buildBody() => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+//          _buildCursorInfo(),
           const Divider(color: Colors.deepPurpleAccent),
           FormatusBar(
             formatusController: controller,
             textFieldFocus: _formatusFocus,
           ),
           TextFormField(
+            buildCounter: (BuildContext context,
+                    {required int currentLength,
+                    required int? maxLength,
+                    required bool isFocused}) =>
+                _buildCounter(currentLength, isFocused, controller.selection),
             controller: controller,
             decoration: const InputDecoration(
               label: Text('Editable Input Field'),
@@ -92,12 +104,6 @@ class _MyHomePageState extends State<MyHomePage> {
         ],
       );
 
-  @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
-  }
-
   Widget _buildActionDivider() => Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -114,4 +120,16 @@ class _MyHomePageState extends State<MyHomePage> {
           const Expanded(child: Divider(color: Colors.deepPurpleAccent)),
         ],
       );
+
+  /// TODO updating cursor info requires a listener and setState
+  Widget _buildCursorInfo() => ListTile(
+        leading: Text('Cursor'),
+        title: Text(
+            '${controller.selection.baseOffset} ${controller.selection.extentOffset}'),
+      );
+
+  Widget _buildCounter(
+          int currentLength, bool isFocused, TextSelection selection) =>
+      Text(
+          '${selection.baseOffset} of $currentLength ${isFocused ? "focused" : ""}');
 }

@@ -183,18 +183,17 @@ class FormatusDocument {
   /// Handle cases for `insert`
   void handleInsert(DeltaText diff) {
     FormatusNode textNode = FormatusNode();
+    debugPrint(diff.toString());
     if (diff.isAtStart) {
-      debugPrint(diff.toString());
       textNode = textNodes.first;
       textNode.text = diff.added + textNode.text;
     } else if (diff.isAtEnd) {
-      debugPrint(diff.toString());
       textNode = textNodes.last;
       textNode.text += diff.added;
     } else {
-      debugPrint(diff.toString());
       int nodeIndex = indexOfCharIndex(diff.leadingEndIndex);
       textNode = textNodes[nodeIndex];
+      debugPrint('=== node: $textNode');
       textNode.text = textNode.text.substring(0, textNode.textOffset) +
           diff.added +
           textNode.text.substring(textNode.textOffset);
@@ -344,7 +343,7 @@ class FormatusNode {
   ///
   @override
   String toString() => text.isNotEmpty
-      ? '$textOffset:"$text"'
+      ? 'offset=$textOffset "$text"'
       : '<${format.key}> ${_children.length}';
 
   TextSpan toTextSpan() {
@@ -383,15 +382,17 @@ class FormatusTextNodes {
     for (int i = 0; i < textNodes.length; i++) {
       FormatusNode textNode = textNodes[i];
 
-      //--- Adjust node
+      //--- Adjust node based on first char of this node
       if ([' ', ',', '\n'].contains(previousText[charCount])) {
-        if (charIndex < charCount + 1) {
+        if (charIndex == charCount) {
           i--;
           textNode = textNodes[i];
           textNode.textOffset = textNode.text.length;
           return i;
         }
-        charCount++;
+        if (previousText[charCount] == '\n') {
+          charCount++;
+        }
       }
       int textLen = textNode.text.length;
       if (charIndex < charCount + textLen) {
@@ -525,6 +526,6 @@ class DeltaText {
     if (hasDelta == false) return '<no delta>';
     return '${isDelete ? "DELETE" : isInsert ? "INSERT" : "UPDATE"}'
         ' ${isAtStart ? "START " : isAtEnd ? "END   " : "MIDDLE"}'
-        ' added=$_added, lead=$_leading, trail=$_trailing';
+        ' added="$_added" lead="$_leading" trail="$_trailing"';
   }
 }

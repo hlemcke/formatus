@@ -48,11 +48,20 @@ typedef AnchorActivity = Future<void> Function(
 /// The bar itself is a [Wrap] of [_FormatusButton] widgets.
 ///
 class FormatusBar extends StatefulWidget {
+  /// Actions to be included in the toolbar. Defaults to all actions.
   late final List<FormatusAction> actions;
+
+  /// TODO `true` will condense top-level formats and alignments
+  /// into dropdown selections.
   final bool condense;
   final Axis direction;
   final FormatusController formatusController;
+
+  /// Callback invoked with parameter [FormatusAnchor] from cursor position.
+  /// Setting this parameter will activate [anchorAction] in the toolbar.
   final AnchorEditor? onEditAnchor;
+
+  /// Callback invoked with parameter [FormatusAnchor] from cursor position
   final AnchorActivity? onTapAnchor;
   final FocusNode? textFieldFocus;
 
@@ -62,13 +71,8 @@ class FormatusBar extends StatefulWidget {
   /// and to this `FormatusBar`.
   ///
   /// To automatically switch back the focus from this `FormatusBar` the
-  /// same [FocusNode] must be supplied also both to the [TextField]
-  /// and to this `FormatusBar`.
-  ///
-  /// The allowed actions can be supplied. They default to all actions.
-  ///
-  /// `condense: true` will condense top-level formats and alignments
-  /// into dropdown selections.
+  /// same [FocusNode] must be supplied both to the [TextField]
+  /// and to this [FormatusBar].
   ///
   FormatusBar({
     super.key,
@@ -81,8 +85,8 @@ class FormatusBar extends StatefulWidget {
     this.textFieldFocus,
   }) {
     this.actions = actions ?? _defaultActions;
-    if (onEditAnchor != null) {
-      this.actions.add(FormatusAction(formatus: Formatus.anchor));
+    if (onEditAnchor == null) {
+      this.actions.remove(anchorAction);
     }
   }
 
@@ -153,7 +157,6 @@ class _FormatusBarState extends State<FormatusBar> {
 
   void _updateActivatedActions() {
     Set<Formatus> formatsInPath = _ctrl.formatsAtCursor;
-    debugPrint('_updateActivatedActions path: $formatsInPath');
     _deactivateActions();
     for (Formatus format in formatsInPath) {
       _selectedFormats.add(format);
@@ -186,6 +189,8 @@ class _FormatusButton extends StatelessWidget {
       );
 }
 
+/// Separately specified to put into expected position
+final FormatusAction anchorAction = FormatusAction(formatus: Formatus.anchor);
 final List<FormatusAction> _defaultActions = [
   FormatusAction(formatus: Formatus.header1),
   FormatusAction(formatus: Formatus.header2),
@@ -195,6 +200,7 @@ final List<FormatusAction> _defaultActions = [
   FormatusAction(formatus: Formatus.bold),
   FormatusAction(formatus: Formatus.underline),
   FormatusAction(formatus: Formatus.strikeThrough),
+  anchorAction,
 ];
 
 final ButtonStyle _formatusButtonStyle = ButtonStyle(

@@ -1,5 +1,7 @@
 # Delta-Text Analysis
 
+## Delta-Types
+
 |= Type       =|= leading =|= trailing =|= added =|
 |==============|===========|============|=========|
 | Ins -  start |        "" |   previous |   added |
@@ -34,3 +36,14 @@ A: No because insert always adds text to only one single text-node without modif
 
 Q: How to determine if it's an insert?
 A: Insert has: `added.isNotEmpty` AND `leading.length + trailing.length == previous.length`
+
+## Determine Text-Node
+
+A text-node can be determined by the cursor position or by some computed index.
+
+Following variations can happen:
+
+#### Cursor index points to first char of node
+
+IF this character is a comma or space OR if the previous character is a line-break
+THEN the previous text-node will be used.

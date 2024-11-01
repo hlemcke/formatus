@@ -15,8 +15,8 @@ class FormatusController extends TextEditingController {
   Set<Formatus> selectedFormats = {};
 
   /// Selection before any change
-  TextSelection _previousSelection =
-      TextSelection(baseOffset: 0, extentOffset: 0);
+  final TextSelection _previousSelection =
+      const TextSelection(baseOffset: 0, extentOffset: 0);
 
   FormatusController._();
 

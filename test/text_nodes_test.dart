@@ -60,7 +60,7 @@ void main() {
       print(
           '${doc.textNodes.length} nodes, nodeIndex=$nodeIndex node="${doc.textNodes[nodeIndex].text}"');
       DeltaText diff = doc.update('Words boldX underline');
-      print('${doc.toHtml()}');
+      print(doc.toHtml());
     });
 
     ///
@@ -70,7 +70,7 @@ void main() {
       print(
           '${doc.textNodes.length} nodes, nodeIndex=$nodeIndex node="${doc.textNodes[nodeIndex].text}"');
       DeltaText diff = doc.update('Words Xbold underline');
-      print('${doc.toHtml()}');
+      print(doc.toHtml());
     });
   });
 }
