@@ -76,7 +76,7 @@ class _MyHomePageState extends State<MyHomePage> {
 //          _buildCursorInfo(),
           const Divider(color: Colors.deepPurpleAccent),
           FormatusBar(
-            formatusController: controller,
+            controller: controller,
             textFieldFocus: _formatusFocus,
           ),
           TextFormField(
@@ -119,13 +119,6 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
           const Expanded(child: Divider(color: Colors.deepPurpleAccent)),
         ],
-      );
-
-  /// TODO updating cursor info requires a listener and setState
-  Widget _buildCursorInfo() => ListTile(
-        leading: Text('Cursor'),
-        title: Text(
-            '${controller.selection.baseOffset} ${controller.selection.extentOffset}'),
       );
 
   Widget _buildCounter(

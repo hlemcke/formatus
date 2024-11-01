@@ -56,21 +56,23 @@ void main() {
     ///
     test('Insert "X" at end of "bold" -> should become bold also', () {
       FormatusDocument doc = FormatusDocument.fromHtml(htmlBody: easyParagraph);
+      DeltaFormat deltaFormat =
+          DeltaFormat(formatsAtCursor: {}, selectedFormats: {});
+      doc.update('Words boldX underline', deltaFormat);
       int nodeIndex = doc.computeNodeIndex(10);
-      print(
-          '${doc.textNodes.length} nodes, nodeIndex=$nodeIndex node="${doc.textNodes[nodeIndex].text}"');
-      DeltaText diff = doc.update('Words boldX underline');
-      print(doc.toHtml());
+      FormatusNode textNode = doc.textNodes[nodeIndex];
+      expect('boldX', textNode.text);
     });
 
     ///
     test('Insert "X" at start of "bold" -> should become bold also', () {
       FormatusDocument doc = FormatusDocument.fromHtml(htmlBody: easyParagraph);
+      DeltaFormat deltaFormat =
+          DeltaFormat(formatsAtCursor: {}, selectedFormats: {});
+      doc.update('Words Xbold underline', deltaFormat);
       int nodeIndex = doc.computeNodeIndex(6);
-      print(
-          '${doc.textNodes.length} nodes, nodeIndex=$nodeIndex node="${doc.textNodes[nodeIndex].text}"');
-      DeltaText diff = doc.update('Words Xbold underline');
-      print(doc.toHtml());
+      FormatusNode textNode = doc.textNodes[nodeIndex];
+      expect('Xbold', textNode.text);
     });
   });
 }

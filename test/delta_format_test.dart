@@ -19,9 +19,10 @@ void main() {
         Formatus.italic,
         Formatus.bold
       };
-      DeltaFormat difference =
-          DeltaFormat(textNode: textNode, selectedFormats: selectedFormats);
-      expect(difference.isEmpty, true);
+      DeltaFormat deltaFormat = DeltaFormat(
+          formatsAtCursor: textNode.formatsInPath,
+          selectedFormats: selectedFormats);
+      expect(deltaFormat.isEmpty, true);
     });
 
     ///
@@ -32,10 +33,11 @@ void main() {
         Formatus.underline,
         Formatus.bold
       };
-      DeltaFormat difference =
-          DeltaFormat(textNode: textNode, selectedFormats: selectedFormats);
-      expect(difference.isEmpty, false);
-      expect(difference.added, {Formatus.underline});
+      DeltaFormat deltaFormat = DeltaFormat(
+          formatsAtCursor: textNode.formatsInPath,
+          selectedFormats: selectedFormats);
+      expect(deltaFormat.isEmpty, false);
+      expect(deltaFormat.added, {Formatus.underline});
     });
 
     ///
@@ -44,10 +46,11 @@ void main() {
         Formatus.paragraph,
         Formatus.italic,
       };
-      DeltaFormat difference =
-          DeltaFormat(textNode: textNode, selectedFormats: selectedFormats);
-      expect(difference.isEmpty, false);
-      expect(difference.removed, {Formatus.bold});
+      DeltaFormat deltaFormat = DeltaFormat(
+          formatsAtCursor: textNode.formatsInPath,
+          selectedFormats: selectedFormats);
+      expect(deltaFormat.isEmpty, false);
+      expect(deltaFormat.removed, {Formatus.bold});
     });
 
     ///
@@ -57,11 +60,12 @@ void main() {
         Formatus.italic,
         Formatus.underline,
       };
-      DeltaFormat difference =
-          DeltaFormat(textNode: textNode, selectedFormats: selectedFormats);
-      expect(difference.isEmpty, false);
-      expect(difference.added, {Formatus.underline});
-      expect(difference.removed, {Formatus.bold});
+      DeltaFormat deltaFormat = DeltaFormat(
+          formatsAtCursor: textNode.formatsInPath,
+          selectedFormats: selectedFormats);
+      expect(deltaFormat.isEmpty, false);
+      expect(deltaFormat.added, {Formatus.underline});
+      expect(deltaFormat.removed, {Formatus.bold});
     });
   });
 }

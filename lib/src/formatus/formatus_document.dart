@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:formatus/formatus.dart';
 
-import 'formatus_model.dart';
 import 'formatus_parser.dart';
 
 ///
@@ -143,32 +143,34 @@ class FormatusDocument {
   ///
   /// Returns `false` if text is not changed.
   ///
-  /// TODO add parameter "selectedFormats" and apply them to insert and update
-  ///
-  DeltaText update(String current) {
-    DeltaText diff = DeltaText.compute(previous: _previousText, next: current);
-    if (diff.hasDelta) {
-      //--- Modify tree according to text delta
-      if (diff.isInsert) {
-        handleInsert(diff);
+  DeltaText update(String current, DeltaFormat deltaFormat) {
+    DeltaText deltaText =
+        DeltaText.compute(previous: _previousText, next: current);
+    if (deltaText.hasDelta) {
+      // debugPrint(diff.toString());
+      if (deltaText.isInsert) {
+        handleInsert(deltaText, deltaFormat);
       } else {
-        handleDeleteAndUpdate(diff);
+        handleDeleteAndUpdate(deltaText);
       }
 //      optimize();
       _previousText = toPlainText();
     }
-    return diff;
+    return deltaText;
   }
 
   ///
   /// Handle cases for `insert`
   ///
-  void handleInsert(DeltaText diff) {
+  void handleInsert(DeltaText diff, DeltaFormat deltaFormat) {
     FormatusNode textNode = FormatusNode();
-    debugPrint(diff.toString());
     if (diff.isAtStart) {
       textNode = textNodes.first;
-      textNode.text = diff.added + textNode.text;
+      if (deltaFormat.isEmpty) {
+        textNode.text = diff.added + textNode.text;
+      } else {
+        insertAddedText(textNode, diff.added, deltaFormat);
+      }
     } else if (diff.isAtEnd) {
       textNode = textNodes.last;
       textNode.text += diff.added;
@@ -181,11 +183,13 @@ class FormatusDocument {
     }
   }
 
+  void insertAddedText(
+      FormatusNode textNode, String added, DeltaFormat deltaFormat) {}
+
   ///
   /// Handle cases for `delete` and `update`.
   ///
   void handleDeleteAndUpdate(DeltaText diff) {
-    debugPrint(diff.toString());
     if (diff.isAtStart) {
       int nodeIndex = computeNodeIndex(diff.tailTextIndex);
       FormatusNode textNode = textNodes[nodeIndex];

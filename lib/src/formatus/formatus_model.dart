@@ -238,6 +238,16 @@ class FormatusAnchor {
     this.name = '',
   });
 
+  /// Returns a new instance of an anchor-node with a single text-node as child.
+  /// The child contains the displayed name.
+  FormatusNode buildNodes() {
+    FormatusNode textNode = FormatusNode(format: Formatus.text, text: name);
+    FormatusNode anchorNode = FormatusNode(format: Formatus.anchor);
+    anchorNode.attributes[FormatusAttribute.href.name] = href;
+    anchorNode.addChild(textNode);
+    return anchorNode;
+  }
+
   String toHtml() => '<href="$href">$name</a>';
 
   @override

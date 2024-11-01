@@ -14,10 +14,6 @@ class FormatusController extends TextEditingController {
   /// Formats set by cursor positioning and modifiable by user selection.
   Set<Formatus> selectedFormats = {};
 
-  /// Selection before any change
-  final TextSelection _previousSelection =
-      const TextSelection(baseOffset: 0, extentOffset: 0);
-
   FormatusController._();
 
   // TODO implement factory FormatusController.fromMarkdown
@@ -37,10 +33,41 @@ class FormatusController extends TextEditingController {
     return ctrl;
   }
 
-  /// Returns element at cursor position or creates a new one
-  FormatusAnchor get anchorAtCursor {
-    FormatusAnchor anchor = FormatusAnchor();
-    return anchor;
+  /// Returns anchor element  at cursor position or `null` if there is none
+  FormatusAnchor? get anchorAtCursor {
+    int nodeIndex = document.computeNodeIndex(selection.baseOffset);
+    FormatusNode node = document.textNodes[nodeIndex];
+    if (node.parent!.format == Formatus.anchor) {
+      FormatusAnchor anchor = FormatusAnchor(
+          href: node.parent!.attributes[FormatusAttribute.href.name] ?? '',
+          name: node.text);
+      return anchor;
+    }
+    return null;
+  }
+
+  /// Inserts or updates anchor at cursor position. Deletes is if `null`
+  set anchorAtCursor(FormatusAnchor? anchor) {
+    int nodeIndex = document.computeNodeIndex(selection.baseOffset);
+    FormatusNode node = document.textNodes[nodeIndex];
+
+    //--- Anchor exists at cursor position
+    if (node.parent!.format == Formatus.anchor) {
+      //--- Update existing anchor
+      if (anchor != null) {
+        node.text = anchor.name;
+        node.parent!.attributes[FormatusAttribute.href.name] = anchor.href;
+      } else {
+        //--- Delete existing anchor
+        node.dispose();
+      }
+    } else {
+      //--- Insert a new anchor element at cursor position
+      if (anchor != null) {
+        FormatusNode anchorNode = anchor.buildNodes();
+        // TODO split current textNode and insert anchorNode between
+      } // else do nothing because there is no anchor and none is created
+    }
   }
 
   ///
@@ -68,16 +95,24 @@ class FormatusController extends TextEditingController {
   /// Returns current text as a html formatted string
   String toHtml() => document.toHtml();
 
+  /// Changes top-level format at current cursor position
+  void updateTopLevelFormat(Formatus formatus) {
+    int textNodeIndex = document.computeNodeIndex(selection.baseOffset);
+    FormatusNode textNode = document.textNodes[textNodeIndex];
+    textNode.path.first.format = formatus;
+    notifyListeners();
+  }
+
   ///
   /// This closure will be called by the underlying system whenever the
   /// content of the text field changes.
   ///
   void _onListen() {
-    if (document.update(text).hasDelta) {
-      return;
-    }
-    //--- Selection has changed
-    debugPrint('=== range: ${selection.baseOffset} ${selection.extentOffset}');
+    DeltaFormat deltaFormat = DeltaFormat(
+        formatsAtCursor: formatsAtCursor, selectedFormats: formatsAtCursor);
+    bool hasDelta = document.update(text, deltaFormat).hasDelta;
+    debugPrint(
+        '=== ${hasDelta ? 'document updated' : 'range: ${selection.baseOffset} ${selection.extentOffset}'}');
   }
 }
 
@@ -104,19 +139,18 @@ class DeltaFormat {
 
   /// Constructor builds both sets
   DeltaFormat({
-    required FormatusNode textNode,
+    required Set<Formatus> formatsAtCursor,
     required Set<Formatus> selectedFormats,
   }) {
-    Set<Formatus> formatsInPath = textNode.formatsInPath;
     for (Formatus formatus in selectedFormats) {
-      if (formatsInPath.contains(formatus)) {
-        formatsInPath.remove(formatus);
+      if (formatsAtCursor.contains(formatus)) {
+        formatsAtCursor.remove(formatus);
         same.add(formatus);
       } else {
         added.add(formatus);
       }
     }
-    removed.addAll(formatsInPath);
+    removed.addAll(formatsAtCursor);
   }
 
   bool get isEmpty => added.isEmpty && removed.isEmpty;

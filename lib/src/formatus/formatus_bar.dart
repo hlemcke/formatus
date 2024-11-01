@@ -55,7 +55,7 @@ class FormatusBar extends StatefulWidget {
   /// into dropdown selections.
   final bool condense;
   final Axis direction;
-  final FormatusController formatusController;
+  final FormatusController controller;
 
   /// Callback invoked with parameter [FormatusAnchor] from cursor position.
   /// Setting this parameter will activate [anchorAction] in the toolbar.
@@ -76,7 +76,7 @@ class FormatusBar extends StatefulWidget {
   ///
   FormatusBar({
     super.key,
-    required this.formatusController,
+    required this.controller,
     List<FormatusAction>? actions,
     this.condense = false,
     this.direction = Axis.horizontal,
@@ -105,7 +105,7 @@ class _FormatusBarState extends State<FormatusBar> {
   @override
   void initState() {
     super.initState();
-    _ctrl = widget.formatusController;
+    _ctrl = widget.controller;
     _ctrl.addListener(_updateActivatedActions);
     _deactivateActions();
   }
@@ -133,20 +133,27 @@ class _FormatusBarState extends State<FormatusBar> {
     }
   }
 
+  Future<void> _onEditAnchor() async {
+    FormatusAnchor? anchorAtCursor = widget.controller.anchorAtCursor;
+    FormatusAnchor? result =
+        await widget.onEditAnchor!(context, anchorAtCursor ?? FormatusAnchor());
+    widget.controller.anchorAtCursor = result;
+  }
+
   ///
   /// Toggles format button
   ///
   /// Only one top-level format may be active at any time.
   ///
   void _onToggleAction(Formatus formatus) {
+    //--- Special handling if anchor link is present in formatting actions
     if (formatus == Formatus.anchor) {
-      // invoke method "onEditAnchor"
-      FormatusAnchor anchor = widget.formatusController.anchorAtCursor;
-      widget.onEditAnchor!(context, anchor);
+      _onEditAnchor();
       return;
     } else if (formatus.isTopLevel) {
       _deactivateTopLevelActions();
       _selectedFormats.add(formatus);
+      widget.controller.updateTopLevelFormat(formatus);
     } else if (_selectedFormats.contains(formatus)) {
       _selectedFormats.remove(formatus);
     } else {
