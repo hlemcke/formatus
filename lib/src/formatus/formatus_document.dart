@@ -74,8 +74,8 @@ class FormatusDocument {
   ///
   /// Returns index of text-node which contains given `charIndex`
   ///
-  int indexOfCharIndex(int charIndex) =>
-      textNodes.indexOfCharIndex(charIndex, _previousText);
+  int computeNodeIndex(int charIndex) =>
+      textNodes.computeNodeIndex(_previousText, charIndex);
 
   ///
   /// Optimizes the tree by combining sibling nodes of same format into one.
@@ -164,19 +164,48 @@ class FormatusDocument {
 
   /// Handle cases for `delete`. Deletion can include multiple nodes
   void handleDelete(DeltaText diff) {
+    debugPrint(diff.toString());
     if (diff.isAtStart) {
-      int nodeIndex = indexOfCharIndex(diff.trailingStartIndex);
+      int nodeIndex = computeNodeIndex(diff.tailTextIndex);
       FormatusNode textNode = textNodes[nodeIndex];
+      debugPrint('=> node[$nodeIndex]=$textNode');
       textNodes.removeBefore(nodeIndex);
       textNode.text = textNode.text.substring(textNode.textOffset);
     } else if (diff.isAtEnd) {
-      int nodeIndex = indexOfCharIndex(diff.leadingEndIndex);
+      int nodeIndex = computeNodeIndex(diff.leadTextIndex);
       FormatusNode textNode = textNodes[nodeIndex];
       textNodes.removeAfter(nodeIndex);
       textNode.text = textNode.text.substring(0, textNode.textOffset);
     } else {
-      debugPrint('DELETE MIDDLE');
-      // TODO implement deletion in middle
+      int leadNodeIndex = computeNodeIndex(diff.leadTextIndex);
+      FormatusNode leadNode = textNodes[leadNodeIndex];
+      int leadOffset = leadNode.textOffset;
+      int tailNodeIndex = computeNodeIndex(diff.tailTextIndex);
+      //--- Deletion within same node
+      if (leadNodeIndex == tailNodeIndex) {
+        debugPrint(
+            '=> leadIdx=$leadNodeIndex leadOffset=$leadOffset node=$leadNode');
+        String pre = leadNode.text.substring(0, leadOffset);
+        String post = leadNode.text.substring(leadNode.textOffset);
+        leadNode.text = pre + post;
+        if (leadNode.isEmpty) {
+          leadNode.dispose();
+        }
+      } else {
+        FormatusNode tailNode = textNodes[tailNodeIndex];
+        debugPrint(
+            '=> leadIdx=$leadNodeIndex off=$leadOffset tailIdx=$tailNodeIndex off=${tailNode.textOffset}');
+        leadNode.text = leadNode.text.substring(0, leadOffset);
+        tailNode.text = tailNode.text.substring(tailNode.textOffset);
+
+        //--- Remove nodes in between. Must do from right to left!
+        for (int i = tailNodeIndex - 1; i > leadNodeIndex; i--) {
+          textNodes.removeAt(i);
+        }
+        //--- Must remove lead and tail at end!
+        if (leadNode.isEmpty) leadNode.dispose();
+        if (tailNode.isEmpty) tailNode.dispose();
+      }
     }
   }
 
@@ -191,9 +220,8 @@ class FormatusDocument {
       textNode = textNodes.last;
       textNode.text += diff.added;
     } else {
-      int nodeIndex = indexOfCharIndex(diff.leadingEndIndex);
+      int nodeIndex = computeNodeIndex(diff.leadTextIndex);
       textNode = textNodes[nodeIndex];
-      debugPrint('=== node: $textNode');
       textNode.text = textNode.text.substring(0, textNode.textOffset) +
           diff.added +
           textNode.text.substring(textNode.textOffset);
@@ -205,12 +233,12 @@ class FormatusDocument {
   /// TODO handle different start and end node
   void handleUpdate(DeltaText diff) {
     if (diff.isAtStart) {
-      int nodeIndex = indexOfCharIndex(diff.trailingStartIndex);
+      int nodeIndex = computeNodeIndex(diff.tailTextIndex);
       FormatusNode textNode = textNodes[nodeIndex];
       textNodes.removeBefore(nodeIndex);
       textNode.text = diff.added + textNode.text;
     } else if (diff.isAtEnd) {
-      int nodeIndex = indexOfCharIndex(diff.leadingEndIndex);
+      int nodeIndex = computeNodeIndex(diff.leadTextIndex);
       FormatusNode textNode = textNodes[nodeIndex];
       textNodes.removeAfter(nodeIndex);
       textNode.text =
@@ -343,7 +371,7 @@ class FormatusNode {
   ///
   @override
   String toString() => text.isNotEmpty
-      ? 'offset=$textOffset "$text"'
+      ? '[$textOffset] "$text"'
       : '<${format.key}> ${_children.length}';
 
   TextSpan toTextSpan() {
@@ -377,7 +405,10 @@ class FormatusTextNodes {
   /// Returns index to text-node where `charIndex` <= sum of previous
   /// text-nodes length.
   ///
-  int indexOfCharIndex(int charIndex, String previousText) {
+  int computeNodeIndex(
+    String previousText,
+    int charIndex,
+  ) {
     int charCount = 0;
     for (int i = 0; i < textNodes.length; i++) {
       FormatusNode textNode = textNodes[i];
@@ -446,14 +477,19 @@ class DeltaText {
   String _added = '';
 
   /// Leading characters which are identical in both texts
-  String get leading => _leading;
-  String _leading = '';
-  int leadingEndIndex = -1;
+  String get leadText => _leadText;
+  String _leadText = '';
+
+  /// Index to end of leading text which is identical in both texts
+  int get leadTextIndex => _leadText.length;
 
   /// Trailing characters which are identical in both texts
-  String get trailing => _trailing;
-  String _trailing = '';
-  int trailingStartIndex = -1;
+  String get tailText => _tailText;
+  String _tailText = '';
+
+  /// Index to start of `tailText` in `previous` text
+  int get tailTextIndex => _tailTextIndex;
+  int _tailTextIndex = -1;
 
   DeltaText._();
 
@@ -468,10 +504,10 @@ class DeltaText {
   bool _hasDelta = true;
 
   /// Returns `true` if change has occurred at start of previous text
-  bool get isAtEnd => _hasDelta && _trailing.isEmpty;
+  bool get isAtEnd => _hasDelta && tailText.isEmpty;
 
   /// Returns `true` if change has occurred at end of previous text
-  bool get isAtStart => _leading.isEmpty;
+  bool get isAtStart => leadText.isEmpty;
 
   /// Returns `true` if characters were deleted
   bool get isDelete => hasDelta && _added.isEmpty;
@@ -489,7 +525,7 @@ class DeltaText {
     _computeLeading(prev, next);
     if (_hasDelta) {
       _computeRest(prev, next);
-      _isInsert = (_leading.length + _trailing.length == prev.length);
+      _isInsert = (_leadText.length + _tailText.length == prev.length);
     }
   }
 
@@ -498,24 +534,23 @@ class DeltaText {
     while (i < prev.length && i < next.length && prev[i] == next[i]) {
       i++;
     }
-    _leading = (i > 0) ? prev.substring(0, i) : '';
-    leadingEndIndex = leading.length;
+    _leadText = (i > 0) ? prev.substring(0, i) : '';
     _hasDelta = ((i < prev.length) || (i < next.length)) ? true : false;
   }
 
   /// Identical trailing text is computed from right to left
   void _computeRest(String prev, String next) {
-    int leadLen = leading.length;
+    int leadLen = _leadText.length;
     int i = prev.length;
     int j = next.length;
     while ((i > leadLen) && j > leadLen && (prev[i - 1] == next[j - 1])) {
       i--;
       j--;
     }
-    if (j < next.length - 1) _trailing = next.substring(j);
-    trailingStartIndex = j;
+    if (i < prev.length - 1) _tailText = prev.substring(i);
+    _tailTextIndex = i;
     if (j > leadLen) {
-      _added = trailing.isEmpty
+      _added = tailText.isEmpty
           ? next.substring(leadLen)
           : next.substring(leadLen, j);
     }
@@ -526,6 +561,8 @@ class DeltaText {
     if (hasDelta == false) return '<no delta>';
     return '${isDelete ? "DELETE" : isInsert ? "INSERT" : "UPDATE"}'
         ' ${isAtStart ? "START " : isAtEnd ? "END   " : "MIDDLE"}'
-        ' added="$_added" lead="$_leading" trail="$_trailing"';
+        ' leadTextIdx=$leadTextIndex tailTextIdx=$tailTextIndex'
+        ' added="$added"\nlead ="$leadText"'
+        '\ntail="$tailText"';
   }
 }

@@ -61,7 +61,7 @@ class FormatusController extends TextEditingController {
   }
 
   Set<Formatus> get formatsAtCursor {
-    int nodeIndex = document.indexOfCharIndex(selection.baseOffset);
+    int nodeIndex = document.computeNodeIndex(selection.baseOffset);
     return document.textNodes[nodeIndex].formatsInPath;
   }
 

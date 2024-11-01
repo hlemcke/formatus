@@ -13,9 +13,9 @@ void main() {
       expect(delta.isDelete, false);
       expect(delta.isInsert, false);
       expect(delta.isUpdate, false);
-      expect(delta.leading, text);
+      expect(delta.leadText, text);
       expect(delta.added, '');
-      expect(delta.trailing, '');
+      expect(delta.tailText, '');
     });
 
     ///
@@ -30,9 +30,9 @@ void main() {
       expect(delta.isDelete, false);
       expect(delta.isInsert, true);
       expect(delta.isUpdate, false);
-      expect(delta.leading, '');
+      expect(delta.leadText, '');
       expect(delta.added, added);
-      expect(delta.trailing, prev);
+      expect(delta.tailText, prev);
     });
 
     ///
@@ -47,9 +47,9 @@ void main() {
       expect(delta.isDelete, false);
       expect(delta.isInsert, true);
       expect(delta.isUpdate, false);
-      expect(delta.leading, prev);
+      expect(delta.leadText, prev);
       expect(delta.added, added);
-      expect(delta.trailing, '');
+      expect(delta.tailText, '');
     });
 
     ///
@@ -65,9 +65,9 @@ void main() {
       expect(delta.isDelete, false);
       expect(delta.isInsert, true);
       expect(delta.isUpdate, false);
-      expect(delta.leading, leading);
+      expect(delta.leadText, leading);
       expect(delta.added, added);
-      expect(delta.trailing, trailing);
+      expect(delta.tailText, trailing);
     });
   });
 
@@ -85,9 +85,9 @@ void main() {
       expect(delta.isDelete, true);
       expect(delta.isInsert, false);
       expect(delta.isUpdate, false);
-      expect(delta.leading, '');
+      expect(delta.leadText, '');
       expect(delta.added, '');
-      expect(delta.trailing, ' text');
+      expect(delta.tailText, ' text');
     });
 
     ///
@@ -101,9 +101,9 @@ void main() {
       expect(delta.isDelete, true);
       expect(delta.isInsert, false);
       expect(delta.isUpdate, false);
-      expect(delta.leading, next);
+      expect(delta.leadText, next);
       expect(delta.added, '');
-      expect(delta.trailing, '');
+      expect(delta.tailText, '');
     });
 
     ///
@@ -117,9 +117,9 @@ void main() {
       expect(delta.isDelete, true);
       expect(delta.isInsert, false);
       expect(delta.isUpdate, false);
-      expect(delta.leading, 'some');
+      expect(delta.leadText, 'some');
       expect(delta.added, '');
-      expect(delta.trailing, 'xt');
+      expect(delta.tailText, 'xt');
     });
   });
 
@@ -137,9 +137,9 @@ void main() {
       expect(delta.isDelete, false);
       expect(delta.isInsert, false);
       expect(delta.isUpdate, true);
-      expect(delta.leading, '');
+      expect(delta.leadText, '');
       expect(delta.added, 'other');
-      expect(delta.trailing, ' text');
+      expect(delta.tailText, ' text');
     });
 
     ///
@@ -153,9 +153,9 @@ void main() {
       expect(delta.isDelete, false);
       expect(delta.isInsert, false);
       expect(delta.isUpdate, true);
-      expect(delta.leading, 'some ');
+      expect(delta.leadText, 'some ');
       expect(delta.added, 'drink');
-      expect(delta.trailing, '');
+      expect(delta.tailText, '');
     });
 
     ///
@@ -169,9 +169,9 @@ void main() {
       expect(delta.isDelete, false);
       expect(delta.isInsert, false);
       expect(delta.isUpdate, true);
-      expect(delta.leading, 'som');
+      expect(delta.leadText, 'som');
       expect(delta.added, 'xxx');
-      expect(delta.trailing, 'ext');
+      expect(delta.tailText, 'ext');
     });
   });
 }

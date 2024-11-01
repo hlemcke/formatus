@@ -41,9 +41,8 @@ A: Insert has: `added.isNotEmpty` AND `leading.length + trailing.length == previ
 
 A text-node can be determined by the cursor position or by some computed index.
 
-Following variations can happen:
-
-#### Cursor index points to first char of node
-
-IF this character is a comma or space OR if the previous character is a line-break
+```
+IF cursor index is on first character of a text-node
+AND (this character is a comma or space OR if the previous character is a line-break)
 THEN the previous text-node will be used.
+```

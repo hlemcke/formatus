@@ -20,7 +20,7 @@ void main() {
     test('Element should be: "Title " with path h1', () {
       List<int> cursors = [0, 4, 5];
       for (int cursor in cursors) {
-        int nodeIndex = doc.indexOfCharIndex(cursor);
+        int nodeIndex = doc.computeNodeIndex(cursor);
         FormatusNode node = doc.textNodes[nodeIndex];
         expect(node.text, 'Title ', reason: '$cursor');
         expect(node.path[0].format, Formatus.header1);
@@ -29,7 +29,7 @@ void main() {
     test('Element should be: "italic" with path h1 / i', () {
       List<int> cursors = [6, 7, 11, 12, 13];
       for (int cursor in cursors) {
-        int nodeIndex = doc.indexOfCharIndex(cursor);
+        int nodeIndex = doc.computeNodeIndex(cursor);
         FormatusNode node = doc.textNodes[nodeIndex];
         expect(node.text, 'italic', reason: printReason(doc, cursor));
         expect(node.path[0].format, Formatus.header1);
@@ -39,7 +39,7 @@ void main() {
     test('Element should be: "under" at p / b / u', () {
       List<int> cursors = [23, 24, 27];
       for (int cursor in cursors) {
-        int nodeIndex = doc.indexOfCharIndex(cursor);
+        int nodeIndex = doc.computeNodeIndex(cursor);
         FormatusNode node = doc.textNodes[nodeIndex];
         expect(node.text, 'under', reason: printReason(doc, cursor));
         expect(node.path[0].format, Formatus.paragraph);
@@ -56,7 +56,7 @@ void main() {
     ///
     test('Insert "X" at end of "bold" -> should become bold also', () {
       FormatusDocument doc = FormatusDocument.fromHtml(htmlBody: easyParagraph);
-      int nodeIndex = doc.indexOfCharIndex(10);
+      int nodeIndex = doc.computeNodeIndex(10);
       print(
           '${doc.textNodes.length} nodes, nodeIndex=$nodeIndex node="${doc.textNodes[nodeIndex].text}"');
       DeltaText diff = doc.update('Words boldX underline');
@@ -66,7 +66,7 @@ void main() {
     ///
     test('Insert "X" at start of "bold" -> should become bold also', () {
       FormatusDocument doc = FormatusDocument.fromHtml(htmlBody: easyParagraph);
-      int nodeIndex = doc.indexOfCharIndex(6);
+      int nodeIndex = doc.computeNodeIndex(6);
       print(
           '${doc.textNodes.length} nodes, nodeIndex=$nodeIndex node="${doc.textNodes[nodeIndex].text}"');
       DeltaText diff = doc.update('Words Xbold underline');
