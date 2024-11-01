@@ -151,10 +151,8 @@ class FormatusDocument {
       //--- Modify tree according to text delta
       if (diff.isInsert) {
         handleInsert(diff);
-      } else if (diff.isDelete) {
-        handleDelete(diff);
       } else {
-        handleUpdate(diff);
+        handleDeleteAndUpdate(diff);
       }
 //      optimize();
       _previousText = toPlainText();
@@ -162,54 +160,9 @@ class FormatusDocument {
     return diff;
   }
 
-  /// Handle cases for `delete`. Deletion can include multiple nodes
-  void handleDelete(DeltaText diff) {
-    debugPrint(diff.toString());
-    if (diff.isAtStart) {
-      int nodeIndex = computeNodeIndex(diff.tailTextIndex);
-      FormatusNode textNode = textNodes[nodeIndex];
-      debugPrint('=> node[$nodeIndex]=$textNode');
-      textNodes.removeBefore(nodeIndex);
-      textNode.text = textNode.text.substring(textNode.textOffset);
-    } else if (diff.isAtEnd) {
-      int nodeIndex = computeNodeIndex(diff.leadTextIndex);
-      FormatusNode textNode = textNodes[nodeIndex];
-      textNodes.removeAfter(nodeIndex);
-      textNode.text = textNode.text.substring(0, textNode.textOffset);
-    } else {
-      int leadNodeIndex = computeNodeIndex(diff.leadTextIndex);
-      FormatusNode leadNode = textNodes[leadNodeIndex];
-      int leadOffset = leadNode.textOffset;
-      int tailNodeIndex = computeNodeIndex(diff.tailTextIndex);
-      //--- Deletion within same node
-      if (leadNodeIndex == tailNodeIndex) {
-        debugPrint(
-            '=> leadIdx=$leadNodeIndex leadOffset=$leadOffset node=$leadNode');
-        String pre = leadNode.text.substring(0, leadOffset);
-        String post = leadNode.text.substring(leadNode.textOffset);
-        leadNode.text = pre + post;
-        if (leadNode.isEmpty) {
-          leadNode.dispose();
-        }
-      } else {
-        FormatusNode tailNode = textNodes[tailNodeIndex];
-        debugPrint(
-            '=> leadIdx=$leadNodeIndex off=$leadOffset tailIdx=$tailNodeIndex off=${tailNode.textOffset}');
-        leadNode.text = leadNode.text.substring(0, leadOffset);
-        tailNode.text = tailNode.text.substring(tailNode.textOffset);
-
-        //--- Remove nodes in between. Must do from right to left!
-        for (int i = tailNodeIndex - 1; i > leadNodeIndex; i--) {
-          textNodes.removeAt(i);
-        }
-        //--- Must remove lead and tail at end!
-        if (leadNode.isEmpty) leadNode.dispose();
-        if (tailNode.isEmpty) tailNode.dispose();
-      }
-    }
-  }
-
+  ///
   /// Handle cases for `insert`
+  ///
   void handleInsert(DeltaText diff) {
     FormatusNode textNode = FormatusNode();
     debugPrint(diff.toString());
@@ -228,15 +181,16 @@ class FormatusDocument {
     }
   }
 
-  /// Handle cases for `update`. Modified text can include multiple nodes.
   ///
-  /// TODO handle different start and end node
-  void handleUpdate(DeltaText diff) {
+  /// Handle cases for `delete` and `update`.
+  ///
+  void handleDeleteAndUpdate(DeltaText diff) {
+    debugPrint(diff.toString());
     if (diff.isAtStart) {
       int nodeIndex = computeNodeIndex(diff.tailTextIndex);
       FormatusNode textNode = textNodes[nodeIndex];
       textNodes.removeBefore(nodeIndex);
-      textNode.text = diff.added + textNode.text;
+      textNode.text = diff.added + textNode.text.substring(textNode.textOffset);
     } else if (diff.isAtEnd) {
       int nodeIndex = computeNodeIndex(diff.leadTextIndex);
       FormatusNode textNode = textNodes[nodeIndex];
@@ -244,8 +198,31 @@ class FormatusDocument {
       textNode.text =
           textNode.text.substring(0, textNode.textOffset) + diff.added;
     } else {
-      debugPrint('UPDATE MIDDLE');
-      // TODO implement update in middle
+      int leadNodeIndex = computeNodeIndex(diff.leadTextIndex);
+      FormatusNode leadNode = textNodes[leadNodeIndex];
+      int leadOffset = leadNode.textOffset;
+      int tailNodeIndex = computeNodeIndex(diff.tailTextIndex);
+      //--- Replacement within same node
+      if (leadNodeIndex == tailNodeIndex) {
+        String pre = leadNode.text.substring(0, leadOffset);
+        String post = leadNode.text.substring(leadNode.textOffset);
+        leadNode.text = pre + diff.added + post;
+        if (leadNode.isEmpty) {
+          leadNode.dispose();
+        }
+      } else {
+        FormatusNode tailNode = textNodes[tailNodeIndex];
+        leadNode.text = leadNode.text.substring(0, leadOffset) + diff.added;
+        tailNode.text = tailNode.text.substring(tailNode.textOffset);
+
+        //--- Remove nodes in between. Must do from right to left!
+        for (int i = tailNodeIndex - 1; i > leadNodeIndex; i--) {
+          textNodes.removeAt(i);
+        }
+        //--- Must remove lead and tail at end!
+        if (leadNode.isEmpty) leadNode.dispose();
+        if (tailNode.isEmpty) tailNode.dispose();
+      }
     }
   }
 }
@@ -562,7 +539,6 @@ class DeltaText {
     return '${isDelete ? "DELETE" : isInsert ? "INSERT" : "UPDATE"}'
         ' ${isAtStart ? "START " : isAtEnd ? "END   " : "MIDDLE"}'
         ' leadTextIdx=$leadTextIndex tailTextIdx=$tailTextIndex'
-        ' added="$added"\nlead ="$leadText"'
-        '\ntail="$tailText"';
+        ' added="$added"\nlead="$leadText"\ntail="$tailText"';
   }
 }
