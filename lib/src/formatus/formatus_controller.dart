@@ -109,10 +109,10 @@ class FormatusController extends TextEditingController {
   ///
   void _onListen() {
     DeltaFormat deltaFormat = DeltaFormat(
-        formatsAtCursor: formatsAtCursor, selectedFormats: formatsAtCursor);
-    bool hasDelta = document.update(text, deltaFormat).hasDelta;
+        formatsAtCursor: formatsAtCursor, selectedFormats: selectedFormats);
+    DeltaText deltaText = document.update(text, deltaFormat);
     debugPrint(
-        '=== ${hasDelta ? 'document updated' : 'range: ${selection.baseOffset} ${selection.extentOffset}'}');
+        '=== ${deltaText.hasDelta ? 'document updated' : 'range: ${selection.baseOffset} ${selection.extentOffset}'}');
   }
 }
 
@@ -155,6 +155,8 @@ class DeltaFormat {
 
   bool get isEmpty => added.isEmpty && removed.isEmpty;
 
+  bool get isNotEmpty => added.isNotEmpty || removed.isNotEmpty;
+
   @override
-  String toString() => '+: $added, =:$same, -:$removed';
+  String toString() => '+:$added, =:$same, -:$removed';
 }

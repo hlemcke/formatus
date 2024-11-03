@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:formatus/formatus.dart';
 
-/// Entry point for example application
+/// Entry point of example application
 void main() {
   runApp(const MyApp());
 }
 
+/// TODO frame input field
+/// TODO add dropdown: empty, short, long
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 

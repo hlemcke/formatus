@@ -84,6 +84,9 @@ enum Formatus {
     null,
   ),
 
+  /// Empty format used for placeholders
+  placeHolder('?', FormatusType.attribute, null, null),
+
   /// Top level element header 3 (largest)
   header1(
     'h1',

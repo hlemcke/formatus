@@ -147,7 +147,7 @@ class FormatusDocument {
     DeltaText deltaText =
         DeltaText.compute(previous: _previousText, next: current);
     if (deltaText.hasDelta) {
-      // debugPrint(diff.toString());
+      debugPrint('$deltaText ### $deltaFormat');
       if (deltaText.isInsert) {
         handleInsert(deltaText, deltaFormat);
       } else {
@@ -160,33 +160,6 @@ class FormatusDocument {
   }
 
   ///
-  /// Handle cases for `insert`
-  ///
-  void handleInsert(DeltaText diff, DeltaFormat deltaFormat) {
-    FormatusNode textNode = FormatusNode();
-    if (diff.isAtStart) {
-      textNode = textNodes.first;
-      if (deltaFormat.isEmpty) {
-        textNode.text = diff.added + textNode.text;
-      } else {
-        insertAddedText(textNode, diff.added, deltaFormat);
-      }
-    } else if (diff.isAtEnd) {
-      textNode = textNodes.last;
-      textNode.text += diff.added;
-    } else {
-      int nodeIndex = computeNodeIndex(diff.leadTextIndex);
-      textNode = textNodes[nodeIndex];
-      textNode.text = textNode.text.substring(0, textNode.textOffset) +
-          diff.added +
-          textNode.text.substring(textNode.textOffset);
-    }
-  }
-
-  void insertAddedText(
-      FormatusNode textNode, String added, DeltaFormat deltaFormat) {}
-
-  ///
   /// Handle cases for `delete` and `update`.
   ///
   void handleDeleteAndUpdate(DeltaText diff) {
@@ -195,12 +168,14 @@ class FormatusDocument {
       FormatusNode textNode = textNodes[nodeIndex];
       textNodes.removeBefore(nodeIndex);
       textNode.text = diff.added + textNode.text.substring(textNode.textOffset);
+      if (textNode.isEmpty) textNode.dispose();
     } else if (diff.isAtEnd) {
       int nodeIndex = computeNodeIndex(diff.leadTextIndex);
       FormatusNode textNode = textNodes[nodeIndex];
       textNodes.removeAfter(nodeIndex);
       textNode.text =
           textNode.text.substring(0, textNode.textOffset) + diff.added;
+      if (textNode.isEmpty) textNode.dispose();
     } else {
       int leadNodeIndex = computeNodeIndex(diff.leadTextIndex);
       FormatusNode leadNode = textNodes[leadNodeIndex];
@@ -228,6 +203,119 @@ class FormatusDocument {
         if (tailNode.isEmpty) tailNode.dispose();
       }
     }
+  }
+
+  ///
+  /// Handle cases for `insert`
+  ///
+  void handleInsert(DeltaText diff, DeltaFormat deltaFormat) {
+    FormatusNode textNode = FormatusNode();
+    if (diff.isAtStart) {
+      textNode = textNodes.first;
+      if (deltaFormat.isEmpty) {
+        textNode.text = diff.added + textNode.text;
+      } else {
+        handleInsertWithDifferentFormat(
+            textNode, diff.added, true, deltaFormat);
+      }
+    } else if (diff.isAtEnd) {
+      textNode = textNodes.last;
+      if (deltaFormat.isEmpty) {
+        textNode.text = textNode.text + diff.added;
+      } else {
+        handleInsertWithDifferentFormat(
+            textNode, diff.added, false, deltaFormat);
+      }
+    } else {
+      int nodeIndex = computeNodeIndex(diff.leadTextIndex);
+      textNode = textNodes[nodeIndex];
+      if (deltaFormat.isEmpty) {
+        textNode.text = textNode.text.substring(0, textNode.textOffset) +
+            diff.added +
+            textNode.text.substring(textNode.textOffset);
+      }
+      //--- Handle insert in middle with different format
+      else {
+        String leadText = textNode.text.substring(0, textNode.textOffset);
+        String tailText = textNode.text.substring(textNode.textOffset);
+        textNode.text = leadText;
+        debugPrint('--- lead="$leadText" tail="$tailText"');
+
+        //--- Create and attach differently formatted nodes
+        FormatusNode subTreeTop = handleInsertWithDifferentFormat(
+            textNode, diff.added, false, deltaFormat);
+
+        //--- Create and attach node with same format and rest of text
+        if (tailText.isNotEmpty) {
+          FormatusNode tailTextNode =
+              createSubtree(tailText, deltaFormat.removed);
+          subTreeTop.parent?.insertChild(
+              subTreeTop.childIndexInParent + 1, tailTextNode.path[0]);
+          int textNodeIndex = textNodes.textNodes.indexOf(textNode);
+          textNodes.insert(textNodeIndex + 2, tailTextNode);
+        }
+
+        //--- Cleanup eventually empty lead node
+        if (leadText.isEmpty) textNode.dispose();
+        debugPrint('--- $textNodes');
+      }
+    }
+  }
+
+  ///
+  /// Creates a new subtree with text-node from `text` and parents from `formats`.
+  /// Returns leaf of subtree (which is the new text-node).
+  ///
+  FormatusNode createSubtree(String text, Set<Formatus> formats) {
+    FormatusNode textNode = FormatusNode(format: Formatus.text, text: text);
+    FormatusNode node = textNode;
+    for (Formatus formatus in formats) {
+      FormatusNode parent = FormatusNode(format: formatus);
+      parent.addChild(node);
+      node = parent;
+    }
+    return textNode;
+  }
+
+  ///
+  /// Gets first different node in `textNode.path`.
+  /// Its parent is the last node with same format.
+  ///
+  FormatusNode getFirstDifferentNode(
+      FormatusNode textNode, Set<Formatus> sameFormats) {
+    List<FormatusNode> path = textNode.path;
+    FormatusNode sameFormatNode = path[0]; // start with top-level format
+    int i = 1;
+    while ((i < path.length) && sameFormats.contains(path[i].format)) {
+      sameFormatNode = path[i];
+      i++;
+    }
+    return path[i];
+  }
+
+  ///
+  /// Creates and inserts a new subtree with text `added` for the leaf text-node.
+  ///
+  /// Returns the topmost node of new subtree (`before == false`)
+  /// or of `textNode` (`before == true`).
+  /// Its parent is the lowest node with same formats.
+  ///
+  FormatusNode handleInsertWithDifferentFormat(FormatusNode textNode,
+      String added, bool before, DeltaFormat deltaFormat) {
+    FormatusNode firstDifferentNode =
+        getFirstDifferentNode(textNode, deltaFormat.same);
+    FormatusNode sameFormatNode = firstDifferentNode.parent!;
+    FormatusNode newSubTreeLeaf = createSubtree(added, deltaFormat.added);
+    FormatusNode newSubTreeTop = newSubTreeLeaf.path[0];
+
+    //--- Attach text-node to last format node and update list of text nodes
+    int childIndex = firstDifferentNode.childIndexInParent;
+    sameFormatNode.insertChild(
+        before ? childIndex : childIndex + 1, newSubTreeTop);
+    int textNodeIndex = textNodes.textNodes.indexOf(textNode);
+    textNodes.insert(
+        before ? textNodeIndex : textNodeIndex + 1, newSubTreeLeaf);
+    return before ? firstDifferentNode : newSubTreeTop;
   }
 }
 
@@ -264,6 +352,10 @@ class FormatusNode {
     }
   }
 
+  /// Single final empty node to be used as placeholder
+  static final FormatusNode placeHolder =
+      FormatusNode(format: Formatus.placeHolder);
+
   List<FormatusNode> get children => _children;
   final List<FormatusNode> _children = [];
 
@@ -275,6 +367,9 @@ class FormatusNode {
   /// Index of this node in parents children. Relevant in path
   int get childIndexInParent =>
       (parent == null) ? -1 : parent!.children.indexOf(this);
+
+  /// Gets depths in tree. Returns 0 for a top-level node
+  int get depth => path.last == this ? path.length : parent?.depth ?? 0;
 
   void dispose() {
     if (parent != null) {
@@ -299,6 +394,12 @@ class FormatusNode {
   }
 
   bool get hasParent => parent != null;
+
+  /// Inserts `newChild` into `children` at index
+  void insertChild(int index, FormatusNode child) {
+    children.insert(index, child);
+    child.parent = this;
+  }
 
   bool get isEmpty => isTextNode ? text.isEmpty : _children.isEmpty;
 
@@ -395,7 +496,8 @@ class FormatusTextNodes {
       FormatusNode textNode = textNodes[i];
 
       //--- Adjust node based on first char of this node
-      if ([' ', ',', '\n'].contains(previousText[charCount])) {
+      if ((charCount < previousText.length) &&
+          [' ', ',', '\n'].contains(previousText[charCount])) {
         if (charIndex == charCount) {
           i--;
           textNode = textNodes[i];
@@ -416,6 +518,9 @@ class FormatusTextNodes {
     }
     return textNodes.length - 1;
   }
+
+  void insert(int index, FormatusNode textNode) =>
+      textNodes.insert(index, textNode);
 
   FormatusNode get last => textNodes.last;
 
@@ -447,6 +552,9 @@ class FormatusTextNodes {
   void removeLast() {
     removeAt(textNodes.length);
   }
+
+  @override
+  String toString() => textNodes.toString();
 }
 
 ///
