@@ -146,11 +146,12 @@ class _FormatusBarState extends State<FormatusBar> {
   /// Only one top-level format may be active at any time.
   ///
   void _onToggleAction(Formatus formatus) {
-    //--- Special handling if anchor link is present in formatting actions
+    //--- Special handling if anchor is present in formatting actions
     if (formatus == Formatus.anchor) {
       _onEditAnchor();
       return;
-    } else if (formatus.isTopLevel) {
+    }
+    if (formatus.isTopLevel) {
       _deactivateTopLevelActions();
       _selectedFormats.add(formatus);
       widget.controller.updateTopLevelFormat(formatus);

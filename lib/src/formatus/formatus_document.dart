@@ -41,7 +41,7 @@ class FormatusDocument {
   factory FormatusDocument.fromHtml({
     required String htmlBody,
   }) {
-    String text = FormatusDocument.cleanUp(htmlBody);
+    String text = FormatusDocument.cleanUpHtml(htmlBody);
     if (text.isNotEmpty && !text.startsWith('<')) {
       text = '<p>$text';
     }
@@ -65,7 +65,7 @@ class FormatusDocument {
   /// * replace tab with space
   /// * replace multiple spaces with one space
   ///
-  static String cleanUp(String htmlBody) => htmlBody
+  static String cleanUpHtml(String htmlBody) => htmlBody
       .replaceAll('\r', '')
       .replaceAll('\n', '')
       .replaceAll('\t', ' ')
@@ -78,85 +78,34 @@ class FormatusDocument {
       textNodes.computeNodeIndex(_previousText, charIndex);
 
   ///
-  /// Optimizes the tree by combining sibling nodes of same format into one.
+  /// Creates a new subtree with text-node from `text` and parents from `formats`.
+  /// Returns leaf of subtree (which is the new text-node).
   ///
-  void optimize() {
-    _optimize(root);
-  }
-
-  void _optimize(FormatusNode node) {
-    //--- first round: remove empty children
-    for (FormatusNode child in node.children) {
-      if (child.isEmpty) {
-        node.children.remove(child);
-      }
+  FormatusNode createSubtree(String text, Set<Formatus> formats) {
+    FormatusNode textNode = FormatusNode(format: Formatus.text, text: text);
+    FormatusNode node = textNode;
+    for (Formatus formatus in formats) {
+      FormatusNode parent = FormatusNode(format: formatus);
+      parent.addChild(node);
+      node = parent;
     }
-    //--- second round: combine same formats into one node
-    for (int i = 0; i < node.children.length - 1; i++) {
-      FormatusNode child = node.children[i];
-      FormatusNode sibling = node.children[i + 1];
-      if (child.format == sibling.format) {
-        if (child.format == Formatus.text) {
-          child.text += sibling.text;
-        } else {
-          child.children.addAll(sibling.children);
-        }
-        node.children.removeAt(i + 1);
-      }
-    }
-    //--- third round: do this recursively
-    for (FormatusNode child in node.children) {
-      _optimize(child);
-    }
+    return textNode;
   }
 
   ///
-  /// Returns this document as a string in html format
+  /// Gets first different node in `textNode.path`.
+  /// Its parent is the last node with same format.
   ///
-  String toHtml() {
-    String html = '';
-    for (FormatusNode node in root.children) {
-      html += node.toHtml();
+  FormatusNode getFirstDifferentNode(
+      FormatusNode textNode, Set<Formatus> sameFormats) {
+    List<FormatusNode> path = textNode.path;
+    FormatusNode sameFormatNode = path[0]; // start with top-level format
+    int i = 1;
+    while ((i < path.length) && sameFormats.contains(path[i].format)) {
+      sameFormatNode = path[i];
+      i++;
     }
-    return html;
-  }
-
-  ///
-  /// Returns plain text with line breaks between top-level elements
-  ///
-  /// Used for [TextFormField.text]
-  ///
-  String toPlainText() {
-    String plain = '';
-    bool isNotFirst = false;
-    for (FormatusNode topLevelNode in root.children) {
-      if (isNotFirst) plain += '\n';
-      isNotFirst = true;
-      plain += topLevelNode.toPlainText();
-    }
-    _previousText = plain;
-    return plain;
-  }
-
-  ///
-  /// Updates tree structure from `current`.
-  ///
-  /// Returns `false` if text is not changed.
-  ///
-  DeltaText update(String current, DeltaFormat deltaFormat) {
-    DeltaText deltaText =
-        DeltaText.compute(previous: _previousText, next: current);
-    if (deltaText.hasDelta) {
-      debugPrint('$deltaText ### $deltaFormat');
-      if (deltaText.isInsert) {
-        handleInsert(deltaText, deltaFormat);
-      } else {
-        handleDeleteAndUpdate(deltaText);
-      }
-//      optimize();
-      _previousText = toPlainText();
-    }
-    return deltaText;
+    return path[i];
   }
 
   ///
@@ -263,37 +212,6 @@ class FormatusDocument {
   }
 
   ///
-  /// Creates a new subtree with text-node from `text` and parents from `formats`.
-  /// Returns leaf of subtree (which is the new text-node).
-  ///
-  FormatusNode createSubtree(String text, Set<Formatus> formats) {
-    FormatusNode textNode = FormatusNode(format: Formatus.text, text: text);
-    FormatusNode node = textNode;
-    for (Formatus formatus in formats) {
-      FormatusNode parent = FormatusNode(format: formatus);
-      parent.addChild(node);
-      node = parent;
-    }
-    return textNode;
-  }
-
-  ///
-  /// Gets first different node in `textNode.path`.
-  /// Its parent is the last node with same format.
-  ///
-  FormatusNode getFirstDifferentNode(
-      FormatusNode textNode, Set<Formatus> sameFormats) {
-    List<FormatusNode> path = textNode.path;
-    FormatusNode sameFormatNode = path[0]; // start with top-level format
-    int i = 1;
-    while ((i < path.length) && sameFormats.contains(path[i].format)) {
-      sameFormatNode = path[i];
-      i++;
-    }
-    return path[i];
-  }
-
-  ///
   /// Creates and inserts a new subtree with text `added` for the leaf text-node.
   ///
   /// Returns the topmost node of new subtree (`before == false`)
@@ -316,6 +234,88 @@ class FormatusDocument {
     textNodes.insert(
         before ? textNodeIndex : textNodeIndex + 1, newSubTreeLeaf);
     return before ? firstDifferentNode : newSubTreeTop;
+  }
+
+  ///
+  /// Optimizes the tree by combining sibling nodes of same format into one.
+  ///
+  void optimize() {
+    _optimize(root);
+  }
+
+  void _optimize(FormatusNode node) {
+    //--- first round: remove empty children
+    for (FormatusNode child in node.children) {
+      if (child.isEmpty) {
+        node.children.remove(child);
+      }
+    }
+    //--- second round: combine same formats into one node
+    for (int i = 0; i < node.children.length - 1; i++) {
+      FormatusNode child = node.children[i];
+      FormatusNode sibling = node.children[i + 1];
+      if (child.format == sibling.format) {
+        if (child.format == Formatus.text) {
+          child.text += sibling.text;
+        } else {
+          child.children.addAll(sibling.children);
+        }
+        node.children.removeAt(i + 1);
+      }
+    }
+    //--- third round: do this recursively
+    for (FormatusNode child in node.children) {
+      _optimize(child);
+    }
+  }
+
+  ///
+  /// Returns this document as a string in html format
+  ///
+  String toHtml() {
+    String html = '';
+    for (FormatusNode node in root.children) {
+      html += node.toHtml();
+    }
+    return html;
+  }
+
+  ///
+  /// Returns plain text with line breaks between top-level elements
+  ///
+  /// Used for [TextFormField.text]
+  ///
+  String toPlainText() {
+    String plain = '';
+    bool isNotFirst = false;
+    for (FormatusNode topLevelNode in root.children) {
+      if (isNotFirst) plain += '\n';
+      isNotFirst = true;
+      plain += topLevelNode.toPlainText();
+    }
+    _previousText = plain;
+    return plain;
+  }
+
+  ///
+  /// Updates tree structure from `current`.
+  ///
+  /// Returns `false` if text is not changed.
+  ///
+  DeltaText update(String current, DeltaFormat deltaFormat) {
+    DeltaText deltaText =
+        DeltaText.compute(previous: _previousText, next: current);
+    if (deltaText.hasDelta) {
+      debugPrint('$deltaText ### $deltaFormat');
+      if (deltaText.isInsert) {
+        handleInsert(deltaText, deltaFormat);
+      } else {
+        handleDeleteAndUpdate(deltaText);
+      }
+//      optimize();
+      _previousText = toPlainText();
+    }
+    return deltaText;
   }
 }
 
