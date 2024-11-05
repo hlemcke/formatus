@@ -21,17 +21,19 @@ class FormatusController extends TextEditingController {
   ///
   /// Creates a controller for [TextField] or [TextFormField].
   ///
-  factory FormatusController.fromHtml({
-    required String initialHtml,
+  factory FormatusController.fromFormattedText({
+    required String formattedText,
     VoidCallback? onListen,
   }) {
     FormatusController ctrl = FormatusController._();
-    ctrl.document = FormatusDocument.fromHtml(htmlBody: initialHtml);
-    debugPrint(ctrl.document.toHtml());
-    ctrl.text = ctrl.document.toPlainText();
+    ctrl.document = FormatusDocument.fromHtml(htmlBody: formattedText);
+    ctrl._text = ctrl.document.toPlainText();
     ctrl.addListener(ctrl._onListen);
+    debugPrint(ctrl.document.toHtml());
     return ctrl;
   }
+
+  set _text(String textForSuper) => super.text = textForSuper;
 
   /// Returns anchor element  at cursor position or `null` if there is none
   FormatusAnchor? get anchorAtCursor {
@@ -64,7 +66,10 @@ class FormatusController extends TextEditingController {
     } else {
       //--- Insert a new anchor element at cursor position
       if (anchor != null) {
-        FormatusNode anchorNode = anchor.buildNodes();
+        FormatusNode anchorTextNode =
+            document.createSubtree(anchor.name, {Formatus.anchor});
+        anchorTextNode.parent!.attributes[FormatusAttribute.href.name] =
+            anchor.href;
         // TODO split current textNode and insert anchorNode between
       } // else do nothing because there is no anchor and none is created
     }
@@ -87,13 +92,36 @@ class FormatusController extends TextEditingController {
     return TextSpan(children: spans);
   }
 
+  /// Returns current text as a html formatted string
+  String get formattedText => document.toHtml();
+
+  /// Replaces current text with the parsed `html`
+  set formattedText(String html) {
+    document = FormatusDocument.fromHtml(htmlBody: html);
+    _text = document.toPlainText();
+    value = TextEditingValue(text: text);
+    debugPrint('===set=== $html\n===$text\n===$formattedText');
+  }
+
   Set<Formatus> get formatsAtCursor {
-    int nodeIndex = document.computeNodeIndex(selection.baseOffset);
+    if (!selection.isValid) return {};
+    int nodeIndex = document.computeNodeIndex(selection.start);
     return document.textNodes[nodeIndex].formatsInPath;
   }
 
-  /// Returns current text as a html formatted string
-  String toHtml() => document.toHtml();
+  @override
+  set text(String _) {
+    throw Exception(
+        'Not supported. Use formattedText=... to replace current text');
+  }
+
+  /// Updates formats in selected text range. Immediately returns
+  /// if no range is selected.
+  void updateRangeFormats(Formatus formatus, bool isSet) {
+    if (selection.isCollapsed) return;
+    debugPrint('${isSet ? "set" : "clear"} ${formatus.name}'
+        ' in [${selection.baseOffset}..${selection.extentOffset}]');
+  }
 
   /// Changes top-level format at current cursor position
   void updateTopLevelFormat(Formatus formatus) {
@@ -108,25 +136,17 @@ class FormatusController extends TextEditingController {
   /// content of the text field changes.
   ///
   void _onListen() {
-    DeltaFormat deltaFormat = DeltaFormat(
-        formatsAtCursor: formatsAtCursor, selectedFormats: selectedFormats);
-    DeltaText deltaText = document.update(text, deltaFormat);
-    debugPrint(
-        '=== ${deltaText.hasDelta ? 'document updated' : 'range: ${selection.baseOffset} ${selection.extentOffset}'}');
+    //--- Immediate handling of full deletion
+    if (text.isEmpty) {
+      document.setupEmpty();
+    } else {
+      DeltaFormat deltaFormat = DeltaFormat(
+          formatsAtCursor: formatsAtCursor, selectedFormats: selectedFormats);
+      DeltaText deltaText = document.update(text, deltaFormat);
+      debugPrint(
+          '=== ${deltaText.hasDelta ? 'document updated' : 'range: ${selection.baseOffset} ${selection.extentOffset}'}');
+    }
   }
-}
-
-///
-/// Managed by [FormatusController] and used by [FormatusBar]
-///
-class FormatusContext {
-  int cursorPosition = -1;
-  int rangeStart = -1;
-  int rangeEnd = -1;
-
-  bool get isRange => rangeStart >= 0;
-  FormatusNode startingNode = FormatusNode();
-  FormatusNode endingNode = FormatusNode();
 }
 
 ///

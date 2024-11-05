@@ -157,8 +157,10 @@ class _FormatusBarState extends State<FormatusBar> {
       widget.controller.updateTopLevelFormat(formatus);
     } else if (_selectedFormats.contains(formatus)) {
       _selectedFormats.remove(formatus);
+      _ctrl.updateRangeFormats(formatus, false);
     } else {
       _selectedFormats.add(formatus);
+      _ctrl.updateRangeFormats(formatus, true);
     }
     setState(() => widget.textFieldFocus?.requestFocus());
   }

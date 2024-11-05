@@ -10,7 +10,7 @@ void main() {
 <p>Text with italic, bold and underlined words</p>
 ''';
       FormatusController textController =
-          FormatusController.fromHtml(initialHtml: html);
+          FormatusController.fromFormattedText(formattedText: html);
       expect(textController.text,
           'Formatus Features\nText with italic, bold and underlined words');
     });
@@ -22,8 +22,8 @@ void main() {
 <p>Text with <i>italic</i>, <b>bold</b> and <u>underlined</u> words</p>
 ''';
       FormatusController textController =
-          FormatusController.fromHtml(initialHtml: html);
-      expect(textController.toHtml(), html.replaceAll('\n', ''));
+          FormatusController.fromFormattedText(formattedText: html);
+      expect(textController.formattedText, html.replaceAll('\n', ''));
     });
 
     //---
@@ -33,8 +33,8 @@ void main() {
 <p>Text with <i>italic, <b>bold and <u>underlined</u></b> words</i></p>
 ''';
       FormatusController textController =
-          FormatusController.fromHtml(initialHtml: html);
-      expect(textController.toHtml(), html.replaceAll('\n', ''));
+          FormatusController.fromFormattedText(formattedText: html);
+      expect(textController.formattedText, html.replaceAll('\n', ''));
     });
 
     //---
@@ -45,8 +45,8 @@ void main() {
 <p>Second paragraph references <a href="media:42">media object</a></p>
 ''';
       FormatusController textController =
-          FormatusController.fromHtml(initialHtml: html);
-      expect(textController.toHtml(), html.replaceAll('\n', ''));
+          FormatusController.fromFormattedText(formattedText: html);
+      expect(textController.formattedText, html.replaceAll('\n', ''));
     });
   });
 }

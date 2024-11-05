@@ -8,10 +8,11 @@ class FormatusParser {
   FormatusNode parse(String htmlBody, FormatusTextNodes textNodes) {
     FormatusNode body = FormatusNode(format: Formatus.body);
     if (htmlBody.isEmpty) {
-      FormatusNode node = FormatusNode()..format = Formatus.paragraph;
-      body.children.add(node);
+      FormatusNode paragraphNode = FormatusNode()..format = Formatus.paragraph;
+      body.addChild(paragraphNode);
       FormatusNode textNode = FormatusNode()..format = Formatus.text;
-      node.addChild(textNode);
+      paragraphNode.addChild(textNode);
+      textNodes.add(textNode);
     } else {
       int offset = 0;
       while (offset < htmlBody.length) {

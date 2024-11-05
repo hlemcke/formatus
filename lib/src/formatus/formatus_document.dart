@@ -32,8 +32,12 @@ class FormatusDocument {
   /// Single root element. All children are top-level html elements
   FormatusNode root = FormatusNode();
 
+  /// Internal constructor
+  FormatusDocument._();
+
   factory FormatusDocument.empty() {
     FormatusDocument doc = FormatusDocument._();
+    doc.setupEmpty();
     return doc;
   }
 
@@ -41,20 +45,18 @@ class FormatusDocument {
   factory FormatusDocument.fromHtml({
     required String htmlBody,
   }) {
-    String text = FormatusDocument.cleanUpHtml(htmlBody);
-    if (text.isNotEmpty && !text.startsWith('<')) {
-      text = '<p>$text';
-    }
     FormatusDocument doc = FormatusDocument._();
+    String cleanedHtml = FormatusDocument.cleanUpHtml(htmlBody);
+    if (cleanedHtml.isEmpty) return FormatusDocument.empty();
+    if (cleanedHtml.isNotEmpty && !cleanedHtml.startsWith('<')) {
+      cleanedHtml = '<p>$cleanedHtml';
+    }
     doc.root = FormatusParser().parse(htmlBody, doc.textNodes);
     doc.toPlainText();
     return doc;
   }
 
   // TODO factory FormatusDocument.fromMarkdown({ required String markdownBody, })
-
-  /// Internal constructor
-  FormatusDocument._();
 
   /// Output from [toPlainText] for later [update]
   String _previousText = '';
@@ -99,10 +101,8 @@ class FormatusDocument {
   FormatusNode getFirstDifferentNode(
       FormatusNode textNode, Set<Formatus> sameFormats) {
     List<FormatusNode> path = textNode.path;
-    FormatusNode sameFormatNode = path[0]; // start with top-level format
     int i = 1;
     while ((i < path.length) && sameFormats.contains(path[i].format)) {
-      sameFormatNode = path[i];
       i++;
     }
     return path[i];
@@ -297,6 +297,14 @@ class FormatusDocument {
     return plain;
   }
 
+  void setupEmpty() {
+    FormatusNode emptyTextNode = createSubtree(' ', {Formatus.paragraph});
+    root = FormatusNode(format: Formatus.body);
+    root.addChild(emptyTextNode.parent!);
+    textNodes.clear();
+    textNodes.textNodes.add(emptyTextNode);
+  }
+
   ///
   /// Updates tree structure from `current`.
   ///
@@ -359,6 +367,8 @@ class FormatusNode {
   List<FormatusNode> get children => _children;
   final List<FormatusNode> _children = [];
 
+  /// Appends `child` to end of current list of children and sets `parent`
+  /// in child to `this`.
   void addChild(FormatusNode child) {
     _children.add(child);
     child.parent = this;
@@ -481,6 +491,8 @@ class FormatusTextNodes {
     textNodes.add(textNode);
   }
 
+  void clear() => textNodes.clear();
+
   FormatusNode get first => textNodes.first;
 
   ///
@@ -491,6 +503,12 @@ class FormatusTextNodes {
     String previousText,
     int charIndex,
   ) {
+    //--- End of whole text
+    if (charIndex >= previousText.length) {
+      int nodeIndex = textNodes.length - 1;
+      textNodes[nodeIndex].textOffset = textNodes[nodeIndex].text.length;
+      return nodeIndex;
+    }
     int charCount = 0;
     for (int i = 0; i < textNodes.length; i++) {
       FormatusNode textNode = textNodes[i];

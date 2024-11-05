@@ -6,6 +6,17 @@ void main() {
   runApp(const MyApp());
 }
 
+const String initialTemplateKey = 'Long';
+const Map<String, String> textTemplates = {
+  'Empty': '',
+  'Short': '<p color="blue">Blue with <b>bold</b> words</p>',
+  initialTemplateKey: '''
+<h1>Formatus Features</h1>
+<h2>Text with <b>bold</b>, <i>italic</i> and <u>underlined</u> words</h2>.
+<p>Third <i>contains <s>nested</s> and</i> <u>under<b>line</b>d</u> text.</p>
+''',
+};
+
 /// TODO frame input field
 /// TODO add dropdown: empty, short, long
 class MyApp extends StatelessWidget {
@@ -40,17 +51,13 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   late FormatusController controller;
   final FocusNode _formatusFocus = FocusNode(debugLabel: 'formatus');
-  final String htmlText = '''
-<h1>Formatus Features</h1>
-<h2>Text with <b>bold</b>, <i>italic</i> and <u>underlined</u> words</h2>.
-<p>Third <i>contains <s>nested</s> and</i> <u>under<b>line</b>d</u> text.</p>
-''';
-  String _editedText = '';
+  String _formattedText = '';
 
   @override
   void initState() {
     super.initState();
-    controller = FormatusController.fromHtml(initialHtml: htmlText);
+    controller = FormatusController.fromFormattedText(
+        formattedText: textTemplates[initialTemplateKey] ?? '');
   }
 
   @override
@@ -70,12 +77,14 @@ class _MyHomePageState extends State<MyHomePage> {
 
   PreferredSizeWidget _buildAppBar() => AppBar(
         title: const Text('Formatus Rich-Text-Editor'),
+        actions: [
+          _buildTextPreselection(),
+        ],
       );
 
   Widget _buildBody() => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-//          _buildCursorInfo(),
           const Divider(color: Colors.deepPurpleAccent),
           FormatusBar(
             controller: controller,
@@ -88,9 +97,8 @@ class _MyHomePageState extends State<MyHomePage> {
                     required bool isFocused}) =>
                 _buildCounter(currentLength, isFocused, controller.selection),
             controller: controller,
-            decoration: const InputDecoration(
-              label: Text('Editable Input Field'),
-            ),
+            decoration:
+                const InputDecoration(focusedBorder: OutlineInputBorder()),
             focusNode: _formatusFocus,
             minLines: 3,
             maxLines: 10,
@@ -101,7 +109,7 @@ class _MyHomePageState extends State<MyHomePage> {
               border: Border.all(color: Colors.purpleAccent),
               borderRadius: const BorderRadius.all(Radius.circular(6)),
             ),
-            child: Text(_editedText),
+            child: Text(_formattedText),
           ),
         ],
       );
@@ -115,7 +123,7 @@ class _MyHomePageState extends State<MyHomePage> {
             padding: const EdgeInsets.only(left: 8, right: 8),
             child: ElevatedButton(
               onPressed: () =>
-                  setState(() => _editedText = controller.toHtml()),
+                  setState(() => _formattedText = controller.formattedText),
               child: const Text('Save'),
             ),
           ),
@@ -126,5 +134,16 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget _buildCounter(
           int currentLength, bool isFocused, TextSelection selection) =>
       Text(
-          '${selection.baseOffset} of $currentLength ${isFocused ? "focused" : ""}');
+          '${selection.start} of $currentLength ${isFocused ? "focused" : ""}');
+
+  Widget _buildTextPreselection() => DropdownMenu<String>(
+        dropdownMenuEntries: [
+          for (String key in textTemplates.keys)
+            DropdownMenuEntry<String>(label: key, value: key),
+        ],
+        initialSelection: initialTemplateKey,
+        label: const Text('Preselect text'),
+        onSelected: (key) =>
+            setState(() => controller.formattedText = textTemplates[key]!),
+      );
 }
