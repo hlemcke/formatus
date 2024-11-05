@@ -1,0 +1,143 @@
+# Formatus - Use Cases
+
+### Definitions
+
+* `copied text` -> text copied from somewhere (=> clipboard contains a string which can be `pasted`)
+* `cursor position` -> current position of cursor in whole text.
+   If a text range is selected then it's the start of the selection
+* `end` -> end of whole text (== text.length)
+* `format-bar` -> a button bar with selectable formats
+* `leading text` -> text in front of cursor position or selection
+* `middle` -> somewhere in the text which is neither `start` nor `end`
+* `selection` -> a selected range of text which may include `start` and / or `end`
+* `start` -> start of whole text (== text[0])
+* `top-level` -> node like h1 or paragraph
+* `trailing text` -> text behind cursor position or selection
+
+## Use Case - Save
+
+`FormatusController` provides method `toHtml` to save the current text
+including all formats into a plain text in html-format.
+
+## Use Case - Position Cursor
+
+The cursor position can be changed with the cursor keys
+or by tapping the left mouse key at mouse position.
+This will update the display of the format-bar.
+Any selected text-range will be cleared.
+
+## Use Case - Select Range
+
+A range can be selected by multiple actions depending on current platform.
+The selected text will be highlighted.
+The format-bar will display the formats at selection start.
+
+## Use Case - Toggle Top-Level Format
+
+Changes the format of the current top-level node at cursor position
+or at selection start.
+
+## Use Case - Toggle Inline Format
+
+If no text range is selected then the format-bar will only display the current change.
+
+If a text range is selected then:
+* IF a format is added THEN it will be added to all text-nodes within the selection
+* IF a format is removed THEN it will be removed from all text-nodes within the selection
+
+See `Process - Modify Selected Text-Range
+
+## Use Case - Insertions
+
+Text can be inserted either single character via keyboard or by pasting a copied text.
+
+Position of the inserted character or copied text text is always at cursor position.
+
+If a range of text is selected then it will first be deleted before the new text will take its place.
+
+### Insert a Line-Break
+
+Hitting the `Enter`-key can happen anywhere in the whole text.
+This action will split the current top-level node into the part left of the split
+and into a newly created top-level node with format `paragraph` containing
+the right part of the split.
+
+### Insert at Start
+
+* Action: Character or copied text is inserted at start of whole text
+* Format: format from cursor position or from end of selection
+  will be adapted to current format settings
+
+### Insert at End
+
+* Action: Character or copied text is appended to end of whole text
+* Format: format from cursor position or from start of selection
+  will be adapted to current format settings
+
+### Insert in Middle
+
+* Action: Character or copied text is appended to last character of leading text
+* Format: format from cursor position or from start of selection
+  will be adapted to current format settings
+
+## Use Case - Deletions
+
+A deletions is executed by hitting:
+
+* backspace key to delete character left of cursor position or to delete a selection
+* delete key to delete character right of cursor position or to delete a selection
+
+### Delete a Line-Break
+
+If a `line-break` gets deleted then the text of the the top-level node
+following the split will be appended to the top-level node leading the split
+by keeping all its formats.
+
+### Delete at Start
+
+If the first character is deleted then it will be removed from the first text-node.
+
+If a selection is deleted then all text-nodes left of selection end are deleted and
+the text of the text-node at selection end will be reduced to trailing text.
+
+### Delete at End
+
+If the last character is deleted then it will be removed from the end of
+the last text-node.
+
+If a selection is deleted then all text-nodes right from selection start
+will be deleted and the text of the text-node at selection start
+will be reduced to initial text.
+
+### Delete in Middle
+
+If a single character is deleted which is neither the first nor the last
+character of the text (either by backspace to the left or by deleting
+the right character) then the character will be removed from the
+current text-node.
+
+If a selection is deleted then the text-node at start of the selection
+and the one at end of the selection will be reduced and all text-nodes
+in between will be removed.
+
+## Use Case - Updates
+
+### Update at Start
+
+### Update at End
+
+### Update in Middle
+
+
+# Formatus - Processes
+
+## Process - Modify Selected Text Range
+
+If a text-range is selected and text is pasted or a character is entered
+then the new text must comply to the current format-settings.
+
+If the selection starts or ends within a text-node then this text-node
+will be splitted. The text in the existing node will be reduced to the
+text outside the selection. A new text-node will be created with the
+modified format settings.
+
