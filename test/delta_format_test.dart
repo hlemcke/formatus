@@ -3,6 +3,7 @@ import 'package:formatus/formatus.dart';
 import 'package:formatus/src/formatus/formatus_document.dart';
 
 void main() {
+  //--- Prepare root -> P -> B -> I -> "this is a text node"
   FormatusNode root = FormatusNode(format: Formatus.body);
   FormatusNode paragraph = FormatusNode(format: Formatus.paragraph);
   FormatusNode bold = FormatusNode(format: Formatus.bold);
@@ -20,9 +21,9 @@ void main() {
         Formatus.bold
       };
       DeltaFormat deltaFormat = DeltaFormat(
-          formatsAtCursor: textNode.formatsInPath,
+          textFormats: textNode.formatsInPath,
           selectedFormats: selectedFormats);
-      expect(deltaFormat.isEmpty, true);
+      expect(deltaFormat.hasDelta, false);
     });
 
     ///
@@ -34,9 +35,9 @@ void main() {
         Formatus.bold
       };
       DeltaFormat deltaFormat = DeltaFormat(
-          formatsAtCursor: textNode.formatsInPath,
+          textFormats: textNode.formatsInPath,
           selectedFormats: selectedFormats);
-      expect(deltaFormat.isEmpty, false);
+      expect(deltaFormat.hasDelta, true);
       expect(deltaFormat.added, {Formatus.underline});
     });
 
@@ -47,9 +48,9 @@ void main() {
         Formatus.italic,
       };
       DeltaFormat deltaFormat = DeltaFormat(
-          formatsAtCursor: textNode.formatsInPath,
+          textFormats: textNode.formatsInPath,
           selectedFormats: selectedFormats);
-      expect(deltaFormat.isEmpty, false);
+      expect(deltaFormat.hasDelta, true);
       expect(deltaFormat.removed, {Formatus.bold});
     });
 
@@ -61,9 +62,9 @@ void main() {
         Formatus.underline,
       };
       DeltaFormat deltaFormat = DeltaFormat(
-          formatsAtCursor: textNode.formatsInPath,
+          textFormats: textNode.formatsInPath,
           selectedFormats: selectedFormats);
-      expect(deltaFormat.isEmpty, false);
+      expect(deltaFormat.hasDelta, true);
       expect(deltaFormat.added, {Formatus.underline});
       expect(deltaFormat.removed, {Formatus.bold});
     });

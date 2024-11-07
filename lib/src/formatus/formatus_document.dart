@@ -59,6 +59,7 @@ class FormatusDocument {
   // TODO factory FormatusDocument.fromMarkdown({ required String markdownBody, })
 
   /// Output from [toPlainText] for later [update]
+  String get previousText => _previousText;
   String _previousText = '';
 
   ///
@@ -113,23 +114,25 @@ class FormatusDocument {
   ///
   void handleDeleteAndUpdate(DeltaText diff) {
     if (diff.isAtStart) {
-      int nodeIndex = computeNodeIndex(diff.tailTextIndex);
+      int nodeIndex =
+          computeNodeIndex(_previousText.length - diff.tailText.length);
       FormatusNode textNode = textNodes[nodeIndex];
       textNodes.removeBefore(nodeIndex);
       textNode.text = diff.added + textNode.text.substring(textNode.textOffset);
       if (textNode.isEmpty) textNode.dispose();
     } else if (diff.isAtEnd) {
-      int nodeIndex = computeNodeIndex(diff.leadTextIndex);
+      int nodeIndex = computeNodeIndex(diff.headText.length);
       FormatusNode textNode = textNodes[nodeIndex];
       textNodes.removeAfter(nodeIndex);
       textNode.text =
           textNode.text.substring(0, textNode.textOffset) + diff.added;
       if (textNode.isEmpty) textNode.dispose();
     } else {
-      int leadNodeIndex = computeNodeIndex(diff.leadTextIndex);
+      int leadNodeIndex = computeNodeIndex(diff.headText.length);
       FormatusNode leadNode = textNodes[leadNodeIndex];
       int leadOffset = leadNode.textOffset;
-      int tailNodeIndex = computeNodeIndex(diff.tailTextIndex);
+      int tailNodeIndex =
+          computeNodeIndex(_previousText.length - diff.tailText.length);
       //--- Replacement within same node
       if (leadNodeIndex == tailNodeIndex) {
         String pre = leadNode.text.substring(0, leadOffset);
@@ -157,30 +160,30 @@ class FormatusDocument {
   ///
   /// Handle cases for `insert`
   ///
-  void handleInsert(DeltaText diff, DeltaFormat deltaFormat) {
+  void handleInsert(DeltaText deltaText, DeltaFormat deltaFormat) {
     FormatusNode textNode = FormatusNode();
-    if (diff.isAtStart) {
+    if (deltaText.isAtStart) {
       textNode = textNodes.first;
-      if (deltaFormat.isEmpty) {
-        textNode.text = diff.added + textNode.text;
-      } else {
+      if (deltaFormat.hasDelta) {
         handleInsertWithDifferentFormat(
-            textNode, diff.added, true, deltaFormat);
+            textNode, deltaText.added, true, deltaFormat);
+      } else {
+        textNode.text = deltaText.added + textNode.text;
       }
-    } else if (diff.isAtEnd) {
+    } else if (deltaText.isAtEnd) {
       textNode = textNodes.last;
-      if (deltaFormat.isEmpty) {
-        textNode.text = textNode.text + diff.added;
-      } else {
+      if (deltaFormat.hasDelta) {
         handleInsertWithDifferentFormat(
-            textNode, diff.added, false, deltaFormat);
+            textNode, deltaText.added, false, deltaFormat);
+      } else {
+        textNode.text = textNode.text + deltaText.added;
       }
     } else {
-      int nodeIndex = computeNodeIndex(diff.leadTextIndex);
+      int nodeIndex = computeNodeIndex(deltaText.headText.length);
       textNode = textNodes[nodeIndex];
-      if (deltaFormat.isEmpty) {
+      if (!deltaFormat.hasDelta) {
         textNode.text = textNode.text.substring(0, textNode.textOffset) +
-            diff.added +
+            deltaText.added +
             textNode.text.substring(textNode.textOffset);
       }
       //--- Handle insert in middle with different format
@@ -192,7 +195,7 @@ class FormatusDocument {
 
         //--- Create and attach differently formatted nodes
         FormatusNode subTreeTop = handleInsertWithDifferentFormat(
-            textNode, diff.added, false, deltaFormat);
+            textNode, deltaText.added, false, deltaFormat);
 
         //--- Create and attach node with same format and rest of text
         if (tailText.isNotEmpty) {
@@ -303,27 +306,6 @@ class FormatusDocument {
     root.addChild(emptyTextNode.parent!);
     textNodes.clear();
     textNodes.textNodes.add(emptyTextNode);
-  }
-
-  ///
-  /// Updates tree structure from `current`.
-  ///
-  /// Returns `false` if text is not changed.
-  ///
-  DeltaText update(String current, DeltaFormat deltaFormat) {
-    DeltaText deltaText =
-        DeltaText.compute(previous: _previousText, next: current);
-    if (deltaText.hasDelta) {
-      debugPrint('$deltaText ### $deltaFormat');
-      if (deltaText.isInsert) {
-        handleInsert(deltaText, deltaFormat);
-      } else {
-        handleDeleteAndUpdate(deltaText);
-      }
-//      optimize();
-      _previousText = toPlainText();
-    }
-    return deltaText;
   }
 }
 
@@ -573,102 +555,4 @@ class FormatusTextNodes {
 
   @override
   String toString() => textNodes.toString();
-}
-
-///
-/// Delta between two texts.
-///
-class DeltaText {
-  /// Text which is added
-  String get added => _added;
-  String _added = '';
-
-  /// Leading characters which are identical in both texts
-  String get leadText => _leadText;
-  String _leadText = '';
-
-  /// Index to end of leading text which is identical in both texts
-  int get leadTextIndex => _leadText.length;
-
-  /// Trailing characters which are identical in both texts
-  String get tailText => _tailText;
-  String _tailText = '';
-
-  /// Index to start of `tailText` in `previous` text
-  int get tailTextIndex => _tailTextIndex;
-  int _tailTextIndex = -1;
-
-  DeltaText._();
-
-  factory DeltaText.compute({required String previous, required String next}) {
-    DeltaText diff = DeltaText._();
-    diff._compute(previous, next);
-    return diff;
-  }
-
-  /// Returns `true` if previous text is not equal to next text
-  bool get hasDelta => _hasDelta;
-  bool _hasDelta = true;
-
-  /// Returns `true` if change has occurred at start of previous text
-  bool get isAtEnd => _hasDelta && tailText.isEmpty;
-
-  /// Returns `true` if change has occurred at end of previous text
-  bool get isAtStart => leadText.isEmpty;
-
-  /// Returns `true` if characters were deleted
-  bool get isDelete => hasDelta && _added.isEmpty;
-
-  /// Returns `true` if character were added
-  bool get isInsert => _isInsert;
-  bool _isInsert = false;
-
-  /// Returns `true` if characters were modified.
-  /// The modified characters can be longer, shorter or have same length as
-  /// the previous characters.
-  bool get isUpdate => hasDelta && _added.isNotEmpty && !_isInsert;
-
-  void _compute(String prev, String next) {
-    _computeLeading(prev, next);
-    if (_hasDelta) {
-      _computeRest(prev, next);
-      _isInsert = (_leadText.length + _tailText.length == prev.length);
-    }
-  }
-
-  void _computeLeading(String prev, String next) {
-    int i = 0;
-    while (i < prev.length && i < next.length && prev[i] == next[i]) {
-      i++;
-    }
-    _leadText = (i > 0) ? prev.substring(0, i) : '';
-    _hasDelta = ((i < prev.length) || (i < next.length)) ? true : false;
-  }
-
-  /// Identical trailing text is computed from right to left
-  void _computeRest(String prev, String next) {
-    int leadLen = _leadText.length;
-    int i = prev.length;
-    int j = next.length;
-    while ((i > leadLen) && j > leadLen && (prev[i - 1] == next[j - 1])) {
-      i--;
-      j--;
-    }
-    if (i < prev.length - 1) _tailText = prev.substring(i);
-    _tailTextIndex = i;
-    if (j > leadLen) {
-      _added = tailText.isEmpty
-          ? next.substring(leadLen)
-          : next.substring(leadLen, j);
-    }
-  }
-
-  @override
-  String toString() {
-    if (hasDelta == false) return '<no delta>';
-    return '${isDelete ? "DELETE" : isInsert ? "INSERT" : "UPDATE"}'
-        ' ${isAtStart ? "START " : isAtEnd ? "END   " : "MIDDLE"}'
-        ' leadTextIdx=$leadTextIndex tailTextIdx=$tailTextIndex'
-        ' added="$added"\nlead="$leadText"\ntail="$tailText"';
-  }
 }

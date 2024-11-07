@@ -111,6 +111,16 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             child: Text(_formattedText),
           ),
+          // const Divider(color: Colors.deepPurpleAccent),
+          // TextField(
+          //   buildCounter: (BuildContext context,
+          //           {required int currentLength,
+          //           required int? maxLength,
+          //           required bool isFocused}) =>
+          //       _buildCounter(currentLength, isFocused, controller.selection),
+          //   decoration: const InputDecoration(
+          //       border: OutlineInputBorder(), labelText: 'Test Input'),
+          // ),
         ],
       );
 
@@ -133,8 +143,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget _buildCounter(
           int currentLength, bool isFocused, TextSelection selection) =>
-      Text(
-          '${selection.start} of $currentLength ${isFocused ? "focused" : ""}');
+      Text('${selection.start}..${selection.end} of $currentLength'
+          ' ${isFocused ? "focused" : ""}');
 
   Widget _buildTextPreselection() => DropdownMenu<String>(
         dropdownMenuEntries: [

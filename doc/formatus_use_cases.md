@@ -2,34 +2,35 @@
 
 ### Definitions
 
+* `body` -> object within text which is neither `head` nor `tail`
+* `caret index` -> index of current cursor position in whole text.
+  If a text range is selected then `caret index` is the start of the selection
 * `copied text` -> text copied from somewhere (=> clipboard contains a string which can be `pasted`)
-* `cursor position` -> current position of cursor in whole text. If a text range is selected then it's the start of the selection
-* `end` -> end of whole text (== text.length)
+* `end` -> length of whole text
 * `format-bar` -> a button bar with selectable formats
-* `leading text` -> text in front of cursor position or selection
-* `middle` -> somewhere in the text which is neither `start` nor `end`
+* `head` -> object left of cursor position
 * `selection` -> a selected range of text which may include `start` and / or `end`
-* `start` -> start of whole text (== text[0])
-* `top-level` -> node like h1 or paragraph
-* `trailing text` -> text behind cursor position or selection
+* `tail` -> object right of cursor position
+* `top-level` -> node like `h1` or `paragraph`
 
 ## Use Case - Save
 
 `FormatusController` provides method `formattedText` to save the current text
-including all formats into a string in html-format.
+including all formats into a string. This string can be persisted and given
+as input to a `FormatusController`.
 
-## Use Case - Position Cursor
+## Use Case - Position Caret
 
-The cursor position can be changed with the cursor keys
+The caret position can be changed with the cursor keys
 or by tapping the left mouse key at mouse position.
 
-Position the cursor will update the settings in the format-bar.
-If the cursor is at the end of a text-node then the format-bar
-will display the format of the left text-node if the character
-at cursor position is a space or comma. Otherwise the format-bar
-will display the format of the right text-node.
+Positioning the caret clears any selected text-range.
 
-Any selected text-range will be cleared.
+Positioning the caret will update the settings in the format-bar.
+If the caret is at the end of a text-node
+and the character at that index is a space or a comma
+then the format-bar will display the formats of the left text-node.
+Otherwise the format-bar will display the formats of the right text-node.
 
 ## Use Case - Select Range
 
@@ -39,26 +40,29 @@ The format-bar will display the formats at selection start.
 
 ## Use Case - Toggle Top-Level Format
 
-Changes the format of the current top-level node at cursor position
-or at selection start.
+If the current top-level format is deactivated then nothing will happen.
+If another top-level format is activated then the format
+of the current top-level node will be set to the selected format.
 
 ## Use Case - Toggle Inline Format
 
-If no text range is selected then the format-bar will only display the current change.
+If no text range is selected then the format-bar will only display the current settings.
 
 If a text range is selected then the format settings in the format-bar
-will be compared to the selection start.
+will be compared to the formats at selection start or at caret index.
 
 * IF a format is added THEN it will be added to all text-nodes within the selection
 * IF a format is removed THEN it will be removed from all text-nodes within the selection
 
 ## Use Case - Insertions
 
-Text can be inserted either single character via keyboard or by pasting a copied text.
+Text can be inserted either single character via keyboard
+or by pasting a copied text.
 
-Position of the inserted character or copied text text is always at cursor position.
+Position of the inserted character or copied text text is always at caret index.
 
-If a range of text is selected then it will first be deleted before the new text will take its place.
+If a range of text is selected then it will first be deleted
+before the new text will take its place.
 
 The format of the inserted character or pasted text will be the current format settings.
 
@@ -91,6 +95,4 @@ An update happens if a text-range is selected and a character will be entered
 or some copied text will be inserted.
 
 The inserted character or copied text will have the format settings from the
-format-bar. It this is identical to either the preceding or following text
-then the new text will just be appended to the preceding text or inserted
-at start of the following.
+format-bar which are the formats at start of the selected range of text.

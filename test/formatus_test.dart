@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:formatus/formatus.dart';
 
 void main() {
-  group('Parser tests', () {
+  group(' ParserTests', () {
     //---
     test('parse top level elements without nesting', () {
       String html = '''

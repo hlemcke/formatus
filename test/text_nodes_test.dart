@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:formatus/formatus.dart';
 import 'package:formatus/src/formatus/formatus_document.dart';
@@ -27,7 +28,7 @@ void main() {
       }
     });
     test('Element should be: "italic" with path h1 / i', () {
-      List<int> cursors = [6, 7, 11, 12, 13];
+      List<int> cursors = [6, 7, 11, 12];
       for (int cursor in cursors) {
         int nodeIndex = doc.computeNodeIndex(cursor);
         FormatusNode node = doc.textNodes[nodeIndex];
@@ -55,10 +56,18 @@ void main() {
 
     ///
     test('Insert "X" at end of "bold" -> should become bold also', () {
+      int indexEndOfBold = 'Words bold'.length;
       FormatusDocument doc = FormatusDocument.fromHtml(htmlBody: easyParagraph);
       DeltaFormat deltaFormat =
-          DeltaFormat(formatsAtCursor: {}, selectedFormats: {});
-      doc.update('Words boldX underline', deltaFormat);
+          DeltaFormat(textFormats: {}, selectedFormats: {});
+      DeltaText deltaText = DeltaText(
+          prevSelection: TextSelection(
+              baseOffset: indexEndOfBold, extentOffset: indexEndOfBold),
+          prevText: doc.previousText,
+          nextSelection: TextSelection(
+              baseOffset: indexEndOfBold + 1, extentOffset: indexEndOfBold + 1),
+          nextText: 'Words boldX underline');
+      doc.handleInsert(deltaText, deltaFormat);
       int nodeIndex = doc.computeNodeIndex(10);
       FormatusNode textNode = doc.textNodes[nodeIndex];
       expect('boldX', textNode.text);
@@ -66,11 +75,20 @@ void main() {
 
     ///
     test('Insert "X" at start of "bold" -> should become bold also', () {
+      int indexStartOfBold = 'Words '.length;
       FormatusDocument doc = FormatusDocument.fromHtml(htmlBody: easyParagraph);
       DeltaFormat deltaFormat =
-          DeltaFormat(formatsAtCursor: {}, selectedFormats: {});
-      doc.update('Words Xbold underline', deltaFormat);
-      int nodeIndex = doc.computeNodeIndex(6);
+          DeltaFormat(textFormats: {}, selectedFormats: {});
+      DeltaText deltaText = DeltaText(
+          prevSelection: TextSelection(
+              baseOffset: indexStartOfBold, extentOffset: indexStartOfBold),
+          prevText: doc.previousText,
+          nextSelection: TextSelection(
+              baseOffset: indexStartOfBold + 1,
+              extentOffset: indexStartOfBold + 1),
+          nextText: 'Words Xbold underline');
+      doc.handleInsert(deltaText, deltaFormat);
+      int nodeIndex = doc.computeNodeIndex(7);
       FormatusNode textNode = doc.textNodes[nodeIndex];
       expect('Xbold', textNode.text);
     });

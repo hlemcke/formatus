@@ -1,30 +1,32 @@
 # Delta-Text Analysis
 
-## Delta-Types
+## Delta-Types ordered by Type of Modification
 
-|= Type       =|= leading =|= trailing =|= added =|
-|==============|===========|============|=========|
-| Ins -  start |        "" |   previous |   added |
-| Ins - middle |      lead |      trail |   added |
-| Ins -    end |  previous |         "" |   added |
-| Del -  start |        "" |      trail |      "" |
-| Del - middle |      lead |      trail |      "" |
-| Del -    end |      lead |         "" |      "" |
-| Upd -  start |        "" |      trail |   added |
-| Upd - middle |      lead |      trail |   added |
-| Upd -    end |      lead |         "" |   added |
+|=    Type    =|=  head  =|=  tail  =|= add =|
+|==============|==========|==========|=======|
+| Ins - start  |       "" | previous | added |
+| Ins - middle |     lead |     tail | added |
+| Ins - end    | previous |       "" | added |
+| Del - start  |       "" |     tail |    "" |
+| Del - middle |     lead |     tail |    "" |
+| Del - end    |     lead |       "" |    "" |
+| Upd - start  |       "" |     tail | added |
+| Upd - middle |     lead |     tail | added |
+| Upd - end    |     lead |       "" | added |
 
-|= Type       =|= leading =|= trailing =|= added =|
-|==============|===========|============|=========|
-| Start  - Ins |        "" |   previous |   added |
-| Start  - Del |        "" |      trail |      "" |
-| Start  - Upd |        "" |      trail |   added |
-| Middle - Ins |      lead |      trail |   added |
-| Middle - Del |      lead |      trail |      "" |
-| Middle - Upd |      lead |      trail |   added |
-| End    - Ins |  previous |         "" |   added |
-| End    - Del |      lead |         "" |      "" |
-| End    - Upd |      lead |         "" |   added |
+## Delta-Types ordered by Position of Modification
+
+|=    Type    =|=  head  =|=  tail  =|= add =|
+|==============|==========|==========|=======|
+| Start - Ins  |       "" | previous | added |
+| Start - Del  |       "" |     tail |    "" |
+| Start - Upd  |       "" |     tail | added |
+| Middle - Ins |     lead |     tail | added |
+| Middle - Del |     lead |     tail |    "" |
+| Middle - Upd |     lead |     tail | added |
+| End - Ins    | previous |       "" | added |
+| End - Del    |     lead |       "" |    "" |
+| End - Upd    |     lead |       "" | added |
 
 ## Conclusions
 
@@ -39,7 +41,7 @@ A: Insert has: `added.isNotEmpty` AND `leading.length + trailing.length == previ
 
 ## Determine Text-Node
 
-A text-node can be determined by the cursor position or by some computed index.
+A text-node can be determined from cursor position or from some computed index.
 
 ```
 IF cursor index is on first character of a text-node
