@@ -104,23 +104,8 @@ class _MyHomePageState extends State<MyHomePage> {
             maxLines: 10,
           ),
           _buildActionDivider(),
-          Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.purpleAccent),
-              borderRadius: const BorderRadius.all(Radius.circular(6)),
-            ),
-            child: Text(_formattedText),
-          ),
-          // const Divider(color: Colors.deepPurpleAccent),
-          // TextField(
-          //   buildCounter: (BuildContext context,
-          //           {required int currentLength,
-          //           required int? maxLength,
-          //           required bool isFocused}) =>
-          //       _buildCounter(currentLength, isFocused, controller.selection),
-          //   decoration: const InputDecoration(
-          //       border: OutlineInputBorder(), labelText: 'Test Input'),
-          // ),
+          _buildSavedText(),
+          _buildTextNodes(),
         ],
       );
 
@@ -145,6 +130,22 @@ class _MyHomePageState extends State<MyHomePage> {
           int currentLength, bool isFocused, TextSelection selection) =>
       Text('${selection.start}..${selection.end} of $currentLength'
           ' ${isFocused ? "focused" : ""}');
+
+  Widget _buildSavedText() => Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.purpleAccent),
+          borderRadius: const BorderRadius.all(Radius.circular(6)),
+        ),
+        child: Text(_formattedText),
+      );
+
+  Widget _buildTextNodes() => Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.purpleAccent),
+          borderRadius: const BorderRadius.all(Radius.circular(6)),
+        ),
+        child: Text(controller.document.textNodes.toString()),
+      );
 
   Widget _buildTextPreselection() => DropdownMenu<String>(
         dropdownMenuEntries: [

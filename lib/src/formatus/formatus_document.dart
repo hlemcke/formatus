@@ -155,6 +155,7 @@ class FormatusDocument {
         if (tailNode.isEmpty) tailNode.dispose();
       }
     }
+    _previousText = toPlainText();
   }
 
   ///
@@ -162,6 +163,7 @@ class FormatusDocument {
   ///
   void handleInsert(DeltaText deltaText, DeltaFormat deltaFormat) {
     FormatusNode textNode = FormatusNode();
+    debugPrint('$deltaText');
     if (deltaText.isAtStart) {
       textNode = textNodes.first;
       if (deltaFormat.hasDelta) {
@@ -191,7 +193,6 @@ class FormatusDocument {
         String leadText = textNode.text.substring(0, textNode.textOffset);
         String tailText = textNode.text.substring(textNode.textOffset);
         textNode.text = leadText;
-        debugPrint('--- lead="$leadText" tail="$tailText"');
 
         //--- Create and attach differently formatted nodes
         FormatusNode subTreeTop = handleInsertWithDifferentFormat(
@@ -209,9 +210,9 @@ class FormatusDocument {
 
         //--- Cleanup eventually empty lead node
         if (leadText.isEmpty) textNode.dispose();
-        debugPrint('--- $textNodes');
       }
     }
+    _previousText = toPlainText();
   }
 
   ///

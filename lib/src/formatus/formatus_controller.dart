@@ -29,7 +29,6 @@ class FormatusController extends TextEditingController {
     ctrl.document = FormatusDocument.fromHtml(htmlBody: formattedText);
     ctrl._text = ctrl.document.toPlainText();
     ctrl.addListener(ctrl._onListen);
-    debugPrint(ctrl.document.toHtml());
     return ctrl;
   }
 
@@ -100,7 +99,6 @@ class FormatusController extends TextEditingController {
     document = FormatusDocument.fromHtml(htmlBody: html);
     _text = document.toPlainText();
     value = TextEditingValue(text: text);
-    debugPrint('===set=== $html\n===$text\n===$formattedText');
   }
 
   Set<Formatus> get formatsAtCursor {
@@ -115,8 +113,8 @@ class FormatusController extends TextEditingController {
         'Not supported. Use formattedText=... to replace current text');
   }
 
-  /// Updates formats in selected text range. Immediately returns
-  /// if no range is selected.
+  /// Updates formats in selected text range.
+  /// Immediately returns if no range is selected.
   void updateRangeFormats(Formatus formatus, bool isSet) {
     if (selection.isCollapsed) return;
     debugPrint('${isSet ? "set" : "clear"} ${formatus.name}'
@@ -181,7 +179,7 @@ class FormatusController extends TextEditingController {
 
   void _updateSelection() {
     debugPrint(
-        '-> updateSelection(${selection.baseOffset}..${selection.extentOffset}');
+        '-> updateSelection(${selection.baseOffset}..${selection.extentOffset})');
     _previousSelection = TextSelection(
         baseOffset: selection.baseOffset, extentOffset: selection.extentOffset);
   }
@@ -269,14 +267,7 @@ class DeltaText {
 
     //--- Compute delta
     String prevHead = prevSelection.textBefore(prevText);
-    String prevTail = prevSelection.textAfter(prevText);
-    String nextHead = nextSelection.textBefore(nextText);
     String nextTail = nextSelection.textAfter(nextText);
-    String added = nextSelection.textInside(nextText);
-    debugPrint('### prev ### ${prevSelection.start}..${prevSelection.end}'
-        ' len=${prevText.length} head="$prevHead" tail="$prevTail"\n'
-        '### next ### ${nextSelection.start}..${nextSelection.end}'
-        ' len=${nextText.length} head="$nextHead" tail="$nextTail" added="$added"');
 
     //--- Text is modified
     _headText = _computeHead(prevHead, nextText);
@@ -284,7 +275,11 @@ class DeltaText {
     _added =
         nextText.substring(_headText.length, nextText.length - tailText.length);
     _isInsert = (_headText + _tailText == prevText) && _added.isNotEmpty;
-    debugPrint(toString());
+    // debugPrint('### prev ### ${prevSelection.start}..${prevSelection.end}'
+    //     ' len=${prevText.length} head="$prevHead" tail="%"\n'
+    //     '### next ### ${nextSelection.start}..${nextSelection.end}'
+    //     ' len=${nextText.length} head="%" tail="$nextTail" added="$added"');
+    // debugPrint(toString());
   }
 
   /// Returns `true` if previous text is not equal to next text
