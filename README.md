@@ -13,11 +13,13 @@ and the Flutter guide for
 
 # FORMATUS
 
-A Flutter plain Rich-Text-Editor without any dependencies.
+A plain Flutter Rich-Text-Editor without any dependencies.
 
 ## Features
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
+* Supports multiple top-level and inline formats
+* Easy to use
+* No dependencies to other packages
 
 ## Getting started
 
@@ -28,19 +30,38 @@ flutter:
   formatus: ^1.0.1
 ```
 
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+Create a [FormatusController] and a [FormatusBar].
+Supply a [FocusNode] to both the [FormatusBar] and the [TextField].
+
 
 ## Usage
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
+Use `Formatus` like this:
 
 ```dart
+  FocusNode focusNode = FocusNode(debugLabel: 'formatus');
+  late FormatusController controller;
 
-const FocusNode formatusFocs = FocusNode(debugLabel: 'formatus');
-FormatusController formatusController = FormatusController.fromHtml('');
+void initState() {
+  controller = FormatusController.fromFormattedText( text );
+}
 
+Widget build(BuildContext context) => Column( children: [
+  FormatusBar(
+    controller: controller,
+    textFieldFocus: _formatusFocus,
+  ),
+  TextFormField(
+    controller: controller,
+    focusNode: _formatusFocus,
+    minLines: 3,
+    maxLines: 10 ),
+  ]);
+
+//--- Don't forget the standard dispose of the controller
+void dispose() {
+  controller.dispose();
+}
 ```
 
 ## Additional information
@@ -55,30 +76,13 @@ TODO: Tell users more about the package: where to find more information, how to
 contribute to the package, how to file issues, what response they can expect
 from the package authors, and more.
 
-# TODO
+# Enhancements
 
-1. Use current setting of format actions when entering new text
-2. Apply format action to a range of text
-3. Apply deletion to a range of text. This may include deletion of nodes.
-4. Add action to insert an emoji
-5. Add action to insert an image
-6. Add action to insert a link (URL entered in alert dialog)
+1. Apply format action to a range of text
+2. Add action to insert an emoji
+3. Convert emoji name into emoji inline => insert into current text node
+4. Add action to insert an image
+5. Add action to insert a link (URL entered in alert dialog)
+6. Add formats for lists: ordered and unordered
 7. Parse and export markdown
-
-## Markdown
-
-The `Formatus` editor also supports `Markdown`. Following elements are supported:
-
-* `Heading` -> `# heading1`, `## heading 2`, `### heading 3`
-* `Italic`  -> `*italic text*`
-* `Bold`    -> `**bold text**`
-* `Underline` -> `_underlined text_`
-* `Line through` -> `~~lined through text~~`
-* `Subscript` -> `H~2~O`
-* `Superscript` -> `a^2^ + b^2^ = c^2^`
-* `Horizontal rule` -> `---` as a single line with an empty line above
-* `Link` -> `[title](https://formatus.github.com)`
-* `Ordered list` -> `1. First item`
-* `Unordered list` -> `* item`
-* `Emoji` -> `That's funny :joy:` renders an emoji by its name
-* `Task list` -> `[x] completed\n[ ] still open`
+8. Add format action to change alignment of all text to: left (default), center, right

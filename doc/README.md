@@ -19,30 +19,27 @@ The formatted text
 
 * is stored as an html body without the `body` tag
 * starts with an opening top-level tag like `<h1>` or `<p>`
-* ends with a closing top-level tag like `/p`
-
-## Additional Information
-
-* See `use cases at cursor position` in formatus_uc_cursor.md
-* See `use cases at range selection` in formatus_uc_range.md
+* ends with a closing top-level tag like `</p>`
 
 ## TODOs
 
 * publish to _pub.dev_
 * write documentation
 
-## TODOs for Cursor Position
+## Enhancement: Markdown
 
-* change top level format => update format of current top level node
-* change inline formats => display formats => OK
-* change alignment of top-level format to: left (default), center, right
-* insert character => consider formats
-* delete + text node gets empty => rearrange whole tree
-* insert emoji from some list => insert into current text node
-* convert emoji name into emoji inline => insert into current text node
+The `Formatus` editor also supports `Markdown`. Following elements are supported:
 
-## TODOs for Range Selection
-
-* change inline format => change format of selected text
-* change top-level format => disabled if a range is selected
-* delete => delete all text and nodes within selected range
+* `Heading` -> `# heading1`, `## heading 2`, `### heading 3`
+* `Italic`  -> `*italic text*`
+* `Bold`    -> `**bold text**`
+* `Underline` -> `_underlined text_`
+* `Line through` -> `~~lined through text~~`
+* `Subscript` -> `H~2~O`
+* `Superscript` -> `a^2^ + b^2^ = c^2^`
+* `Horizontal rule` -> `---` as a single line with an empty line above
+* `Link` -> `[title](https://formatus.github.com)`
+* `Ordered list` -> `1. First item`
+* `Unordered list` -> `* item`
+* `Emoji` -> `That's funny :joy:` renders an emoji by its name
+* `Task list` -> `[x] completed\n[ ] still open`

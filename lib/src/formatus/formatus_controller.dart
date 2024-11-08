@@ -66,7 +66,7 @@ class FormatusController extends TextEditingController {
       //--- Insert a new anchor element at cursor position
       if (anchor != null) {
         FormatusNode anchorTextNode =
-            document.createSubtree(anchor.name, {Formatus.anchor});
+            document.createSubTree(anchor.name, {Formatus.anchor});
         anchorTextNode.parent!.attributes[FormatusAttribute.href.name] =
             anchor.href;
         // TODO split current textNode and insert anchorNode between

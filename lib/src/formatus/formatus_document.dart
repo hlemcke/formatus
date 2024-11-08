@@ -84,7 +84,7 @@ class FormatusDocument {
   /// Creates a new subtree with text-node from `text` and parents from `formats`.
   /// Returns leaf of subtree (which is the new text-node).
   ///
-  FormatusNode createSubtree(String text, Set<Formatus> formats) {
+  FormatusNode createSubTree(String text, Set<Formatus> formats) {
     FormatusNode textNode = FormatusNode(format: Formatus.text, text: text);
     FormatusNode node = textNode;
     for (Formatus formatus in formats) {
@@ -164,6 +164,9 @@ class FormatusDocument {
   void handleInsert(DeltaText deltaText, DeltaFormat deltaFormat) {
     FormatusNode textNode = FormatusNode();
     debugPrint('$deltaText');
+    if (deltaText.added == '\n') {
+      handleLineBreakInsert(deltaText);
+    }
     if (deltaText.isAtStart) {
       textNode = textNodes.first;
       if (deltaFormat.hasDelta) {
@@ -201,7 +204,7 @@ class FormatusDocument {
         //--- Create and attach node with same format and rest of text
         if (tailText.isNotEmpty) {
           FormatusNode tailTextNode =
-              createSubtree(tailText, deltaFormat.removed);
+              createSubTree(tailText, deltaFormat.removed);
           subTreeTop.parent?.insertChild(
               subTreeTop.childIndexInParent + 1, tailTextNode.path[0]);
           int textNodeIndex = textNodes.textNodes.indexOf(textNode);
@@ -227,7 +230,7 @@ class FormatusDocument {
     FormatusNode firstDifferentNode =
         getFirstDifferentNode(textNode, deltaFormat.same);
     FormatusNode sameFormatNode = firstDifferentNode.parent!;
-    FormatusNode newSubTreeLeaf = createSubtree(added, deltaFormat.added);
+    FormatusNode newSubTreeLeaf = createSubTree(added, deltaFormat.added);
     FormatusNode newSubTreeTop = newSubTreeLeaf.path[0];
 
     //--- Attach text-node to last format node and update list of text nodes
@@ -238,6 +241,29 @@ class FormatusDocument {
     textNodes.insert(
         before ? textNodeIndex : textNodeIndex + 1, newSubTreeLeaf);
     return before ? firstDifferentNode : newSubTreeTop;
+  }
+
+  void handleLineBreakDelete(DeltaText deltaText) {
+    int indexOfLineBreak = deltaText.headText.length;
+    debugPrint('- handleLineBreakDelete(  $deltaText ) -> $indexOfLineBreak');
+  }
+
+  void handleLineBreakInsert(DeltaText deltaText) {
+    debugPrint('- handleLineBreakInsert( $deltaText )');
+    FormatusNode newNode = createSubTree('', {Formatus.paragraph});
+    if (deltaText.isAtStart) {
+      root.insertChild(0, newNode.path[0]);
+      textNodes.insert(0, newNode);
+    } else if (deltaText.isAtEnd) {
+      root.addChild(newNode.path[0]);
+      textNodes.add(newNode);
+    } else {
+      //--- Determine current text node
+      int splittedNodeIndex =
+          textNodes.computeNodeIndex(previousText, deltaText.headText.length);
+      FormatusNode splittedNode = textNodes[splittedNodeIndex];
+      debugPrint('LF within $splittedNode');
+    }
   }
 
   ///
@@ -302,7 +328,7 @@ class FormatusDocument {
   }
 
   void setupEmpty() {
-    FormatusNode emptyTextNode = createSubtree(' ', {Formatus.paragraph});
+    FormatusNode emptyTextNode = createSubTree(' ', {Formatus.paragraph});
     root = FormatusNode(format: Formatus.body);
     root.addChild(emptyTextNode.parent!);
     textNodes.clear();
