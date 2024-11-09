@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:formatus/formatus.dart';
 import 'package:formatus/src/formatus/formatus_document.dart';
+import 'package:formatus/src/formatus/formatus_node.dart';
 
 void main() {
   ///
@@ -13,7 +14,7 @@ void main() {
   }
 
   ///
-  group('Node by index or cursor', () {
+  group('Node by index', () {
     String nestedHtml =
         '<h1>Title <i>italic</i></h1><p>Word <b>bold <u>under</u></b></p>';
     FormatusDocument doc = FormatusDocument.fromHtml(htmlBody: nestedHtml);

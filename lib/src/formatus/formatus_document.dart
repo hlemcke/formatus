@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:formatus/formatus.dart';
 
+import 'formatus_node.dart';
 import 'formatus_parser.dart';
 
 ///
@@ -113,7 +114,10 @@ class FormatusDocument {
   /// Handle cases for `delete` and `update`.
   ///
   void handleDeleteAndUpdate(DeltaText diff) {
-    if (diff.isAtStart) {
+    //--- Line-break deleted
+    if (previousText[diff.headText.length] == '\n') {
+      _handleLineBreakDelete(diff);
+    } else if (diff.isAtStart) {
       int nodeIndex =
           computeNodeIndex(_previousText.length - diff.tailText.length);
       FormatusNode textNode = textNodes[nodeIndex];
@@ -165,9 +169,8 @@ class FormatusDocument {
     FormatusNode textNode = FormatusNode();
     debugPrint('$deltaText');
     if (deltaText.added == '\n') {
-      handleLineBreakInsert(deltaText);
-    }
-    if (deltaText.isAtStart) {
+      _handleLineBreakInsert(deltaText);
+    } else if (deltaText.isAtStart) {
       textNode = textNodes.first;
       if (deltaFormat.hasDelta) {
         handleInsertWithDifferentFormat(
@@ -243,27 +246,66 @@ class FormatusDocument {
     return before ? firstDifferentNode : newSubTreeTop;
   }
 
-  void handleLineBreakDelete(DeltaText deltaText) {
+  /// Delete a line break -> attach next element to previous one
+  void _handleLineBreakDelete(DeltaText deltaText) {
     int indexOfLineBreak = deltaText.headText.length;
     debugPrint('- handleLineBreakDelete(  $deltaText ) -> $indexOfLineBreak');
   }
 
-  void handleLineBreakInsert(DeltaText deltaText) {
-    debugPrint('- handleLineBreakInsert( $deltaText )');
-    FormatusNode newNode = createSubTree('', {Formatus.paragraph});
+  /// Insert a line break -> at start, at end, within an element, between elements
+  void _handleLineBreakInsert(DeltaText deltaText) {
     if (deltaText.isAtStart) {
-      root.insertChild(0, newNode.path[0]);
+      FormatusNode newNode = createSubTree(' ', {Formatus.paragraph});
+      root.insertChild(0, newNode.top);
       textNodes.insert(0, newNode);
     } else if (deltaText.isAtEnd) {
-      root.addChild(newNode.path[0]);
+      FormatusNode newNode = createSubTree(' ', {Formatus.paragraph});
+      root.addChild(newNode.top);
       textNodes.add(newNode);
+    } else if (_isLineBreakInsertedBetweenTopLevelElements(deltaText)) {
+      //--- Insert new paragraph between the two top-level nodes
+      int prevIndex = computeNodeIndex(deltaText.headText.length - 1);
+      FormatusNode newTextNode = createSubTree(' ', {Formatus.paragraph});
+      textNodes.insert(prevIndex + 1, newTextNode);
+      int topLevelNodeIndex = textNodes[prevIndex].path[0].childIndexInParent;
+      root.insertChild(topLevelNodeIndex + 1, newTextNode.top);
     } else {
-      //--- Determine current text node
-      int splittedNodeIndex =
+      //--- Create new paragraph and fill with nodes right of split
+      debugPrint('----- LF inside a top-level element');
+      //--- Some preparations
+      int splitNodeIndex =
           textNodes.computeNodeIndex(previousText, deltaText.headText.length);
-      FormatusNode splittedNode = textNodes[splittedNodeIndex];
-      debugPrint('LF within $splittedNode');
+      FormatusNode splitTextNode = textNodes[splitNodeIndex];
+      FormatusNode splitTopNode = splitTextNode.top;
+      int splitTopIndex = splitTopNode.childIndexInParent;
+      String cut = splitTextNode.text.substring(splitTextNode.textOffset);
+      debugPrint('----- LF within $splitTextNode ->'
+          ' top-level[$splitTopIndex]: $splitTopNode cut: "$cut"');
+      if (cut.isNotEmpty) {
+        splitTextNode.text =
+            splitTextNode.text.substring(0, splitTextNode.textOffset);
+      }
+
+      //--- Create new paragraph after split top-level node
+
+      FormatusNode newTextNode =
+          createSubTree(cut, splitTextNode.formatsInPath);
+      FormatusNode newTopNode = newTextNode.top;
+      root.insertChild(splitTopIndex + 1, newTopNode);
+
+      //--- append nodes of split top-level to new paragraph
+      for (int i = splitTopIndex + 1; i < splitTopNode.children.length; i++) {
+        FormatusNode node = splitTopNode.children.removeAt(i);
+        newTopNode.addChild(node);
+      }
     }
+  }
+
+  bool _isLineBreakInsertedBetweenTopLevelElements(DeltaText deltaText) {
+    int i = deltaText.headText.length;
+    return ((previousText[i - 1] == '\n') || (previousText[i] == '\n'))
+        ? true
+        : false;
   }
 
   ///
@@ -334,252 +376,4 @@ class FormatusDocument {
     textNodes.clear();
     textNodes.textNodes.add(emptyTextNode);
   }
-}
-
-///
-/// Node in document resembles an html-element with optional attributes.
-///
-/// Text is always a leaf node without style. Style is taken from its parent.
-///
-/// Cannot extend [TextSpan] here because its immutable and we need `parent`.
-///
-class FormatusNode {
-  /// Tag attributes like href or color
-  final Map<String, dynamic> attributes = {};
-
-  /// Format of this node
-  Formatus format;
-
-  /// Style of this node
-  TextStyle style = const TextStyle();
-
-  /// Non empty only if this is a text node (`format == Formatus.text`)
-  String text = '';
-
-  ///
-  /// Creates a new node
-  ///
-  FormatusNode({
-    this.format = Formatus.paragraph,
-    this.style = const TextStyle(),
-    this.text = '',
-  }) {
-    if (text.isNotEmpty) {
-      format = Formatus.text;
-    }
-  }
-
-  /// Single final empty node to be used as placeholder
-  static final FormatusNode placeHolder =
-      FormatusNode(format: Formatus.placeHolder);
-
-  List<FormatusNode> get children => _children;
-  final List<FormatusNode> _children = [];
-
-  /// Appends `child` to end of current list of children and sets `parent`
-  /// in child to `this`.
-  void addChild(FormatusNode child) {
-    _children.add(child);
-    child.parent = this;
-  }
-
-  /// Index of this node in parents children. Relevant in path
-  int get childIndexInParent =>
-      (parent == null) ? -1 : parent!.children.indexOf(this);
-
-  /// Gets depths in tree. Returns 0 for a top-level node
-  int get depth => path.last == this ? path.length : parent?.depth ?? 0;
-
-  void dispose() {
-    if (parent != null) {
-      parent!.children.remove(this);
-      if (parent!.children.isEmpty) {
-        parent!.dispose();
-      }
-      parent = null;
-    }
-  }
-
-  /// Gets formats from path. Root format is removed!
-  Set<Formatus> get formatsInPath {
-    Set<Formatus> formats = {};
-    FormatusNode? node = isTextNode ? parent : this;
-    while (node != null) {
-      formats.add(node.format);
-      node = node.parent;
-    }
-    formats.remove(Formatus.body);
-    return formats;
-  }
-
-  bool get hasParent => parent != null;
-
-  /// Inserts `newChild` into `children` at index
-  void insertChild(int index, FormatusNode child) {
-    children.insert(index, child);
-    child.parent = this;
-  }
-
-  bool get isEmpty => isTextNode ? text.isEmpty : _children.isEmpty;
-
-  bool get isTextNode => format == Formatus.text;
-
-  bool get isTopLevel => format.type == FormatusType.topLevel;
-
-  /// Top-level tags have the single body element as parent
-  FormatusNode? parent;
-
-  /// Gets path from top-level down to this one.
-  /// The `body` element is removed from start of path.
-  List<FormatusNode> get path {
-    List<FormatusNode> path = [];
-    FormatusNode? node = this;
-    while (node != null) {
-      if (node.format != Formatus.body) path.insert(0, node);
-      node = node.parent;
-    }
-    return path;
-  }
-
-  /// Offset into this nodes `text` of cursor position.
-  int textOffset = -1;
-
-  FormatusNode get topLevelNode => isTopLevel ? this : parent!.topLevelNode;
-
-  ///
-  String toHtml() {
-    if (isTextNode) return text;
-    String html = '<${format.key}';
-    for (String key in attributes.keys) {
-      html += ' $key="${attributes[key]}"';
-    }
-    html += '>';
-    for (FormatusNode node in children) {
-      html += node.toHtml();
-    }
-    return '$html</${format.key}>';
-  }
-
-  ///
-  String toPlainText() {
-    String plain = text;
-    for (FormatusNode child in children) {
-      plain += child.toPlainText();
-    }
-    return plain;
-  }
-
-  ///
-  @override
-  String toString() => text.isNotEmpty
-      ? '[$textOffset] "$text"'
-      : '<${format.key}> ${_children.length}';
-
-  TextSpan toTextSpan() {
-    if (text.isNotEmpty) {
-      return TextSpan(style: Formatus.text.style, text: text);
-    }
-    List<TextSpan> spans = [];
-    for (FormatusNode child in children) {
-      spans.add(child.toTextSpan());
-    }
-    return TextSpan(children: spans, style: format.style);
-  }
-}
-
-///
-///
-///
-class FormatusTextNodes {
-  List<FormatusNode> textNodes = [];
-
-  FormatusNode operator [](int index) => textNodes[index];
-
-  void add(FormatusNode textNode) {
-    textNode.format = Formatus.text;
-    textNodes.add(textNode);
-  }
-
-  void clear() => textNodes.clear();
-
-  FormatusNode get first => textNodes.first;
-
-  ///
-  /// Returns index to text-node where `charIndex` <= sum of previous
-  /// text-nodes length.
-  ///
-  int computeNodeIndex(
-    String previousText,
-    int charIndex,
-  ) {
-    //--- End of whole text
-    if (charIndex >= previousText.length) {
-      int nodeIndex = textNodes.length - 1;
-      textNodes[nodeIndex].textOffset = textNodes[nodeIndex].text.length;
-      return nodeIndex;
-    }
-    int charCount = 0;
-    for (int i = 0; i < textNodes.length; i++) {
-      FormatusNode textNode = textNodes[i];
-
-      //--- Adjust node based on first char of this node
-      if ((charCount < previousText.length) &&
-          [' ', ',', '\n'].contains(previousText[charCount])) {
-        if (charIndex == charCount) {
-          i--;
-          textNode = textNodes[i];
-          textNode.textOffset = textNode.text.length;
-          return i;
-        }
-        if (previousText[charCount] == '\n') {
-          charCount++;
-        }
-      }
-      int textLen = textNode.text.length;
-      if (charIndex < charCount + textLen) {
-        //--- Remember offset into text of node found
-        textNode.textOffset = charIndex - charCount;
-        return i;
-      }
-      charCount += textLen;
-    }
-    return textNodes.length - 1;
-  }
-
-  void insert(int index, FormatusNode textNode) =>
-      textNodes.insert(index, textNode);
-
-  FormatusNode get last => textNodes.last;
-
-  int get length => textNodes.length;
-
-  void removeAfter(int index) {
-    while (textNodes.length > index + 1) {
-      removeLast();
-    }
-  }
-
-  void removeAt(int index) {
-    if (textNodes.isEmpty || index < 0) return;
-    if (index >= textNodes.length) index = textNodes.length - 1;
-    FormatusNode node = textNodes.removeAt(index);
-    node.dispose();
-  }
-
-  void removeBefore(int index) {
-    for (int i = 0; i < index; i++) {
-      removeFirst();
-    }
-  }
-
-  void removeFirst() {
-    removeAt(0);
-  }
-
-  void removeLast() {
-    removeAt(textNodes.length);
-  }
-
-  @override
-  String toString() => textNodes.toString();
 }

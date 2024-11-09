@@ -1,5 +1,5 @@
-import 'formatus_document.dart';
 import 'formatus_model.dart';
+import 'formatus_node.dart';
 
 class FormatusParser {
   ///

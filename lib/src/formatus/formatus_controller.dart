@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'formatus_document.dart';
 import 'formatus_model.dart';
+import 'formatus_node.dart';
 
 ///
 /// [FormatusController] displays the tree-like structure of a
@@ -158,6 +159,7 @@ class FormatusController extends TextEditingController {
       nextSelection: selection,
       nextText: text,
     );
+    debugPrint('=== _onlisten => $deltaText');
     if (deltaText.hasDelta) {
       if (deltaText.isInsert) {
         DeltaFormat deltaFormat = DeltaFormat.fromDocument(
