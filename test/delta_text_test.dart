@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:formatus/src/formatus/formatus_controller.dart';
 
 void main() {
-  group('TextDelta - Insertions', () {
+  group('DeltaText - Insertions', () {
     ///
     test('text are identical', () {
       String text = 'identical';
@@ -97,7 +97,7 @@ void main() {
 
   ///
   ///
-  group('TextDelta - Deletions', () {
+  group('DeltaText - Deletions', () {
     ///
     test('text deleted at start', () {
       String prev = 'some text';

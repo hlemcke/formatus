@@ -23,7 +23,7 @@ void main() {
     test('Element should be: "Title " with path h1', () {
       List<int> cursors = [0, 4, 5];
       for (int cursor in cursors) {
-        int nodeIndex = doc.computeNodeIndex(cursor);
+        int nodeIndex = doc.computeTextNodeIndex(cursor);
         FormatusNode node = doc.textNodes[nodeIndex];
         expect(node.text, 'Title ', reason: '$cursor');
         expect(node.path[0].format, Formatus.header1);
@@ -34,7 +34,7 @@ void main() {
     test('Element should be: "italic" with path h1 / i', () {
       List<int> cursors = [6, 7, 11, 12];
       for (int cursor in cursors) {
-        int nodeIndex = doc.computeNodeIndex(cursor);
+        int nodeIndex = doc.computeTextNodeIndex(cursor);
         FormatusNode node = doc.textNodes[nodeIndex];
         expect(node.text, 'italic', reason: printReason(doc, cursor));
         expect(node.path[0].format, Formatus.header1);
@@ -46,7 +46,7 @@ void main() {
     test('Element should be: "under" at p / b / u', () {
       List<int> cursors = [23, 24, 27];
       for (int cursor in cursors) {
-        int nodeIndex = doc.computeNodeIndex(cursor);
+        int nodeIndex = doc.computeTextNodeIndex(cursor);
         FormatusNode node = doc.textNodes[nodeIndex];
         expect(node.text, 'under', reason: printReason(doc, cursor));
         expect(node.path[0].format, Formatus.paragraph);
@@ -74,7 +74,7 @@ void main() {
               baseOffset: indexEndOfBold + 1, extentOffset: indexEndOfBold + 1),
           nextText: 'Words boldX underline');
       doc.handleInsert(deltaText, deltaFormat);
-      int nodeIndex = doc.computeNodeIndex(10);
+      int nodeIndex = doc.computeTextNodeIndex(10);
       FormatusNode textNode = doc.textNodes[nodeIndex];
       expect('boldX', textNode.text);
     });
@@ -94,7 +94,7 @@ void main() {
               extentOffset: indexStartOfBold + 1),
           nextText: 'Words Xbold underline');
       doc.handleInsert(deltaText, deltaFormat);
-      int nodeIndex = doc.computeNodeIndex(7);
+      int nodeIndex = doc.computeTextNodeIndex(7);
       FormatusNode textNode = doc.textNodes[nodeIndex];
       expect('Xbold', textNode.text);
     });

@@ -220,7 +220,7 @@ class FormatusTextNodes {
   /// Returns index to text-node where `charIndex` <= sum of previous
   /// text-nodes plus current one.
   ///
-  int computeNodeIndex(
+  int computeIndex(
     String previousText,
     int charIndex,
   ) {

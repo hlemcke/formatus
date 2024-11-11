@@ -37,7 +37,7 @@ class FormatusController extends TextEditingController {
 
   /// Returns anchor element  at cursor position or `null` if there is none
   FormatusAnchor? get anchorAtCursor {
-    int nodeIndex = document.computeNodeIndex(selection.baseOffset);
+    int nodeIndex = document.computeTextNodeIndex(selection.baseOffset);
     FormatusNode node = document.textNodes[nodeIndex];
     if (node.parent!.format == Formatus.anchor) {
       FormatusAnchor anchor = FormatusAnchor(
@@ -50,7 +50,7 @@ class FormatusController extends TextEditingController {
 
   /// Inserts or updates anchor at cursor position. Deletes is if `null`
   set anchorAtCursor(FormatusAnchor? anchor) {
-    int nodeIndex = document.computeNodeIndex(selection.baseOffset);
+    int nodeIndex = document.computeTextNodeIndex(selection.baseOffset);
     FormatusNode node = document.textNodes[nodeIndex];
 
     //--- Anchor exists at cursor position
@@ -104,7 +104,7 @@ class FormatusController extends TextEditingController {
 
   List<Formatus> get formatsAtCursor {
     if (!selection.isValid) return [];
-    int nodeIndex = document.computeNodeIndex(selection.start);
+    int nodeIndex = document.computeTextNodeIndex(selection.start);
     return document.textNodes[nodeIndex].formatsInPath;
   }
 
@@ -120,11 +120,17 @@ class FormatusController extends TextEditingController {
     if (selection.isCollapsed) return;
     debugPrint('${isSet ? "set" : "clear"} ${formatus.name}'
         ' in [${selection.baseOffset}..${selection.extentOffset}]');
+    document.updateFormatOfSelection(formatus, isSet, selection);
+    if (isSet) {
+      selectedFormats.add(formatus);
+    } else {
+      selectedFormats.remove(formatus);
+    }
   }
 
   /// Changes top-level format at current cursor position
   void updateTopLevelFormat(Formatus formatus) {
-    int textNodeIndex = document.computeNodeIndex(selection.baseOffset);
+    int textNodeIndex = document.computeTextNodeIndex(selection.baseOffset);
     FormatusNode textNode = document.textNodes[textNodeIndex];
     textNode.path.first.format = formatus;
     notifyListeners();
@@ -230,7 +236,7 @@ class DeltaFormat {
     required int caretIndex,
     required Set<Formatus> selectedFormats,
   }) {
-    int textNodeIndex = document.computeNodeIndex(caretIndex);
+    int textNodeIndex = document.computeTextNodeIndex(caretIndex);
     FormatusNode textNode = document.textNodes[textNodeIndex];
     return DeltaFormat(
         textFormats: textNode.formatsInPath, selectedFormats: selectedFormats);

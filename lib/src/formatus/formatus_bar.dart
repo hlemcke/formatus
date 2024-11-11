@@ -63,6 +63,9 @@ class FormatusBar extends StatefulWidget {
 
   /// Callback invoked with parameter [FormatusAnchor] from cursor position
   final AnchorActivity? onTapAnchor;
+
+  /// Supply [FocusNode] from [TextField] to have [FormatusBar] automatically
+  /// switch back focus to the text field after any format change.
   final FocusNode? textFieldFocus;
 
   ///

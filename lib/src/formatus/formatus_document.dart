@@ -78,8 +78,8 @@ class FormatusDocument {
   ///
   /// Returns index of text-node which contains given `charIndex`
   ///
-  int computeNodeIndex(int charIndex) =>
-      textNodes.computeNodeIndex(_previousText, charIndex);
+  int computeTextNodeIndex(int charIndex) =>
+      textNodes.computeIndex(_previousText, charIndex);
 
   ///
   /// Creates a new subtree with text-node from `text` and parents from `formatPath`.
@@ -122,24 +122,24 @@ class FormatusDocument {
       _handleLineBreakDelete(diff);
     } else if (diff.isAtStart) {
       int nodeIndex =
-          computeNodeIndex(_previousText.length - diff.tailText.length);
+          computeTextNodeIndex(_previousText.length - diff.tailText.length);
       FormatusNode textNode = textNodes[nodeIndex];
       textNodes.removeBefore(nodeIndex);
       textNode.text = diff.added + textNode.text.substring(textNode.textOffset);
       if (textNode.isEmpty) textNode.dispose();
     } else if (diff.isAtEnd) {
-      int nodeIndex = computeNodeIndex(diff.headText.length);
+      int nodeIndex = computeTextNodeIndex(diff.headText.length);
       FormatusNode textNode = textNodes[nodeIndex];
       textNodes.removeAfter(nodeIndex);
       textNode.text =
           textNode.text.substring(0, textNode.textOffset) + diff.added;
       if (textNode.isEmpty) textNode.dispose();
     } else {
-      int leadNodeIndex = computeNodeIndex(diff.headText.length);
+      int leadNodeIndex = computeTextNodeIndex(diff.headText.length);
       FormatusNode leadNode = textNodes[leadNodeIndex];
       int leadOffset = leadNode.textOffset;
       int tailNodeIndex =
-          computeNodeIndex(_previousText.length - diff.tailText.length);
+          computeTextNodeIndex(_previousText.length - diff.tailText.length);
 
       //--- Deletion or replacement within same node
       if (leadNodeIndex == tailNodeIndex) {
@@ -209,7 +209,7 @@ class FormatusDocument {
         textNode.text = textNode.text + deltaText.added;
       }
     } else {
-      int nodeIndex = computeNodeIndex(deltaText.headText.length);
+      int nodeIndex = computeTextNodeIndex(deltaText.headText.length);
       textNode = textNodes[nodeIndex];
       if (!deltaFormat.hasDelta) {
         textNode.text = textNode.text.substring(0, textNode.textOffset) +
@@ -268,12 +268,88 @@ class FormatusDocument {
     return before ? firstDifferentNode : newSubTreeTop;
   }
 
+  ///
+  /// Add (`isSet = true`) or remove (`isSet = false`) format from selected
+  /// text-range.
+  ///
+  void updateFormatOfSelection(
+      Formatus formatus, bool isSet, TextSelection selection) {
+    if (selection.isCollapsed) return;
+    int headTextIndex = computeTextNodeIndex(selection.start);
+    int headTextOffset = textNodes[headTextIndex].textOffset;
+    int tailTextIndex = computeTextNodeIndex(selection.end);
+
+    //--- Split head-node and tail-node if required
+    bool changed =
+        _updateFormatOfBorderNode(headTextIndex, true, formatus, isSet);
+    if (changed) {
+      headTextIndex++;
+      tailTextIndex++;
+    }
+    if (tailTextIndex != headTextIndex) {
+      changed =
+          _updateFormatOfBorderNode(tailTextIndex, false, formatus, isSet);
+      if (changed) tailTextIndex--;
+    }
+
+    //--- Adapt text-nodes in selection range
+    for (int i = headTextIndex; i <= tailTextIndex; i++) {
+      FormatusNode textNode = textNodes[i];
+      List<Formatus> formatsInPath = textNode.formatsInPath;
+
+      if (isSet && !formatsInPath.contains(formatus)) {
+        debugPrint('add $formatus to node $i: "${textNodes[i]}"');
+      } else if (!isSet && formatsInPath.contains(formatus)) {
+        debugPrint('remove $formatus from node $i: "${textNodes[i]}"');
+      }
+    }
+  }
+
+  bool _updateFormatOfBorderNode(
+      int nodeIndex, bool isHead, Formatus formatus, bool isSet) {
+    FormatusNode textNode = textNodes[nodeIndex];
+    if (0 == textNode.textOffset ||
+        textNode.textOffset == textNode.text.length) {
+      return false;
+    }
+
+    //--- Prepare formats for split node
+    List<Formatus> formatsInPath = textNode.formatsInPath;
+    List<Formatus> formatsToUse =
+        _updateFormatsToUse(formatsInPath, formatus, isSet);
+    FormatusNode topDiffNode = getFirstDifferentNode(textNode, formatsToUse);
+    for (int i = 0; i < formatsInPath.length && i < formatsToUse.length; i++) {
+      if (formatsInPath[i] != formatsToUse[i]) {
+        formatsToUse = formatsToUse.sublist(i);
+      }
+    }
+
+    //--- Create split node and insert it
+    FormatusNode newTextNode = createSubTree(
+        textNode.text.substring(textNode.textOffset), formatsToUse);
+    topDiffNode.parent
+        ?.insertChild(topDiffNode.childIndexInParent + 1, newTextNode);
+    textNodes.insert(isHead ? nodeIndex + 1 : nodeIndex - 1, newTextNode);
+    return true;
+  }
+
+  List<Formatus> _updateFormatsToUse(
+      List<Formatus> formatPath, Formatus formatus, bool isSet) {
+    List<Formatus> updated = formatPath;
+    if (isSet) {
+      updated.add(formatus);
+    } else {
+      updated.remove(formatus);
+    }
+    return updated;
+  }
+
   /// Delete a single line break
   /// -> attach children of right top-level element to left one
   void _handleLineBreakDelete(DeltaText deltaText) {
     int indexOfLineBreak = deltaText.headText.length;
     debugPrint('- handleLineBreakDelete(  $deltaText ) -> $indexOfLineBreak');
-    int leftTextNodeIndex = computeNodeIndex(indexOfLineBreak - 1);
+    int leftTextNodeIndex = computeTextNodeIndex(indexOfLineBreak - 1);
     FormatusNode leftTopNode = textNodes[leftTextNodeIndex].top;
     int leftTopNodeIndex = leftTopNode.childIndexInParent;
     FormatusNode rightTopNode = root.children[leftTopNodeIndex + 1];
@@ -299,7 +375,7 @@ class FormatusDocument {
       textNodes.add(newNode);
     } else if (_isLineBreakInsertedBetweenTopLevelElements(deltaText)) {
       //--- Insert new paragraph between the two top-level nodes
-      int prevIndex = computeNodeIndex(deltaText.headText.length - 1);
+      int prevIndex = computeTextNodeIndex(deltaText.headText.length - 1);
       FormatusNode newTextNode = createSubTree(' ', [Formatus.paragraph]);
       textNodes.insert(prevIndex + 1, newTextNode);
       int topLevelNodeIndex = textNodes[prevIndex].path[0].childIndexInParent;
@@ -309,7 +385,7 @@ class FormatusDocument {
       debugPrint('----- LF inside a top-level element');
       //--- Some preparations
       int splitNodeIndex =
-          textNodes.computeNodeIndex(previousText, deltaText.headText.length);
+          textNodes.computeIndex(previousText, deltaText.headText.length);
       FormatusNode splitTextNode = textNodes[splitNodeIndex];
       FormatusNode splitTopNode = splitTextNode.top;
       int splitTopIndex = splitTopNode.childIndexInParent;
