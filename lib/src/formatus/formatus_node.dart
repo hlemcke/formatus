@@ -44,10 +44,12 @@ class FormatusNode {
 
   /// Appends `child` to end of current list of children and sets `parent`
   /// in child to `this`.
-  void addChild(FormatusNode child) {
+  ///
+  /// Returns `true` if reduction has occurred
+  bool addChild(FormatusNode child) {
     children.add(child);
     child.parent = this;
-    reduce();
+    return reduce();
   }
 
   /// Index of this node in parents children. Relevant in path
@@ -66,6 +68,7 @@ class FormatusNode {
         parent!.dispose();
       }
       parent = null;
+      text = '';
     }
   }
 
@@ -87,16 +90,20 @@ class FormatusNode {
   /// Inserts `child` into `children` at `index`.
   ///
   /// If child has same format as left node then its children will be added instead.
-  void insertChild(int index, FormatusNode child) {
+  ///
+  /// Returns `true` if reduction has occurred
+  bool insertChild(int index, FormatusNode child) {
     children.insert(index, child);
     child.parent = this;
-    reduce();
+    return reduce();
   }
 
-  /// Reduces children below top-level node by combining same formats
-  void reduce() {
+  /// Reduces children below top-level node by combining same formats.
+  /// Returns `true` if reduction has occurred.
+  bool reduce() {
     //--- Never combine top-level elements
-    if (format == Formatus.root) return;
+    if (format == Formatus.root) return false;
+    bool isReduced = false;
     for (int i = 1; i < children.length; i++) {
       if (children[i - 1].format == children[i].format) {
         if (children[i].format == Formatus.text) {
@@ -104,15 +111,18 @@ class FormatusNode {
           FormatusNode textNode = children.removeAt(i);
           children[i - 1].text += textNode.text;
           textNode.dispose();
+          isReduced = true;
         } else {
           //--- format-node -> move children from next to current
           while (children[i].children.isNotEmpty) {
             children[-1].children.add(children[i].children.removeAt(0));
           }
           children[i].dispose();
+          isReduced = true;
         }
       }
     }
+    return isReduced;
   }
 
   bool get isEmpty => isTextNode ? text.isEmpty : _children.isEmpty;

@@ -195,7 +195,9 @@ void main() {
       expect(doc.textNodes[0].text, 'Title');
       expect(doc.textNodes[1].text.startsWith('Sentence'), true);
     });
-    test('Delete line-break within text range', () {
+
+    ///
+    test('Delete line-break in text range', () {
       // --- given
       prevHtml = '<h1>Title</h1><h2>Sentence with <b>bold</b> words</h2>';
       doc = FormatusDocument.fromHtml(htmlBody: prevHtml);
@@ -218,7 +220,9 @@ void main() {
       expect(doc.previousText, nextText);
       expect(doc.root.children[0].format, Formatus.header1);
       expect(doc.textNodes.length, 3);
-      expect(doc.textNodes[0].text, nextText);
+      expect(doc.textNodes[0].text, 'Titence with ');
+      expect(doc.textNodes[1].text, 'bold');
+      expect(doc.textNodes[2].text, ' words');
     });
   });
 }

@@ -149,18 +149,36 @@ class FormatusDocument {
         if (leadNode.isEmpty) {
           leadNode.dispose();
         }
-      } else {
+      }
+      //--- Deletion covers multiple text-nodes
+      else {
+        //--- Adapt text-nodes
         FormatusNode tailNode = textNodes[tailNodeIndex];
         leadNode.text = leadNode.text.substring(0, leadOffset) + diff.added;
         tailNode.text = tailNode.text.substring(tailNode.textOffset);
-
-        //--- Remove nodes in between. Must do from right to left!
-        for (int i = tailNodeIndex - 1; i > leadNodeIndex; i--) {
-          textNodes.removeAt(i);
+        for (int i = leadNodeIndex + 1; i < tailNodeIndex; i++) {
+          textNodes[i].text = '';
         }
-        //--- Must remove lead and tail at end!
-        if (leadNode.isEmpty) leadNode.dispose();
-        if (tailNode.isEmpty) tailNode.dispose();
+
+        //--- Right side is another top-level element -> move children
+        FormatusNode leadTopNode = leadNode.top;
+        FormatusNode tailTopNode = tailNode.top;
+        if (leadTopNode != tailTopNode) {
+          int idx = tailNode.path[1].childIndexInParent;
+          while (idx < tailTopNode.children.length) {
+            FormatusNode node = tailTopNode.children.removeAt(idx);
+            leadTopNode.addChild(node);
+          }
+          tailTopNode.dispose();
+        }
+
+        //--- Remove empty text-nodes
+        for (int i = 0; i < textNodes.length; i++) {
+          if (textNodes[i].isEmpty) {
+            textNodes[i].dispose();
+            textNodes.removeAt(i);
+          }
+        }
       }
     }
     _previousText = toPlainText();
