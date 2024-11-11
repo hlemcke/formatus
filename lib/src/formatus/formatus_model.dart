@@ -60,14 +60,6 @@ enum Formatus {
     TextStyle(color: Colors.purpleAccent, decoration: TextDecoration.underline),
   ),
 
-  /// Single root element in a [FormatusDocument]
-  body(
-    'body',
-    FormatusType.body,
-    null,
-    TextStyle(fontSize: kDefaultFontSize),
-  ),
-
   /// Inline format to display bold text
   bold(
     'b',
@@ -172,6 +164,14 @@ enum Formatus {
         fontWeight: FontWeight.bold,
       ),
     ),
+    TextStyle(fontSize: kDefaultFontSize),
+  ),
+
+  /// Single root element in a [FormatusDocument]
+  root(
+    'body',
+    FormatusType.root,
+    null,
     TextStyle(fontSize: kDefaultFontSize),
   ),
 
@@ -300,7 +300,7 @@ enum FormatusType {
   inline,
 
   /// The single root element in [FormatusDocument]
-  body,
+  root,
 
   /// Top level elements can only contain `inline` elements
   topLevel,

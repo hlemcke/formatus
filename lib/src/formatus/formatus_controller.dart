@@ -67,7 +67,7 @@ class FormatusController extends TextEditingController {
       //--- Insert a new anchor element at cursor position
       if (anchor != null) {
         FormatusNode anchorTextNode =
-            document.createSubTree(anchor.name, {Formatus.anchor});
+            FormatusDocument.createSubTree(anchor.name, [Formatus.anchor]);
         anchorTextNode.parent!.attributes[FormatusAttribute.href.name] =
             anchor.href;
         // TODO split current textNode and insert anchorNode between
@@ -102,8 +102,8 @@ class FormatusController extends TextEditingController {
     value = TextEditingValue(text: text);
   }
 
-  Set<Formatus> get formatsAtCursor {
-    if (!selection.isValid) return {};
+  List<Formatus> get formatsAtCursor {
+    if (!selection.isValid) return [];
     int nodeIndex = document.computeNodeIndex(selection.start);
     return document.textNodes[nodeIndex].formatsInPath;
   }
@@ -170,13 +170,10 @@ class FormatusController extends TextEditingController {
       } else {
         document.handleDeleteAndUpdate(deltaText);
       }
-      debugPrint(
-          '=== $deltaText range: ${selection.baseOffset} ${selection.extentOffset}');
-    } else {
-      debugPrint(
-          '=== range: ${selection.baseOffset} ${selection.extentOffset}');
     }
     _updateSelection();
+    debugPrint(
+        '=== $deltaText range: ${selection.baseOffset} ${selection.extentOffset}');
   }
 
   void _updateSelection() {
@@ -192,14 +189,14 @@ class FormatusController extends TextEditingController {
 /// [FormatusBar].
 ///
 class DeltaFormat {
-  final Set<Formatus> textFormats;
+  final List<Formatus> textFormats;
   final Set<Formatus> selectedFormats;
 
   Set<Formatus> get added => _added;
   Set<Formatus> _added = {};
 
-  Set<Formatus> get same => _same;
-  Set<Formatus> _same = {};
+  List<Formatus> get same => _same;
+  List<Formatus> _same = [];
 
   Set<Formatus> get removed => _removed;
   Set<Formatus> _removed = {};
@@ -213,9 +210,13 @@ class DeltaFormat {
     required this.textFormats,
     required this.selectedFormats,
   }) {
-    _added = selectedFormats.difference(textFormats);
-    _same = selectedFormats.intersection(textFormats);
-    _removed = textFormats.difference(selectedFormats);
+    _added = selectedFormats.difference(textFormats.toSet());
+    _removed = textFormats.toSet().difference(selectedFormats);
+    for (Formatus formatus in textFormats) {
+      if (selectedFormats.contains(formatus)) {
+        _same.add(formatus);
+      }
+    }
   }
 
   ///

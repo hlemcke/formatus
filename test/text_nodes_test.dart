@@ -19,6 +19,7 @@ void main() {
         '<h1>Title <i>italic</i></h1><p>Word <b>bold <u>under</u></b></p>';
     FormatusDocument doc = FormatusDocument.fromHtml(htmlBody: nestedHtml);
 
+    ///
     test('Element should be: "Title " with path h1', () {
       List<int> cursors = [0, 4, 5];
       for (int cursor in cursors) {
@@ -28,6 +29,8 @@ void main() {
         expect(node.path[0].format, Formatus.header1);
       }
     });
+
+    ///
     test('Element should be: "italic" with path h1 / i', () {
       List<int> cursors = [6, 7, 11, 12];
       for (int cursor in cursors) {
@@ -38,6 +41,8 @@ void main() {
         expect(node.path[1].format, Formatus.italic);
       }
     });
+
+    ///
     test('Element should be: "under" at p / b / u', () {
       List<int> cursors = [23, 24, 27];
       for (int cursor in cursors) {
@@ -60,7 +65,7 @@ void main() {
       int indexEndOfBold = 'Words bold'.length;
       FormatusDocument doc = FormatusDocument.fromHtml(htmlBody: easyParagraph);
       DeltaFormat deltaFormat =
-          DeltaFormat(textFormats: {}, selectedFormats: {});
+          DeltaFormat(textFormats: [], selectedFormats: {});
       DeltaText deltaText = DeltaText(
           prevSelection: TextSelection(
               baseOffset: indexEndOfBold, extentOffset: indexEndOfBold),
@@ -79,7 +84,7 @@ void main() {
       int indexStartOfBold = 'Words '.length;
       FormatusDocument doc = FormatusDocument.fromHtml(htmlBody: easyParagraph);
       DeltaFormat deltaFormat =
-          DeltaFormat(textFormats: {}, selectedFormats: {});
+          DeltaFormat(textFormats: [], selectedFormats: {});
       DeltaText deltaText = DeltaText(
           prevSelection: TextSelection(
               baseOffset: indexStartOfBold, extentOffset: indexStartOfBold),

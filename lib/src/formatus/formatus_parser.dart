@@ -6,7 +6,7 @@ class FormatusParser {
   /// Parses `htmlBody` and returns a root-node.
   ///
   FormatusNode parse(String htmlBody, FormatusTextNodes textNodes) {
-    FormatusNode body = FormatusNode(format: Formatus.body);
+    FormatusNode body = FormatusNode(format: Formatus.root);
     if (htmlBody.isEmpty) {
       FormatusNode paragraphNode = FormatusNode()..format = Formatus.paragraph;
       body.addChild(paragraphNode);

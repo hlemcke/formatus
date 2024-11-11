@@ -82,17 +82,18 @@ class FormatusDocument {
       textNodes.computeNodeIndex(_previousText, charIndex);
 
   ///
-  /// Creates a new subtree with text-node from `text` and parents from `formats`.
+  /// Creates a new subtree with text-node from `text` and parents from `formatPath`.
   /// Returns leaf of subtree (which is the new text-node).
   ///
-  FormatusNode createSubTree(String text, Set<Formatus> formats) {
-    FormatusNode textNode = FormatusNode(format: Formatus.text, text: text);
-    FormatusNode node = textNode;
-    for (Formatus formatus in formats) {
-      FormatusNode parent = FormatusNode(format: formatus);
-      parent.addChild(node);
-      node = parent;
+  static FormatusNode createSubTree(String text, List<Formatus> formatPath) {
+    FormatusNode node = FormatusNode(format: formatPath[0]);
+    for (int i = 1; i < formatPath.length; i++) {
+      FormatusNode child = FormatusNode(format: formatPath[i]);
+      node.addChild(child);
+      node = child;
     }
+    FormatusNode textNode = FormatusNode(format: Formatus.text, text: text);
+    node.addChild(textNode);
     return textNode;
   }
 
@@ -100,11 +101,13 @@ class FormatusDocument {
   /// Gets first different node in `textNode.path`.
   /// Its parent is the last node with same format.
   ///
-  FormatusNode getFirstDifferentNode(
-      FormatusNode textNode, Set<Formatus> sameFormats) {
+  static FormatusNode getFirstDifferentNode(
+      FormatusNode textNode, List<Formatus> sameFormats) {
     List<FormatusNode> path = textNode.path;
-    int i = 1;
-    while ((i < path.length) && sameFormats.contains(path[i].format)) {
+    int i = 0;
+    while ((i < path.length) &&
+        (i < sameFormats.length) &&
+        (path[i].format == sameFormats[i])) {
       i++;
     }
     return path[i];
@@ -137,7 +140,8 @@ class FormatusDocument {
       int leadOffset = leadNode.textOffset;
       int tailNodeIndex =
           computeNodeIndex(_previousText.length - diff.tailText.length);
-      //--- Replacement within same node
+
+      //--- Deletion or replacement within same node
       if (leadNodeIndex == tailNodeIndex) {
         String pre = leadNode.text.substring(0, leadOffset);
         String post = leadNode.text.substring(leadNode.textOffset);
@@ -206,10 +210,9 @@ class FormatusDocument {
 
         //--- Create and attach node with same format and rest of text
         if (tailText.isNotEmpty) {
-          FormatusNode tailTextNode =
-              createSubTree(tailText, deltaFormat.removed);
+          FormatusNode tailTextNode = createSubTree(tailText, deltaFormat.same);
           subTreeTop.parent?.insertChild(
-              subTreeTop.childIndexInParent + 1, tailTextNode.path[0]);
+              subTreeTop.childIndexInParent + 1, tailTextNode.top);
           int textNodeIndex = textNodes.textNodes.indexOf(textNode);
           textNodes.insert(textNodeIndex + 2, tailTextNode);
         }
@@ -233,7 +236,8 @@ class FormatusDocument {
     FormatusNode firstDifferentNode =
         getFirstDifferentNode(textNode, deltaFormat.same);
     FormatusNode sameFormatNode = firstDifferentNode.parent!;
-    FormatusNode newSubTreeLeaf = createSubTree(added, deltaFormat.added);
+    FormatusNode newSubTreeLeaf =
+        createSubTree(added, deltaFormat.added.toList());
     FormatusNode newSubTreeTop = newSubTreeLeaf.path[0];
 
     //--- Attach text-node to last format node and update list of text nodes
@@ -246,26 +250,39 @@ class FormatusDocument {
     return before ? firstDifferentNode : newSubTreeTop;
   }
 
-  /// Delete a line break -> attach next element to previous one
+  /// Delete a single line break
+  /// -> attach children of right top-level element to left one
   void _handleLineBreakDelete(DeltaText deltaText) {
     int indexOfLineBreak = deltaText.headText.length;
     debugPrint('- handleLineBreakDelete(  $deltaText ) -> $indexOfLineBreak');
+    int leftTextNodeIndex = computeNodeIndex(indexOfLineBreak - 1);
+    FormatusNode leftTopNode = textNodes[leftTextNodeIndex].top;
+    int leftTopNodeIndex = leftTopNode.childIndexInParent;
+    FormatusNode rightTopNode = root.children[leftTopNodeIndex + 1];
+    while (rightTopNode.children.isNotEmpty) {
+      FormatusNode rightChild = rightTopNode.children.removeAt(0);
+      leftTopNode.addChild(rightChild);
+      if (rightChild.format == Formatus.text) {
+        textNodes.textNodes.remove(rightChild);
+      }
+    }
+    root.children.removeAt(leftTopNodeIndex + 1);
   }
 
   /// Insert a line break -> at start, at end, within an element, between elements
   void _handleLineBreakInsert(DeltaText deltaText) {
     if (deltaText.isAtStart) {
-      FormatusNode newNode = createSubTree(' ', {Formatus.paragraph});
+      FormatusNode newNode = createSubTree(' ', [Formatus.paragraph]);
       root.insertChild(0, newNode.top);
       textNodes.insert(0, newNode);
     } else if (deltaText.isAtEnd) {
-      FormatusNode newNode = createSubTree(' ', {Formatus.paragraph});
+      FormatusNode newNode = createSubTree(' ', [Formatus.paragraph]);
       root.addChild(newNode.top);
       textNodes.add(newNode);
     } else if (_isLineBreakInsertedBetweenTopLevelElements(deltaText)) {
       //--- Insert new paragraph between the two top-level nodes
       int prevIndex = computeNodeIndex(deltaText.headText.length - 1);
-      FormatusNode newTextNode = createSubTree(' ', {Formatus.paragraph});
+      FormatusNode newTextNode = createSubTree(' ', [Formatus.paragraph]);
       textNodes.insert(prevIndex + 1, newTextNode);
       int topLevelNodeIndex = textNodes[prevIndex].path[0].childIndexInParent;
       root.insertChild(topLevelNodeIndex + 1, newTextNode.top);
@@ -287,16 +304,26 @@ class FormatusDocument {
       }
 
       //--- Create new paragraph after split top-level node
-
-      FormatusNode newTextNode =
-          createSubTree(cut, splitTextNode.formatsInPath);
+      List<Formatus> formatsInPath = splitTextNode.formatsInPath;
+      formatsInPath[0] = Formatus.paragraph;
+      FormatusNode newTextNode = createSubTree(cut, formatsInPath);
       FormatusNode newTopNode = newTextNode.top;
       root.insertChild(splitTopIndex + 1, newTopNode);
 
       //--- append nodes of split top-level to new paragraph
-      for (int i = splitTopIndex + 1; i < splitTopNode.children.length; i++) {
+      int splitIndexBelowTopLevel = splitTextNode.path[1].childIndexInParent;
+      for (int i = splitIndexBelowTopLevel + 1;
+          i < splitTopNode.children.length;
+          i++) {
         FormatusNode node = splitTopNode.children.removeAt(i);
         newTopNode.addChild(node);
+      }
+
+      //--- Remove initially create "cut" node if its empty
+      if (cut.isEmpty) {
+        newTextNode.dispose();
+      } else {
+        textNodes.insert(splitNodeIndex + 1, newTextNode);
       }
     }
   }
@@ -370,8 +397,8 @@ class FormatusDocument {
   }
 
   void setupEmpty() {
-    FormatusNode emptyTextNode = createSubTree(' ', {Formatus.paragraph});
-    root = FormatusNode(format: Formatus.body);
+    FormatusNode emptyTextNode = createSubTree(' ', [Formatus.paragraph]);
+    root = FormatusNode(format: Formatus.root);
     root.addChild(emptyTextNode.parent!);
     textNodes.clear();
     textNodes.textNodes.add(emptyTextNode);

@@ -45,8 +45,9 @@ class FormatusNode {
   /// Appends `child` to end of current list of children and sets `parent`
   /// in child to `this`.
   void addChild(FormatusNode child) {
-    _children.add(child);
+    children.add(child);
     child.parent = this;
+    reduce();
   }
 
   /// Index of this node in parents children. Relevant in path
@@ -56,6 +57,8 @@ class FormatusNode {
   /// Gets depths in tree. Returns 0 for a top-level node
   int get depth => path.last == this ? path.length : parent?.depth ?? 0;
 
+  /// Disposes this node by removing it from its parents children.
+  /// If parents children become empty then parent will be disposed also.
   void dispose() {
     if (parent != null) {
       parent!.children.remove(this);
@@ -66,24 +69,50 @@ class FormatusNode {
     }
   }
 
+  ///
   /// Gets formats from path without `root`-format
-  Set<Formatus> get formatsInPath {
-    Set<Formatus> formats = {};
+  ///
+  List<Formatus> get formatsInPath {
+    List<Formatus> formats = [];
     FormatusNode? node = isTextNode ? parent : this;
-    while (node != null) {
-      formats.add(node.format);
+    while ((node != null) && (node.format != Formatus.root)) {
+      formats.insert(0, node.format);
       node = node.parent;
     }
-    formats.remove(Formatus.body);
     return formats;
   }
 
   bool get hasParent => parent != null;
 
-  /// Inserts `newChild` into `children` at index
+  /// Inserts `child` into `children` at `index`.
+  ///
+  /// If child has same format as left node then its children will be added instead.
   void insertChild(int index, FormatusNode child) {
     children.insert(index, child);
     child.parent = this;
+    reduce();
+  }
+
+  /// Reduces children below top-level node by combining same formats
+  void reduce() {
+    //--- Never combine top-level elements
+    if (format == Formatus.root) return;
+    for (int i = 1; i < children.length; i++) {
+      if (children[i - 1].format == children[i].format) {
+        if (children[i].format == Formatus.text) {
+          //--- Text-node -> join strings
+          FormatusNode textNode = children.removeAt(i);
+          children[i - 1].text += textNode.text;
+          textNode.dispose();
+        } else {
+          //--- format-node -> move children from next to current
+          while (children[i].children.isNotEmpty) {
+            children[-1].children.add(children[i].children.removeAt(0));
+          }
+          children[i].dispose();
+        }
+      }
+    }
   }
 
   bool get isEmpty => isTextNode ? text.isEmpty : _children.isEmpty;
@@ -98,13 +127,12 @@ class FormatusNode {
   /// Top-level tags have the single body element as parent
   FormatusNode? parent;
 
-  /// Gets path from top-level down to this one.
-  /// The `body` element is removed from start of path.
+  /// Gets path from top-level (below `root`) down to this node.
   List<FormatusNode> get path {
     List<FormatusNode> path = [];
     FormatusNode? node = this;
-    while (node != null) {
-      if (node.format != Formatus.body) path.insert(0, node);
+    while ((node != null) && (node.format != Formatus.root)) {
+      path.insert(0, node);
       node = node.parent;
     }
     return path;
@@ -116,7 +144,7 @@ class FormatusNode {
   /// Gets top node (below `root`) of this subtree
   FormatusNode get top => (parent == null)
       ? this
-      : (parent!.parent == null)
+      : (parent!.format == Formatus.root)
           ? this
           : parent!.top;
 
@@ -180,7 +208,7 @@ class FormatusTextNodes {
 
   ///
   /// Returns index to text-node where `charIndex` <= sum of previous
-  /// text-nodes length.
+  /// text-nodes plus current one.
   ///
   int computeNodeIndex(
     String previousText,

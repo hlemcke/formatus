@@ -4,7 +4,7 @@ import 'package:formatus/src/formatus/formatus_node.dart';
 
 void main() {
   //--- Prepare root -> P -> B -> I -> "this is a text node"
-  FormatusNode root = FormatusNode(format: Formatus.body);
+  FormatusNode root = FormatusNode(format: Formatus.root);
   FormatusNode paragraph = FormatusNode(format: Formatus.paragraph);
   FormatusNode bold = FormatusNode(format: Formatus.bold);
   FormatusNode italic = FormatusNode(format: Formatus.italic);

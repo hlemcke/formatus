@@ -166,7 +166,7 @@ class _FormatusBarState extends State<FormatusBar> {
   }
 
   void _updateActivatedActions() {
-    Set<Formatus> formatsInPath = _ctrl.formatsAtCursor;
+    List<Formatus> formatsInPath = _ctrl.formatsAtCursor;
     _deactivateActions();
     for (Formatus format in formatsInPath) {
       _selectedFormats.add(format);
