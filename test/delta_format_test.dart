@@ -69,4 +69,31 @@ void main() {
       expect(deltaFormat.removed, {Formatus.bold});
     });
   });
+  group('DeltaFormat factory constructors', () {
+    test('DeltaFormat.added', () {
+      Set<Formatus> formats = {
+        Formatus.header1,
+        Formatus.bold,
+        Formatus.italic
+      };
+      DeltaFormat deltaFormat = DeltaFormat.added(
+          selectedFormats: formats, added: Formatus.underline);
+      expect(deltaFormat.added, {Formatus.underline});
+      expect(deltaFormat.removed, <Formatus>{});
+      expect(
+          deltaFormat.same, [Formatus.header1, Formatus.bold, Formatus.italic]);
+    });
+    test('DeltaFormat.removed', () {
+      Set<Formatus> formats = {
+        Formatus.header1,
+        Formatus.bold,
+        Formatus.italic
+      };
+      DeltaFormat deltaFormat =
+          DeltaFormat.removed(selectedFormats: formats, removed: Formatus.bold);
+      expect(deltaFormat.added, <Formatus>{});
+      expect(deltaFormat.removed, {Formatus.bold});
+      expect(deltaFormat.same, [Formatus.header1, Formatus.italic]);
+    });
+  });
 }

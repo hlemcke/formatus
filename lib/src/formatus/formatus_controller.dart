@@ -118,14 +118,11 @@ class FormatusController extends TextEditingController {
   /// Immediately returns if no range is selected.
   void updateRangeFormats(Formatus formatus, bool isSet) {
     if (selection.isCollapsed) return;
-    debugPrint('${isSet ? "set" : "clear"} ${formatus.name}'
-        ' in [${selection.baseOffset}..${selection.extentOffset}]');
-    document.updateFormatOfSelection(formatus, isSet, selection);
-    if (isSet) {
-      selectedFormats.add(formatus);
-    } else {
-      selectedFormats.remove(formatus);
-    }
+    DeltaFormat deltaFormat = isSet
+        ? DeltaFormat.added(selectedFormats: selectedFormats, added: formatus)
+        : DeltaFormat.removed(
+            selectedFormats: selectedFormats, removed: formatus);
+    document.updateFormatOfSelection(deltaFormat, selection);
   }
 
   /// Changes top-level format at current cursor position
@@ -201,11 +198,14 @@ class DeltaFormat {
   Set<Formatus> get added => _added;
   Set<Formatus> _added = {};
 
-  List<Formatus> get same => _same;
-  List<Formatus> _same = [];
+  /// Gets path from `same` and `added` for creating a new subtree
+  List<Formatus> get path => [...same, ...added.toList()];
 
   Set<Formatus> get removed => _removed;
   Set<Formatus> _removed = {};
+
+  List<Formatus> get same => _same;
+  final List<Formatus> _same = [];
 
   bool get hasDelta => added.isNotEmpty || removed.isNotEmpty;
 
@@ -241,6 +241,22 @@ class DeltaFormat {
     return DeltaFormat(
         textFormats: textNode.formatsInPath, selectedFormats: selectedFormats);
   }
+
+  factory DeltaFormat.added({
+    required Set<Formatus> selectedFormats,
+    required Formatus added,
+  }) =>
+      DeltaFormat(
+          textFormats: (selectedFormats..remove(added)).toList(),
+          selectedFormats: selectedFormats..add(added));
+
+  factory DeltaFormat.removed({
+    required Set<Formatus> selectedFormats,
+    required Formatus removed,
+  }) =>
+      DeltaFormat(
+          textFormats: selectedFormats.toList(),
+          selectedFormats: selectedFormats..remove(removed));
 
   @override
   String toString() => '-:$removed, =:$same, +:$added';

@@ -1,6 +1,5 @@
 import 'package:flutter/widgets.dart';
-
-import 'formatus_model.dart';
+import 'package:formatus/formatus.dart';
 
 ///
 /// Node in document resembles an html-element with optional attributes.
@@ -115,7 +114,7 @@ class FormatusNode {
         } else {
           //--- format-node -> move children from next to current
           while (children[i].children.isNotEmpty) {
-            children[-1].children.add(children[i].children.removeAt(0));
+            children[i - 1].children.add(children[i].children.removeAt(0));
           }
           children[i].dispose();
           isReduced = true;
@@ -196,6 +195,12 @@ class FormatusNode {
       spans.add(child.toTextSpan());
     }
     return TextSpan(children: spans, style: format.style);
+  }
+
+  /// Updates format-path by appending `deltaFormat.added`
+  /// or by removing `deltaFormat.removed`.
+  bool updateFormat(DeltaFormat deltaFormat) {
+    return false;
   }
 }
 

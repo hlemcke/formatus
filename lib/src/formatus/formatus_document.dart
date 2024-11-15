@@ -76,6 +76,62 @@ class FormatusDocument {
       .replaceAll('  ', ' ');
 
   ///
+  /// Applies `format` to text-node given by `index`.
+  /// `start` and `end` define the part of the text-node.
+  ///
+  /// Returns number of new text-nodes: 0 (format applied to full text),
+  /// 1 (format applied to head or tail) or 2 (format applied to range within text).
+  ///
+  int applyFormatToTextNode(
+      DeltaFormat format, int nodeIndex, int start, int end) {
+    FormatusNode textNode = textNodes[nodeIndex];
+
+    if (start <= 0) {
+      //--- apply format to full node
+      if (end >= textNode.length) {
+        buildAndInsertTextNode(format, nodeIndex, textNode.text, '', 0);
+        textNode.dispose();
+        return 0;
+      }
+
+      //--- apply format to head
+      buildAndInsertTextNode(format, nodeIndex, textNode.text.substring(0, end),
+          textNode.text.substring(end), 0);
+      return 1;
+    }
+
+    //--- apply format to tail
+    if (end >= textNode.length) {
+      buildAndInsertTextNode(
+          format,
+          nodeIndex,
+          textNode.text.substring(start, end),
+          textNode.text.substring(0, start),
+          1);
+      return 1;
+    }
+
+    //--- apply format to range inside text
+    String headText = textNode.text.substring(0, start);
+    String splitText = textNode.text.substring(start, end);
+    String tailText = textNode.text.substring(end);
+    buildAndInsertTextNode(format, nodeIndex, splitText, headText, 1);
+    buildAndInsertTextNode(format, nodeIndex + 1, tailText, splitText, 1);
+    return 2;
+  }
+
+  void buildAndInsertTextNode(DeltaFormat format, int nodeIndex, String newText,
+      String oldText, int increment) {
+    FormatusNode textNode = textNodes[nodeIndex];
+    FormatusNode newNode = createSubTree(newText, format.added.toList());
+    FormatusNode diffNode = getFirstDifferentNode(textNode, format.same);
+    int childIndex = diffNode.childIndexInParent + increment;
+    diffNode.parent!.insertChild(childIndex, newNode.top);
+    textNode.text = oldText;
+    textNodes.insert(nodeIndex + increment, newNode);
+  }
+
+  ///
   /// Returns index of text-node which contains given `charIndex`
   ///
   int computeTextNodeIndex(int charIndex) =>
@@ -269,79 +325,34 @@ class FormatusDocument {
   }
 
   ///
-  /// Add (`isSet = true`) or remove (`isSet = false`) format from selected
-  /// text-range.
+  /// Apply `deltaFormat` to selected text-range.
   ///
-  void updateFormatOfSelection(
-      Formatus formatus, bool isSet, TextSelection selection) {
+  void updateFormatOfSelection(DeltaFormat format, TextSelection selection) {
     if (selection.isCollapsed) return;
+
+    //--- Determine first and last text-node from selection
     int headTextIndex = computeTextNodeIndex(selection.start);
-    int headTextOffset = textNodes[headTextIndex].textOffset;
     int tailTextIndex = computeTextNodeIndex(selection.end);
 
-    //--- Split head-node and tail-node if required
-    bool changed =
-        _updateFormatOfBorderNode(headTextIndex, true, formatus, isSet);
-    if (changed) {
-      headTextIndex++;
-      tailTextIndex++;
-    }
-    if (tailTextIndex != headTextIndex) {
-      changed =
-          _updateFormatOfBorderNode(tailTextIndex, false, formatus, isSet);
-      if (changed) tailTextIndex--;
+    //--- Apply format to single node
+    if (headTextIndex == tailTextIndex) {
+      applyFormatToTextNode(
+          format, headTextIndex, selection.start, selection.end);
+      return;
     }
 
-    //--- Adapt text-nodes in selection range
-    for (int i = headTextIndex; i <= tailTextIndex; i++) {
-      FormatusNode textNode = textNodes[i];
-      List<Formatus> formatsInPath = textNode.formatsInPath;
+    //--- Apply format to first text-node in selection
+    headTextIndex += applyFormatToTextNode(
+        format, headTextIndex, textNodes[headTextIndex].textOffset, 9999);
 
-      if (isSet && !formatsInPath.contains(formatus)) {
-        debugPrint('add $formatus to node $i: "${textNodes[i]}"');
-      } else if (!isSet && formatsInPath.contains(formatus)) {
-        debugPrint('remove $formatus from node $i: "${textNodes[i]}"');
-      }
+    //--- Apply format to last text-node in selection
+    tailTextIndex -= applyFormatToTextNode(
+        format, tailTextIndex, 0, textNodes[headTextIndex].textOffset);
+
+    //--- Apply format to all nodes in between
+    for (int i = headTextIndex; i < tailTextIndex; i++) {
+      applyFormatToTextNode(format, i, 0, 9999);
     }
-  }
-
-  bool _updateFormatOfBorderNode(
-      int nodeIndex, bool isHead, Formatus formatus, bool isSet) {
-    FormatusNode textNode = textNodes[nodeIndex];
-    if (0 == textNode.textOffset ||
-        textNode.textOffset == textNode.text.length) {
-      return false;
-    }
-
-    //--- Prepare formats for split node
-    List<Formatus> formatsInPath = textNode.formatsInPath;
-    List<Formatus> formatsToUse =
-        _updateFormatsToUse(formatsInPath, formatus, isSet);
-    FormatusNode topDiffNode = getFirstDifferentNode(textNode, formatsToUse);
-    for (int i = 0; i < formatsInPath.length && i < formatsToUse.length; i++) {
-      if (formatsInPath[i] != formatsToUse[i]) {
-        formatsToUse = formatsToUse.sublist(i);
-      }
-    }
-
-    //--- Create split node and insert it
-    FormatusNode newTextNode = createSubTree(
-        textNode.text.substring(textNode.textOffset), formatsToUse);
-    topDiffNode.parent
-        ?.insertChild(topDiffNode.childIndexInParent + 1, newTextNode);
-    textNodes.insert(isHead ? nodeIndex + 1 : nodeIndex - 1, newTextNode);
-    return true;
-  }
-
-  List<Formatus> _updateFormatsToUse(
-      List<Formatus> formatPath, Formatus formatus, bool isSet) {
-    List<Formatus> updated = formatPath;
-    if (isSet) {
-      updated.add(formatus);
-    } else {
-      updated.remove(formatus);
-    }
-    return updated;
   }
 
   /// Delete a single line break
