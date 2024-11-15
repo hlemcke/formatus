@@ -84,10 +84,9 @@ void main() {
       expect(doc.textNodes.length, 3);
       expect(doc.textNodes[0].text, 'Title ');
       expect(doc.textNodes[0].formatsInPath, [Formatus.header1]);
-      expect(doc.textNodes[1].text, 'middle');
-      expect(
-          doc.textNodes[1].formatsInPath, [Formatus.header1, Formatus.italic]);
-      expect(doc.textNodes[2].text, 'Line');
+      expect(doc.textNodes[1].text, 'midd');
+      expect(doc.textNodes[1].formatsInPath, [Formatus.header1, Formatus.bold]);
+      expect(doc.textNodes[2].text, 'le Line');
       expect(doc.textNodes[2].formatsInPath, [Formatus.header1]);
     });
   });

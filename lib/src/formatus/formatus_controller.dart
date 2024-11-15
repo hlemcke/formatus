@@ -300,11 +300,6 @@ class DeltaText {
     _added =
         nextText.substring(_headText.length, nextText.length - tailText.length);
     _isInsert = (_headText + _tailText == prevText) && _added.isNotEmpty;
-    // debugPrint('### prev ### ${prevSelection.start}..${prevSelection.end}'
-    //     ' len=${prevText.length} head="$prevHead" tail="%"\n'
-    //     '### next ### ${nextSelection.start}..${nextSelection.end}'
-    //     ' len=${nextText.length} head="%" tail="$nextTail" added="$added"');
-    // debugPrint(toString());
   }
 
   /// Returns `true` if previous text is not equal to next text

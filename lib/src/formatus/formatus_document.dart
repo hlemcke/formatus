@@ -89,24 +89,31 @@ class FormatusDocument {
     if (start <= 0) {
       //--- apply format to full node
       if (end >= textNode.length) {
-        buildAndInsertTextNode(format, nodeIndex, textNode.text, '', 0);
+        buildAndInsertTextNode(nodeIndex, textNode.text, format.added.toList(),
+            '', format.same.toList(), 0);
         textNode.dispose();
         return 0;
       }
 
       //--- apply format to head
-      buildAndInsertTextNode(format, nodeIndex, textNode.text.substring(0, end),
-          textNode.text.substring(end), 0);
+      buildAndInsertTextNode(
+          nodeIndex,
+          textNode.text.substring(0, end),
+          format.added.toList(),
+          textNode.text.substring(end),
+          format.same.toList(),
+          0);
       return 1;
     }
 
     //--- apply format to tail
     if (end >= textNode.length) {
       buildAndInsertTextNode(
-          format,
           nodeIndex,
           textNode.text.substring(start, end),
+          format.added.toList(),
           textNode.text.substring(0, start),
+          format.same.toList(),
           1);
       return 1;
     }
@@ -115,16 +122,23 @@ class FormatusDocument {
     String headText = textNode.text.substring(0, start);
     String splitText = textNode.text.substring(start, end);
     String tailText = textNode.text.substring(end);
-    buildAndInsertTextNode(format, nodeIndex, splitText, headText, 1);
-    buildAndInsertTextNode(format, nodeIndex + 1, tailText, splitText, 1);
+    buildAndInsertTextNode(
+        nodeIndex, splitText, format.added.toList(), headText, format.same, 1);
+    buildAndInsertTextNode(nodeIndex + 1, tailText, format.removed.toList(),
+        splitText, format.same, 1);
     return 2;
   }
 
-  void buildAndInsertTextNode(DeltaFormat format, int nodeIndex, String newText,
-      String oldText, int increment) {
+  void buildAndInsertTextNode(
+      int nodeIndex,
+      String newText,
+      List<Formatus> newFormat,
+      String oldText,
+      List<Formatus> sameFormat,
+      int increment) {
     FormatusNode textNode = textNodes[nodeIndex];
-    FormatusNode newNode = createSubTree(newText, format.added.toList());
-    FormatusNode diffNode = getFirstDifferentNode(textNode, format.same);
+    FormatusNode newNode = createSubTree(newText, newFormat);
+    FormatusNode diffNode = getFirstDifferentNode(textNode, sameFormat);
     int childIndex = diffNode.childIndexInParent + increment;
     diffNode.parent!.insertChild(childIndex, newNode.top);
     textNode.text = oldText;
@@ -142,6 +156,10 @@ class FormatusDocument {
   /// Returns leaf of subtree (which is the new text-node).
   ///
   static FormatusNode createSubTree(String text, List<Formatus> formatPath) {
+    if (formatPath.isEmpty) {
+      FormatusNode textNode = FormatusNode(format: Formatus.text, text: text);
+      return textNode;
+    }
     FormatusNode node = FormatusNode(format: formatPath[0]);
     for (int i = 1; i < formatPath.length; i++) {
       FormatusNode child = FormatusNode(format: formatPath[i]);
@@ -245,7 +263,6 @@ class FormatusDocument {
   ///
   void handleInsert(DeltaText deltaText, DeltaFormat deltaFormat) {
     FormatusNode textNode = FormatusNode();
-    debugPrint('$deltaText');
     if (deltaText.added == '\n') {
       _handleLineBreakInsert(deltaText);
     } else if (deltaText.isAtStart) {
@@ -359,7 +376,6 @@ class FormatusDocument {
   /// -> attach children of right top-level element to left one
   void _handleLineBreakDelete(DeltaText deltaText) {
     int indexOfLineBreak = deltaText.headText.length;
-    debugPrint('- handleLineBreakDelete(  $deltaText ) -> $indexOfLineBreak');
     int leftTextNodeIndex = computeTextNodeIndex(indexOfLineBreak - 1);
     FormatusNode leftTopNode = textNodes[leftTextNodeIndex].top;
     int leftTopNodeIndex = leftTopNode.childIndexInParent;
@@ -393,16 +409,12 @@ class FormatusDocument {
       root.insertChild(topLevelNodeIndex + 1, newTextNode.top);
     } else {
       //--- Create new paragraph and fill with nodes right of split
-      debugPrint('----- LF inside a top-level element');
-      //--- Some preparations
       int splitNodeIndex =
           textNodes.computeIndex(previousText, deltaText.headText.length);
       FormatusNode splitTextNode = textNodes[splitNodeIndex];
       FormatusNode splitTopNode = splitTextNode.top;
       int splitTopIndex = splitTopNode.childIndexInParent;
       String cut = splitTextNode.text.substring(splitTextNode.textOffset);
-      debugPrint('----- LF within $splitTextNode ->'
-          ' top-level[$splitTopIndex]: $splitTopNode cut: "$cut"');
       if (cut.isNotEmpty) {
         splitTextNode.text =
             splitTextNode.text.substring(0, splitTextNode.textOffset);
