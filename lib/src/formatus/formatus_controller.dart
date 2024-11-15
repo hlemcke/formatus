@@ -188,21 +188,17 @@ class FormatusController extends TextEditingController {
 }
 
 ///
-/// Difference of formats at cursor position and formats selected in
-/// [FormatusBar].
+/// Difference between formats selected in [FormatusBar] and `textFormats`.
 ///
 class DeltaFormat {
   final List<Formatus> textFormats;
   final Set<Formatus> selectedFormats;
 
-  Set<Formatus> get added => _added;
-  Set<Formatus> _added = {};
+  List<Formatus> get added => _added;
+  List<Formatus> _added = [];
 
-  /// Gets path from `same` and `added` for creating a new subtree
-  List<Formatus> get path => [...same, ...added.toList()];
-
-  Set<Formatus> get removed => _removed;
-  Set<Formatus> _removed = {};
+  List<Formatus> get removed => _removed;
+  List<Formatus> _removed = [];
 
   List<Formatus> get same => _same;
   final List<Formatus> _same = [];
@@ -216,11 +212,16 @@ class DeltaFormat {
     required this.textFormats,
     required this.selectedFormats,
   }) {
-    _added = selectedFormats.difference(textFormats.toSet());
-    _removed = textFormats.toSet().difference(selectedFormats);
     for (Formatus formatus in textFormats) {
       if (selectedFormats.contains(formatus)) {
         _same.add(formatus);
+      } else {
+        _removed.add(formatus);
+      }
+    }
+    for (Formatus formatus in selectedFormats) {
+      if (!textFormats.contains(formatus)) {
+        _added.add(formatus);
       }
     }
   }

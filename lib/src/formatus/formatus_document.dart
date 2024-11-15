@@ -89,32 +89,22 @@ class FormatusDocument {
     if (start <= 0) {
       //--- apply format to full node
       if (end >= textNode.length) {
-        buildAndInsertTextNode(nodeIndex, textNode.text, format.added.toList(),
-            '', format.same.toList(), 0);
+        buildAndInsertTextNode(
+            nodeIndex, textNode.text, format.added, '', format.same, 0);
         textNode.dispose();
         return 0;
       }
 
       //--- apply format to head
-      buildAndInsertTextNode(
-          nodeIndex,
-          textNode.text.substring(0, end),
-          format.added.toList(),
-          textNode.text.substring(end),
-          format.same.toList(),
-          0);
+      buildAndInsertTextNode(nodeIndex, textNode.text.substring(0, end),
+          format.added, textNode.text.substring(end), format.same, 0);
       return 1;
     }
 
     //--- apply format to tail
     if (end >= textNode.length) {
-      buildAndInsertTextNode(
-          nodeIndex,
-          textNode.text.substring(start, end),
-          format.added.toList(),
-          textNode.text.substring(0, start),
-          format.same.toList(),
-          1);
+      buildAndInsertTextNode(nodeIndex, textNode.text.substring(start, end),
+          format.added, textNode.text.substring(0, start), format.same, 1);
       return 1;
     }
 
@@ -123,9 +113,9 @@ class FormatusDocument {
     String splitText = textNode.text.substring(start, end);
     String tailText = textNode.text.substring(end);
     buildAndInsertTextNode(
-        nodeIndex, splitText, format.added.toList(), headText, format.same, 1);
-    buildAndInsertTextNode(nodeIndex + 1, tailText, format.removed.toList(),
-        splitText, format.same, 1);
+        nodeIndex, splitText, format.added, headText, format.same, 1);
+    buildAndInsertTextNode(
+        nodeIndex + 1, tailText, format.removed, splitText, format.same, 1);
     return 2;
   }
 
@@ -188,7 +178,7 @@ class FormatusDocument {
   }
 
   ///
-  /// Handle cases for `delete` and `update`.
+  /// Handle cases for `delete` and `update`. A `DeltaFormat` cannot exist here!
   ///
   void handleDeleteAndUpdate(DeltaText diff) {
     //--- Line-break deleted
@@ -327,8 +317,7 @@ class FormatusDocument {
     FormatusNode firstDifferentNode =
         getFirstDifferentNode(textNode, deltaFormat.same);
     FormatusNode sameFormatNode = firstDifferentNode.parent!;
-    FormatusNode newSubTreeLeaf =
-        createSubTree(added, deltaFormat.added.toList());
+    FormatusNode newSubTreeLeaf = createSubTree(added, deltaFormat.added);
     FormatusNode newSubTreeTop = newSubTreeLeaf.path[0];
 
     //--- Attach text-node to last format node and update list of text nodes

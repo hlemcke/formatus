@@ -64,6 +64,27 @@ void dispose() {
 }
 ```
 
+## User Manual
+
+### Definition of Terms
+
+### Use cases
+
+This section describes the use cases for `Formatus`.
+
+* Position caret -> updates [FormatusBar] with formats at caret position
+* Select a text range -> updates [FormatusBar] with formats from selection start
+* Activate another top-level format in [FormatusBar]
+  -> the current section (at caret position or at start of a selected text-range)
+  will be changed to the activated top-level format
+* Change an inline format in [FormatusBar] -> if a text range is selected
+  then the selected text will be updated with the new format
+* Enter characters (via keyboard or by pasting from a clipboard) -> characters
+  will be inserted at caret position. Current format settings will be applied.
+* Delete characters -> if this includes one or more (requires a text-range)
+  line-breaks then the text right of the deleted text will be integrated
+  into the top-level node at deletion start
+
 ## Additional information
 
 Please find additional information like architecture considerations at
@@ -76,13 +97,13 @@ TODO: Tell users more about the package: where to find more information, how to
 contribute to the package, how to file issues, what response they can expect
 from the package authors, and more.
 
-# Enhancements
+## Enhancements
 
-1. Apply format action to a range of text
-2. Add action to insert an emoji
-3. Convert emoji name into emoji inline => insert into current text node
-4. Add action to insert an image
-5. Add action to insert a link (URL entered in alert dialog)
-6. Add formats for lists: ordered and unordered
-7. Parse and export markdown
-8. Add format action to change alignment of all text to: left (default), center, right
+1. Add formats for lists: ordered and unordered
+2. Add action to change a color
+3. Add action to insert an emoji. This should become an optional add-on action
+   similar to `FormatusAnchor`. Could also include converting an emoji name
+   into emoji inline (insert into current text node).
+4. Parse and export markdown
+5. Add format action to change alignment of all text to: left (default), center, right
+6. Integrate an option to work with right-to-left languages
