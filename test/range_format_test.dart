@@ -4,7 +4,7 @@ import 'package:formatus/formatus.dart';
 import 'package:formatus/src/formatus/formatus_document.dart';
 
 void main() {
-  group('Reformat text range', () {
+  group('Apply format to text range', () {
     test('No selection -> no format update', () {
       //--- given
       String prevHtml = '<h1>Title Line</h1>';
@@ -88,6 +88,27 @@ void main() {
       expect(doc.textNodes[1].formatsInPath, [Formatus.header1, Formatus.bold]);
       expect(doc.textNodes[2].text, 'le Line');
       expect(doc.textNodes[2].formatsInPath, [Formatus.header1]);
+    });
+  });
+
+  group('Remove format from text range', () {
+    test('Remove format from middle word', () {
+      //--- given
+      String prevHtml = '<p>Some <b>bold</b> text</p>';
+      FormatusDocument doc = FormatusDocument.fromHtml(htmlBody: prevHtml);
+      DeltaFormat deltaFormat = DeltaFormat(
+          selectedFormats: {Formatus.paragraph},
+          textFormats: [Formatus.paragraph, Formatus.bold]);
+      TextSelection selection =
+          const TextSelection(baseOffset: 5, extentOffset: 9);
+
+      //--- when
+      doc.updateFormatOfSelection(deltaFormat, selection);
+
+      //--- then
+      expect(doc.textNodes.length, 1);
+      expect(doc.textNodes[0].formatsInPath, [Formatus.paragraph]);
+      expect(doc.textNodes[0].text, 'Some bold text');
     });
   });
 }

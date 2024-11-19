@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'formatus_document.dart';
 import 'formatus_model.dart';
 import 'formatus_node.dart';
+import 'formatus_tree.dart';
 
 ///
 /// [FormatusController] displays the tree-like structure of a
@@ -61,13 +62,13 @@ class FormatusController extends TextEditingController {
         node.parent!.attributes[FormatusAttribute.href.name] = anchor.href;
       } else {
         //--- Delete existing anchor
-        node.dispose();
+        FormatusTree.dispose(document.textNodes, node);
       }
     } else {
       //--- Insert a new anchor element at cursor position
       if (anchor != null) {
-        FormatusNode anchorTextNode =
-            FormatusDocument.createSubTree(anchor.name, [Formatus.anchor]);
+        FormatusNode anchorTextNode = FormatusTree.createSubTree(
+            document.textNodes, anchor.name, [Formatus.anchor]);
         anchorTextNode.parent!.attributes[FormatusAttribute.href.name] =
             anchor.href;
         // TODO split current textNode and insert anchorNode between
@@ -195,10 +196,10 @@ class DeltaFormat {
   final Set<Formatus> selectedFormats;
 
   List<Formatus> get added => _added;
-  List<Formatus> _added = [];
+  final List<Formatus> _added = [];
 
   List<Formatus> get removed => _removed;
-  List<Formatus> _removed = [];
+  final List<Formatus> _removed = [];
 
   List<Formatus> get same => _same;
   final List<Formatus> _same = [];

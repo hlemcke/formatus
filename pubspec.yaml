@@ -1,11 +1,10 @@
 name: formatus
-description: "A plain Flutter Rich-Text-Editor"
-version: 0.0.1
+description: "Formatus - the plain Flutter Rich-Text-Editor"
+version: 1.0.0
 homepage: https://formatus.djarjo.com
 
 environment:
-  sdk: '>=3.2.4 <4.0.0'
-  flutter: ">=1.17.0"
+  sdk: ^3.5.3
 
 dependencies:
   flutter:
@@ -14,7 +13,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^2.0.0
+  flutter_lints: ^5.0.0
 
 flutter:
   uses-material-design: true

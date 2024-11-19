@@ -36,8 +36,6 @@ void main() {
           FormatusController.fromFormattedText(formattedText: html);
       expect(textController.formattedText, html.replaceAll('\n', ''));
     });
-
-    //---
     test('Parse tags with attributes', () {
       String html = '''
 <h1>Formatus Features</h1>

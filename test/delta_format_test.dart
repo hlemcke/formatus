@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:formatus/formatus.dart';
 import 'package:formatus/src/formatus/formatus_node.dart';
+import 'package:formatus/src/formatus/formatus_tree.dart';
 
 void main() {
   //--- Prepare root -> P -> B -> I -> "this is a text node"
@@ -9,10 +10,11 @@ void main() {
   FormatusNode bold = FormatusNode(format: Formatus.bold);
   FormatusNode italic = FormatusNode(format: Formatus.italic);
   FormatusNode textNode = FormatusNode(text: 'this is a text node');
-  root.addChild(paragraph);
-  paragraph.addChild(bold);
-  bold.addChild(italic);
-  italic.addChild(textNode);
+  List<FormatusNode> textNodes = [];
+  FormatusTree.appendChild(textNodes, root, paragraph);
+  FormatusTree.appendChild(textNodes, paragraph, bold);
+  FormatusTree.appendChild(textNodes, bold, italic);
+  FormatusTree.appendChild(textNodes, italic, textNode);
   group('Format difference tests', () {
     test('same formats', () {
       Set<Formatus> selectedFormats = {

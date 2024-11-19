@@ -1,4 +1,4 @@
-library formatus;
+library;
 
 export 'src/formatus/formatus_bar.dart';
 export 'src/formatus/formatus_controller.dart';

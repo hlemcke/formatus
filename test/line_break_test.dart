@@ -134,8 +134,6 @@ void main() {
       expect(doc.textNodes[2].text.startsWith('Sentence'), true);
     });
   });
-
-  ///
   group('Line-Break Deletions', () {
     test('Delete single line-break between top-level nodes', () {
       // --- given

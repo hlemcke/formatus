@@ -41,16 +41,6 @@ class FormatusNode {
   List<FormatusNode> get children => _children;
   final List<FormatusNode> _children = [];
 
-  /// Appends `child` to end of current list of children and sets `parent`
-  /// in child to `this`.
-  ///
-  /// Returns `true` if reduction has occurred
-  bool addChild(FormatusNode child) {
-    children.add(child);
-    child.parent = this;
-    return reduce();
-  }
-
   /// Index of this node in parents children. Relevant in path
   int get childIndexInParent =>
       (parent == null) ? -1 : parent!.children.indexOf(this);
@@ -58,25 +48,12 @@ class FormatusNode {
   /// Gets depths in tree. Returns 0 for a top-level node
   int get depth => path.last == this ? path.length : parent?.depth ?? 0;
 
-  /// Disposes this node by removing it from its parents children.
-  /// If parents children become empty then parent will be disposed also.
-  void dispose() {
-    if (parent != null) {
-      parent!.children.remove(this);
-      if (parent!.children.isEmpty) {
-        parent!.dispose();
-      }
-      parent = null;
-      text = '';
-    }
-  }
-
   ///
   /// Gets formats from path without `root`-format
   ///
   List<Formatus> get formatsInPath {
     List<Formatus> formats = [];
-    FormatusNode? node = isTextNode ? parent : this;
+    FormatusNode? node = isText ? parent : this;
     while ((node != null) && (node.format != Formatus.root)) {
       formats.insert(0, node.format);
       node = node.parent;
@@ -84,49 +61,15 @@ class FormatusNode {
     return formats;
   }
 
+  bool get hasChildren => children.isNotEmpty;
+
   bool get hasParent => parent != null;
 
-  /// Inserts `child` into `children` at `index`.
-  ///
-  /// If child has same format as left node then its children will be added instead.
-  ///
-  /// Returns `true` if reduction has occurred
-  bool insertChild(int index, FormatusNode child) {
-    children.insert(index, child);
-    child.parent = this;
-    return reduce();
-  }
+  bool get isEmpty => isText ? text.isEmpty : _children.isEmpty;
 
-  /// Reduces children below top-level node by combining same formats.
-  /// Returns `true` if reduction has occurred.
-  bool reduce() {
-    //--- Never combine top-level elements
-    if (format == Formatus.root) return false;
-    bool isReduced = false;
-    for (int i = 1; i < children.length; i++) {
-      if (children[i - 1].format == children[i].format) {
-        if (children[i].format == Formatus.text) {
-          //--- Text-node -> join strings
-          FormatusNode textNode = children.removeAt(i);
-          children[i - 1].text += textNode.text;
-          textNode.dispose();
-          isReduced = true;
-        } else {
-          //--- format-node -> move children from next to current
-          while (children[i].children.isNotEmpty) {
-            children[i - 1].children.add(children[i].children.removeAt(0));
-          }
-          children[i].dispose();
-          isReduced = true;
-        }
-      }
-    }
-    return isReduced;
-  }
+  bool get isRoot => format == Formatus.root;
 
-  bool get isEmpty => isTextNode ? text.isEmpty : _children.isEmpty;
-
-  bool get isTextNode => format == Formatus.text;
+  bool get isText => format == Formatus.text;
 
   bool get isTopLevel => format.type == FormatusType.topLevel;
 
@@ -159,7 +102,7 @@ class FormatusNode {
 
   ///
   String toHtml() {
-    if (isTextNode) return text;
+    if (isText) return text;
     String html = '<${format.key}';
     for (String key in attributes.keys) {
       html += ' $key="${attributes[key]}"';
@@ -196,103 +139,4 @@ class FormatusNode {
     }
     return TextSpan(children: spans, style: format.style);
   }
-
-  /// Updates format-path by appending `deltaFormat.added`
-  /// or by removing `deltaFormat.removed`.
-  bool updateFormat(DeltaFormat deltaFormat) {
-    return false;
-  }
-}
-
-///
-///
-///
-class FormatusTextNodes {
-  List<FormatusNode> textNodes = [];
-
-  FormatusNode operator [](int index) => textNodes[index];
-
-  void add(FormatusNode textNode) {
-    textNode.format = Formatus.text;
-    textNodes.add(textNode);
-  }
-
-  void clear() => textNodes.clear();
-
-  FormatusNode get first => textNodes.first;
-
-  ///
-  /// Returns index to text-node where `charIndex` <= sum of previous
-  /// text-nodes plus current one.
-  ///
-  int computeIndex(
-    String previousText,
-    int charIndex,
-  ) {
-    //--- End of whole text
-    if (charIndex >= previousText.length) {
-      int nodeIndex = textNodes.length - 1;
-      textNodes[nodeIndex].textOffset = textNodes[nodeIndex].text.length;
-      return nodeIndex;
-    }
-    int charCount = 0;
-    for (int i = 0; i < textNodes.length; i++) {
-      FormatusNode textNode = textNodes[i];
-
-      //--- Adjust node based on first char of this node
-      if ((charCount < previousText.length) &&
-          [' ', ',', '\n'].contains(previousText[charCount])) {
-        if (charIndex == charCount) {
-          i--;
-          textNode = textNodes[i];
-          textNode.textOffset = textNode.text.length;
-          return i;
-        }
-        if (previousText[charCount] == '\n') {
-          charCount++;
-        }
-      }
-      int textLen = textNode.text.length;
-      if (charIndex < charCount + textLen) {
-        //--- Remember offset into text of node found
-        textNode.textOffset = charIndex - charCount;
-        return i;
-      }
-      charCount += textLen;
-    }
-    return textNodes.length - 1;
-  }
-
-  void insert(int index, FormatusNode textNode) =>
-      textNodes.insert(index, textNode);
-
-  FormatusNode get last => textNodes.last;
-
-  int get length => textNodes.length;
-
-  void removeAfter(int index) {
-    while (textNodes.length > index + 1) {
-      removeLast();
-    }
-  }
-
-  void removeAt(int index) {
-    if (textNodes.isEmpty || index < 0) return;
-    if (index >= textNodes.length) index = textNodes.length - 1;
-    FormatusNode node = textNodes.removeAt(index);
-    node.dispose();
-  }
-
-  void removeBefore(int index) {
-    for (int i = 0; i < index; i++) {
-      removeFirst();
-    }
-  }
-
-  void removeFirst() => removeAt(0);
-
-  void removeLast() => removeAt(textNodes.length);
-
-  @override
-  String toString() => textNodes.toString();
 }

@@ -1,3 +1,5 @@
+import 'package:formatus/src/formatus/formatus_tree.dart';
+
 import 'formatus_model.dart';
 import 'formatus_node.dart';
 
@@ -5,21 +7,21 @@ class FormatusParser {
   ///
   /// Parses `htmlBody` and returns a root-node.
   ///
-  FormatusNode parse(String htmlBody, FormatusTextNodes textNodes) {
-    FormatusNode body = FormatusNode(format: Formatus.root);
+  FormatusNode parse(String htmlBody, List<FormatusNode> textNodes) {
+    FormatusNode root = FormatusNode(format: Formatus.root);
     if (htmlBody.isEmpty) {
       FormatusNode paragraphNode = FormatusNode()..format = Formatus.paragraph;
-      body.addChild(paragraphNode);
+      FormatusTree.appendChild(textNodes, root, paragraphNode);
       FormatusNode textNode = FormatusNode()..format = Formatus.text;
-      paragraphNode.addChild(textNode);
+      FormatusTree.appendChild(textNodes, paragraphNode, textNode);
       textNodes.add(textNode);
     } else {
       int offset = 0;
       while (offset < htmlBody.length) {
-        offset = _parseTag(htmlBody, offset, body, textNodes);
+        offset = _parseTag(htmlBody, offset, root, textNodes);
       }
     }
-    return body;
+    return root;
   }
 
   String extractWord(String text, int offset) {
@@ -80,11 +82,11 @@ class FormatusParser {
   /// closing element.
   ///
   int _parseTag(String htmlBody, int offset, FormatusNode parent,
-      FormatusTextNodes textNodes) {
+      List<FormatusNode> textNodes) {
     _ParsedNode? parsedNode = _parseElement(htmlBody, offset);
     if (parsedNode == null) return htmlBody.length;
     FormatusNode node = parsedNode.node;
-    parent.addChild(node);
+    FormatusTree.appendChild(textNodes, parent, node);
 
     //--- loop all content into text or nested inline until closing element
     offset = parsedNode.offset;
@@ -111,14 +113,14 @@ class FormatusParser {
   /// Advances offset to next `<`.
   ///
   int _parseText(String htmlBody, int offset, FormatusNode parent,
-      FormatusTextNodes textNodes) {
+      List<FormatusNode> textNodes) {
     int initialOffset = offset;
     while ((offset < htmlBody.length) && (htmlBody[offset] != '<')) {
       offset++;
     }
     FormatusNode textNode = FormatusNode()..format = Formatus.text;
     textNode.text = htmlBody.substring(initialOffset, offset);
-    parent.addChild(textNode);
+    FormatusTree.appendChild(textNodes, parent, textNode);
     textNodes.add(textNode);
     return offset;
   }
