@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:formatus/formatus.dart';
+import 'package:formatus/src/formatus/formatus_viewer.dart';
 
 /// Entry point of example application
 void main() {
@@ -17,8 +19,6 @@ const Map<String, String> textTemplates = {
 ''',
 };
 
-/// TODO frame input field
-/// TODO add dropdown: empty, short, long
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -105,7 +105,8 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
           _buildActionDivider(),
           _buildSavedText(),
-          _buildTextNodes(),
+          if (kDebugMode) _buildTextNodes(),
+          _buildFormatusViewer(),
         ],
       );
 
@@ -130,6 +131,14 @@ class _MyHomePageState extends State<MyHomePage> {
           int currentLength, bool isFocused, TextSelection selection) =>
       Text('${selection.start}..${selection.end} of $currentLength'
           ' ${isFocused ? "focused" : ""}');
+
+  Widget _buildFormatusViewer() => Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.blueAccent),
+          borderRadius: const BorderRadius.all(Radius.circular(6)),
+        ),
+        child: FormatusViewer(formattedText: controller.formattedText),
+      );
 
   Widget _buildSavedText() => Container(
         decoration: BoxDecoration(

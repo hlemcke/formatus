@@ -1,3 +1,5 @@
+import 'package:flutter/widgets.dart';
+
 import 'formatus_model.dart';
 import 'formatus_node.dart';
 
@@ -12,9 +14,9 @@ class FormatusTree {
 
   ///
   /// Builds a new text-node from `newText` having `newFormat`.
-  /// Inserts the new text-node at `nodeIndex + increment`.
+  /// Inserts the new text-node at `nodeIndex + increment` and returns it.
   ///
-  static void buildAndInsert(
+  static FormatusNode buildAndInsert(
       List<FormatusNode> textNodes,
       int nodeIndex,
       String newText,
@@ -31,6 +33,19 @@ class FormatusTree {
     FormatusNode diffNode = getFirstDifferentNode(textNode, sameFormat);
     int childIndex = diffNode.childIndexInParent + increment;
     insertChild(textNodes, diffNode.parent!, childIndex, newTextNode.top);
+    return newTextNode;
+  }
+
+  ///
+  /// Build [TextSpan] for [FormatusController] and [FormatusViewer]
+  ///
+  static TextSpan buildFormattedText(List<FormatusNode> childrenOfRoot) {
+    List<TextSpan> spans = [];
+    for (FormatusNode topLevelNode in childrenOfRoot) {
+      spans.add(topLevelNode.toTextSpan());
+      spans.add(const TextSpan(text: '\n'));
+    }
+    return TextSpan(children: spans);
   }
 
   ///

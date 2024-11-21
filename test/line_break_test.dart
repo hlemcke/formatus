@@ -51,7 +51,7 @@ void main() {
       expect(deltaText.isInsert, true);
       doc.handleInsert(deltaText, deltaFormatEmpty);
       expect(doc.root.children.length, 3);
-      expect(doc.previousText, '$nextText ');
+      expect(doc.previousText, nextText);
       expect(doc.root.children[0].format, Formatus.header1);
       expect(doc.root.children[1].format, Formatus.header2);
       expect(doc.root.children[2].format, Formatus.paragraph);

@@ -109,6 +109,7 @@ void main() {
       expect(doc.textNodes.length, 1);
       expect(doc.textNodes[0].formatsInPath, [Formatus.paragraph]);
       expect(doc.textNodes[0].text, 'Some bold text');
+      expect(doc.root.children.length, 1);
     });
   });
 }

@@ -90,10 +90,10 @@ class FormatusDocument {
     if (start <= 0) {
       //--- apply format to full node
       if (end >= textNode.length) {
+        FormatusNode newTextNode = FormatusTree.buildAndInsert(
+            textNodes, nodeIndex, textNode.text, format.added, format.same, 1);
         FormatusTree.dispose(textNodes, textNode);
-        FormatusTree.buildAndInsert(
-            textNodes, nodeIndex, textNode.text, format.added, format.same, 0);
-        optimize();
+        FormatusTree.reduceNode(textNodes, newTextNode.parent!);
         return 0;
       }
 
@@ -250,6 +250,9 @@ class FormatusDocument {
       }
     }
     _previousText = toPlainText();
+    if (_previousText.endsWith(' ')) {
+      _previousText = _previousText.substring(0, _previousText.length - 1);
+    }
   }
 
   ///

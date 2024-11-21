@@ -45,23 +45,35 @@ typedef AnchorActivity = Future<void> Function(
 ///
 /// Actions to format text.
 ///
-/// The bar itself is a [Wrap] of [_FormatusButton] widgets.
-///
 class FormatusBar extends StatefulWidget {
   /// Actions to be included in the toolbar. Defaults to all actions.
   late final List<FormatusAction> actions;
 
-  /// TODO `true` will condense top-level formats and alignments
-  /// into dropdown selections.
-  final bool condense;
-  final Axis direction;
+  final WrapAlignment alignment;
+
+  /// `true` will provide the inline formats in a [DropdownMenu].
+  /// Default is `false`.
+  final bool compactInlineFormats;
+
+  /// `true` will provide the section formats in a [DropdownMenu].
+  /// Default is `false`.
+  final bool compactSectionFormats;
+
+  /// Required controller
   final FormatusController controller;
 
-  /// Callback invoked with parameter [FormatusAnchor] from cursor position.
-  /// Setting this parameter will activate [anchorAction] in the toolbar.
+  /// Formatting actions are aligned horizontal (default) or vertical
+  final Axis direction;
+
+  /// Setting this parameter will include the link-action into the bar.
+  ///
+  /// Callback invoked when user activates the link-action in the bar.
+  /// The callback gets the [FormatusAnchor] from cursor position.
   final AnchorEditor? onEditAnchor;
 
-  /// Callback invoked with parameter [FormatusAnchor] from cursor position
+  /// Callback invoked when user double taps on an anchor text.
+  ///
+  /// The callback get the [FormatusAnchor] from cursor position.
   final AnchorActivity? onTapAnchor;
 
   /// Supply [FocusNode] from [TextField] to have [FormatusBar] automatically
@@ -81,7 +93,9 @@ class FormatusBar extends StatefulWidget {
     super.key,
     required this.controller,
     List<FormatusAction>? actions,
-    this.condense = false,
+    this.alignment = WrapAlignment.start,
+    this.compactInlineFormats = false,
+    this.compactSectionFormats = false,
     this.direction = Axis.horizontal,
     this.onEditAnchor,
     this.onTapAnchor,
@@ -115,6 +129,7 @@ class _FormatusBarState extends State<FormatusBar> {
 
   @override
   Widget build(BuildContext context) => Wrap(
+        alignment: widget.alignment,
         direction: widget.direction,
         children: [
           for (FormatusAction action in widget.actions)
@@ -157,13 +172,13 @@ class _FormatusBarState extends State<FormatusBar> {
     if (formatus.isTopLevel) {
       _deactivateTopLevelActions();
       _selectedFormats.add(formatus);
-      widget.controller.updateTopLevelFormat(formatus);
+      widget.controller.updateSectionFormat(formatus);
     } else if (_selectedFormats.contains(formatus)) {
       _selectedFormats.remove(formatus);
-      _ctrl.updateRangeFormats(formatus, false);
+      _ctrl.updateFormatsOfSelection(formatus, false);
     } else {
       _selectedFormats.add(formatus);
-      _ctrl.updateRangeFormats(formatus, true);
+      _ctrl.updateFormatsOfSelection(formatus, true);
     }
     setState(() => widget.textFieldFocus?.requestFocus());
   }

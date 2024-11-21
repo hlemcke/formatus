@@ -16,9 +16,17 @@ class FormatusController extends TextEditingController {
   /// Formats set by cursor positioning and modifiable by user selection.
   Set<Formatus> selectedFormats = {};
 
+  ///
+  /// Internal constructor
+  ///
   FormatusController._();
 
-  // TODO implement factory FormatusController.fromMarkdown
+  ///
+  /// Controller with no text
+  ///
+  factory FormatusController() {
+    return FormatusController.fromFormattedText(formattedText: '');
+  }
 
   ///
   /// Creates a controller for [TextField] or [TextFormField].
@@ -33,6 +41,8 @@ class FormatusController extends TextEditingController {
     ctrl.addListener(ctrl._onListen);
     return ctrl;
   }
+
+  // TODO implement factory FormatusController.fromMarkdown
 
   set _text(String textForSuper) => super.text = textForSuper;
 
@@ -77,21 +87,15 @@ class FormatusController extends TextEditingController {
   }
 
   ///
-  /// Formatting of text. Invoked on every change of text content
+  /// Formatting of text. Invoked on every change of text
   ///
   @override
   TextSpan buildTextSpan({
     required BuildContext context,
     TextStyle? style,
     required bool withComposing,
-  }) {
-    List<TextSpan> spans = [];
-    for (FormatusNode topLevelNode in document.root.children) {
-      spans.add(topLevelNode.toTextSpan());
-      spans.add(const TextSpan(text: '\n'));
-    }
-    return TextSpan(children: spans);
-  }
+  }) =>
+      FormatusTree.buildFormattedText(document.root.children);
 
   /// Returns current text as a html formatted string
   String get formattedText => document.toHtml();
@@ -117,7 +121,7 @@ class FormatusController extends TextEditingController {
 
   /// Updates formats in selected text range.
   /// Immediately returns if no range is selected.
-  void updateRangeFormats(Formatus formatus, bool isSet) {
+  void updateFormatsOfSelection(Formatus formatus, bool isSet) {
     if (selection.isCollapsed) return;
     DeltaFormat deltaFormat = isSet
         ? DeltaFormat.added(selectedFormats: selectedFormats, added: formatus)
@@ -126,8 +130,8 @@ class FormatusController extends TextEditingController {
     document.updateFormatOfSelection(deltaFormat, selection);
   }
 
-  /// Changes top-level format at current cursor position
-  void updateTopLevelFormat(Formatus formatus) {
+  /// Changes section-format at current cursor position
+  void updateSectionFormat(Formatus formatus) {
     int textNodeIndex = document.computeTextNodeIndex(selection.baseOffset);
     FormatusNode textNode = document.textNodes[textNodeIndex];
     textNode.path.first.format = formatus;
@@ -146,7 +150,10 @@ class FormatusController extends TextEditingController {
     //--- Immediate handling of full deletion
     if (text.isEmpty) {
       document.setupEmpty();
+      selectedFormats.clear();
+      selectedFormats.add(Formatus.paragraph);
       _previousSelection = _emptySelection;
+      notifyListeners();
       return;
     }
 
@@ -181,8 +188,6 @@ class FormatusController extends TextEditingController {
   }
 
   void _updateSelection() {
-    debugPrint(
-        '-> updateSelection(${selection.baseOffset}..${selection.extentOffset})');
     _previousSelection = TextSelection(
         baseOffset: selection.baseOffset, extentOffset: selection.extentOffset);
   }
