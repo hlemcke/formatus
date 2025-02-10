@@ -1,3 +1,7 @@
+## 1.1.1
+
+* Fixed bug when deleting last character in a single text node
+
 ## 1.1.0
 
 * Modified constructor of `FormatusController` to be compliant to `TextEditingController` 
