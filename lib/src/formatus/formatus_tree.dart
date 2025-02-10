@@ -214,7 +214,7 @@ class FormatusTree {
 
   /// Removes text-nodes ahead of given `index` (exclusive).
   static void removeTextNodesAhead(List<FormatusNode> textNodes, int index) {
-    for (int i = 0; i < index; i++) {
+    for (int i = 0; i < index && i < textNodes.length; i++) {
       dispose(textNodes, textNodes[i]);
     }
   }

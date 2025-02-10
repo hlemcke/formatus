@@ -1,6 +1,8 @@
 ## 1.1.1
 
 * Fixed bug when deleting last character in a single text node
+* Changed example/main.dart to set `TextFormField.showCursor: true` because otherwise _Flutter_
+  does not position cursor correctly when entering spaces at end of text
 
 ## 1.1.0
 

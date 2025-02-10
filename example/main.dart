@@ -101,6 +101,7 @@ class _MyHomePageState extends State<MyHomePage> {
             minLines: 3,
             maxLines: 10,
             onChanged: (_) => setState(() => ()),
+            showCursor: true,
           ),
           const Divider(color: Colors.deepPurpleAccent),
           SizedBox(height: 16),
