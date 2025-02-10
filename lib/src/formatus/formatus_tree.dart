@@ -221,7 +221,7 @@ class FormatusTree {
 
   /// Removes text-nodes behind given `index` (exclusive).
   static void removeTextNodesBehind(List<FormatusNode> textNodes, int index) {
-    while (textNodes.length > index) {
+    while (textNodes.length > index + 1) {
       dispose(textNodes, textNodes.last);
     }
   }
