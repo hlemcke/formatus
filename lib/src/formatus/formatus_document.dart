@@ -154,7 +154,10 @@ class FormatusDocument {
           computeTextNodeIndex(_previousText.length - diff.tailText.length);
       FormatusNode textNode = textNodes[nodeIndex];
       FormatusTree.removeTextNodesAhead(textNodes, nodeIndex);
-      textNode.text = diff.added + textNode.text.substring(textNode.textOffset);
+      String remains = textNode.text.isEmpty
+          ? ''
+          : textNode.text.substring(textNode.textOffset);
+      textNode.text = diff.added + remains;
       if (textNode.isEmpty) FormatusTree.dispose(textNodes, textNode);
     } else if (diff.isAtEnd) {
       int nodeIndex = computeTextNodeIndex(diff.headText.length);

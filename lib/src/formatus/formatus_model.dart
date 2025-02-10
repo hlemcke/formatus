@@ -6,7 +6,8 @@ const double kDefaultFontSize = 14.0;
 
 ///
 /// Formats for:
-/// * elements (both section and inline)
+/// * Sections
+/// * Inlines
 /// * attributes (like color)
 ///
 /// Each entry provides default values for [FormatusAction] widget
