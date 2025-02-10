@@ -29,7 +29,7 @@ void main() {
       expect(deltaText.isInsert, true);
       doc.handleInsert(deltaText, deltaFormatEmpty);
       expect(doc.root.children.length, 3);
-      expect(doc.previousText, ' $nextText');
+      expect(doc.previousText, nextText);
       expect(doc.root.children[0].format, Formatus.paragraph);
       expect(doc.root.children[1].format, Formatus.header1);
       expect(doc.root.children[2].format, Formatus.header2);
@@ -73,12 +73,12 @@ void main() {
       expect(deltaText.isAtStart, false, reason: 'At start must be false');
       doc.handleInsert(deltaText, deltaFormatEmpty);
       expect(doc.root.children.length, 3);
-      expect(doc.previousText, 'Title\n \nSentence with bold words');
+      expect(doc.previousText, 'Title\n\nSentence with bold words');
       expect(doc.root.children[0].format, Formatus.header1);
       expect(doc.root.children[1].format, Formatus.paragraph);
       expect(doc.root.children[2].format, Formatus.header2);
       expect(doc.textNodes[0].text, 'Title');
-      expect(doc.textNodes[1].text, ' ');
+      expect(doc.textNodes[1].text, '');
       expect(doc.textNodes[2].text, 'Sentence with ');
     });
 
@@ -98,12 +98,12 @@ void main() {
       expect(deltaText.isAtStart, false, reason: 'At start must be false');
       doc.handleInsert(deltaText, deltaFormatEmpty);
       expect(doc.root.children.length, 3);
-      expect(doc.previousText, 'Title\n \nSentence with bold words');
+      expect(doc.previousText, 'Title\n\nSentence with bold words');
       expect(doc.root.children[0].format, Formatus.header1);
       expect(doc.root.children[1].format, Formatus.paragraph);
       expect(doc.root.children[2].format, Formatus.header2);
       expect(doc.textNodes[0].text, 'Title');
-      expect(doc.textNodes[1].text, ' ');
+      expect(doc.textNodes[1].text, '');
       expect(doc.textNodes[2].text, 'Sentence with ');
     });
 

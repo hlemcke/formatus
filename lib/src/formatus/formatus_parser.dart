@@ -41,7 +41,7 @@ class FormatusParser {
   /// offset to first character following the closing ">".
   ///
   _ParsedNode? _parseElement(String htmlBody, int offset) {
-    //--- skip blanks between top-level tags
+    //--- skip blanks between section tags
     int i = htmlBody.indexOf('<', offset);
     if (i < 0) {
       return null;

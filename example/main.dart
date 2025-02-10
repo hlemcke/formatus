@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:formatus/formatus.dart';
-import 'package:formatus/src/formatus/formatus_viewer.dart';
 
 /// Entry point of example application
 void main() {
@@ -51,12 +50,11 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   late FormatusController controller;
   final FocusNode _formatusFocus = FocusNode(debugLabel: 'formatus');
-  String _formattedText = '';
 
   @override
   void initState() {
     super.initState();
-    controller = FormatusController.fromFormattedText(
+    controller = FormatusController(
         formattedText: textTemplates[initialTemplateKey] ?? '');
   }
 
@@ -102,28 +100,15 @@ class _MyHomePageState extends State<MyHomePage> {
             focusNode: _formatusFocus,
             minLines: 3,
             maxLines: 10,
+            onChanged: (_) => setState(() => ()),
           ),
-          _buildActionDivider(),
+          const Divider(color: Colors.deepPurpleAccent),
+          SizedBox(height: 16),
           _buildSavedText(),
+          SizedBox(height: 16),
           if (kDebugMode) _buildTextNodes(),
+          if (kDebugMode) SizedBox(height: 16),
           _buildFormatusViewer(),
-        ],
-      );
-
-  Widget _buildActionDivider() => Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Expanded(child: Divider(color: Colors.deepPurpleAccent)),
-          Padding(
-            padding: const EdgeInsets.only(left: 8, right: 8),
-            child: ElevatedButton(
-              onPressed: () =>
-                  setState(() => _formattedText = controller.formattedText),
-              child: const Text('Save'),
-            ),
-          ),
-          const Expanded(child: Divider(color: Colors.deepPurpleAccent)),
         ],
       );
 
@@ -132,27 +117,18 @@ class _MyHomePageState extends State<MyHomePage> {
       Text('${selection.start}..${selection.end} of $currentLength'
           ' ${isFocused ? "focused" : ""}');
 
-  Widget _buildFormatusViewer() => Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.blueAccent),
-          borderRadius: const BorderRadius.all(Radius.circular(6)),
-        ),
+  Widget _buildFormatusViewer() => Frame(
+        label: 'FormatusViewer',
         child: FormatusViewer(formattedText: controller.formattedText),
       );
 
-  Widget _buildSavedText() => Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.purpleAccent),
-          borderRadius: const BorderRadius.all(Radius.circular(6)),
-        ),
-        child: Text(_formattedText),
+  Widget _buildSavedText() => Frame(
+        label: 'Formatted Text',
+        child: Text(controller.formattedText),
       );
 
-  Widget _buildTextNodes() => Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.purpleAccent),
-          borderRadius: const BorderRadius.all(Radius.circular(6)),
-        ),
+  Widget _buildTextNodes() => Frame(
+        label: 'TextNodes',
         child: Text(controller.document.textNodes.toString()),
       );
 
@@ -163,7 +139,34 @@ class _MyHomePageState extends State<MyHomePage> {
         ],
         initialSelection: initialTemplateKey,
         label: const Text('Preselect text'),
-        onSelected: (key) =>
-            setState(() => controller.formattedText = textTemplates[key]!),
+        onSelected: (key) {
+          _formatusFocus.requestFocus();
+          setState(() => controller.formattedText = textTemplates[key]!);
+        },
+      );
+}
+
+///
+/// Frame with label
+///
+class Frame extends StatelessWidget {
+  final Widget child;
+  final String label;
+
+  const Frame({
+    super.key,
+    required this.label,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) => InputDecorator(
+        decoration: InputDecoration(
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+          labelText: label,
+        ),
+        child: child,
       );
 }

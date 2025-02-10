@@ -7,7 +7,7 @@ import 'formatus_model.dart';
 /// Extendable action to format text.
 ///
 class FormatusAction {
-  /// Top level or inline format
+  /// section or inline format
   final Formatus formatus;
 
   /// Used as [Widget] for formatting button
@@ -31,7 +31,7 @@ class FormatusAction {
     this.style = style ?? formatus.style;
   }
 
-  bool get isTopLevel => formatus.type == FormatusType.topLevel;
+  bool get isSection => formatus.type == FormatusType.section;
 }
 
 /// Signature for action `onEditAnchor`
@@ -143,10 +143,10 @@ class _FormatusBarState extends State<FormatusBar> {
 
   void _deactivateActions() => _selectedFormats.clear();
 
-  void _deactivateTopLevelActions() {
+  void _deactivateSectionActions() {
     for (FormatusAction action in widget.actions) {
-      if (action.isTopLevel) {
-        _selectedFormats.remove(action);
+      if (action.isSection) {
+        _selectedFormats.remove(action.formatus);
       }
     }
   }
@@ -161,7 +161,7 @@ class _FormatusBarState extends State<FormatusBar> {
   ///
   /// Toggles format button
   ///
-  /// Only one top-level format may be active at any time.
+  /// Only one section format may be active at any time.
   ///
   void _onToggleAction(Formatus formatus) {
     //--- Special handling if anchor is present in formatting actions
@@ -169,8 +169,8 @@ class _FormatusBarState extends State<FormatusBar> {
       _onEditAnchor();
       return;
     }
-    if (formatus.isTopLevel) {
-      _deactivateTopLevelActions();
+    if (formatus.isSection) {
+      _deactivateSectionActions();
       _selectedFormats.add(formatus);
       widget.controller.updateSectionFormat(formatus);
     } else if (_selectedFormats.contains(formatus)) {

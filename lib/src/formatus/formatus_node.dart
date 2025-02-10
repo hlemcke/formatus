@@ -45,7 +45,7 @@ class FormatusNode {
   int get childIndexInParent =>
       (parent == null) ? -1 : parent!.children.indexOf(this);
 
-  /// Gets depths in tree. Returns 0 for a top-level node
+  /// Gets depths in tree. Returns 0 for a section node
   int get depth => path.last == this ? path.length : parent?.depth ?? 0;
 
   ///
@@ -71,15 +71,15 @@ class FormatusNode {
 
   bool get isText => format == Formatus.text;
 
-  bool get isTopLevel => format.type == FormatusType.topLevel;
+  bool get isSection => format.type == FormatusType.section;
 
   /// Length of text in a text node. 0 for all other nodes.
   int get length => text.length;
 
-  /// Top-level tags have the single body element as parent
+  /// Section tags have the single body element as parent
   FormatusNode? parent;
 
-  /// Gets path from top-level (below `root`) down to this node.
+  /// Gets path from section (below `root`) down to this node.
   List<FormatusNode> get path {
     List<FormatusNode> path = [];
     FormatusNode? node = this;

@@ -92,7 +92,7 @@ class FormatusTree {
       if ((charCount < previousText.length) &&
           [' ', ',', '\n'].contains(previousText[charCount])) {
         if (charIndex == charCount) {
-          i--;
+          i = (i > 0) ? i - 1 : i;
           textNode = textNodes[i];
           textNode.textOffset = textNode.text.length;
           return i;
@@ -177,7 +177,7 @@ class FormatusTree {
 
   ///
   /// Top-down reduction of nodes having identical formats.
-  /// Top-level nodes will not be reduced.
+  /// Section nodes will not be reduced.
   ///
   static void reduceTree(List<FormatusNode> textNodes, FormatusNode root) {
     for (FormatusNode topLevelNode in root.children) {

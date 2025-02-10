@@ -6,7 +6,7 @@ const double kDefaultFontSize = 14.0;
 
 ///
 /// Formats for:
-/// * elements (both top-level and inline)
+/// * elements (both section and inline)
 /// * attributes (like color)
 ///
 /// Each entry provides default values for [FormatusAction] widget
@@ -68,7 +68,7 @@ enum Formatus {
     TextStyle(fontWeight: FontWeight.bold),
   ),
 
-  /// Action to set color of any top-level or inline element
+  /// Inline format to set a color
   color(
     'color=',
     FormatusType.attribute,
@@ -79,10 +79,10 @@ enum Formatus {
   /// Empty format used for placeholders
   placeHolder('?', FormatusType.attribute, null, null),
 
-  /// Top level element header 3 (largest)
+  /// Section element header 1 (largest)
   header1(
     'h1',
-    FormatusType.topLevel,
+    FormatusType.section,
     Text(
       'H1',
       style: TextStyle(
@@ -96,10 +96,10 @@ enum Formatus {
     ),
   ),
 
-  /// Top level element header 2 (larger)
+  /// Section element header 2 (larger)
   header2(
       'h2',
-      FormatusType.topLevel,
+      FormatusType.section,
       Text(
         'H2',
         style: TextStyle(
@@ -109,10 +109,10 @@ enum Formatus {
       ),
       TextStyle(fontSize: kDefaultFontSize * 1.7)),
 
-  /// Top level element header 3 (large)
+  /// Section element header 3 (large)
   header3(
       'h3',
-      FormatusType.topLevel,
+      FormatusType.section,
       Text(
         'H3',
         style: TextStyle(
@@ -123,7 +123,7 @@ enum Formatus {
       TextStyle(fontSize: kDefaultFontSize * 1.4)),
 
   /// Splits text at current cursor position and inserts a horizontal ruler
-  horizontalRule('hr', FormatusType.topLevel, Text('-'), null),
+  horizontalRule('hr', FormatusType.section, Text('-'), null),
 
   /// Inline element to italicize text
   italic(
@@ -148,7 +148,7 @@ enum Formatus {
   /// Essentially one of the `li` elements of the enclosing `ol` element
   orderedList(
     'ol',
-    FormatusType.topLevel,
+    FormatusType.section,
     Icon(Icons.format_list_numbered),
     null,
   ),
@@ -156,7 +156,7 @@ enum Formatus {
   /// Contains text and other inline elements
   paragraph(
     'p',
-    FormatusType.topLevel,
+    FormatusType.section,
     Text(
       'P',
       style: TextStyle(
@@ -209,7 +209,7 @@ enum Formatus {
   /// Essentially one of the `li` elements of the enclosing `ul` element
   unorderedList(
     'ul',
-    FormatusType.topLevel,
+    FormatusType.section,
     Icon(Icons.format_list_bulleted),
     null,
   );
@@ -226,7 +226,7 @@ enum Formatus {
     this.style,
   );
 
-  bool get isTopLevel => type == FormatusType.topLevel;
+  bool get isSection => type == FormatusType.section;
 
   static Formatus find(String text) => findEnum(text, Formatus.values,
       defaultValue: Formatus.text, withKey: true);
@@ -302,8 +302,8 @@ enum FormatusType {
   /// The single root element in [FormatusDocument]
   root,
 
-  /// Top level elements can only contain `inline` elements
-  topLevel,
+  /// Section elements can only contain `inline` elements
+  section,
 }
 
 ///

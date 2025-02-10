@@ -9,14 +9,14 @@ import 'formatus_parser.dart';
 /// HTML formatted document parsed into a tree-like structure.
 ///
 /// Essentially the `body` tag of an html text.
-/// All children are top-level elements like `h1` or `p`.
-/// Top-level elements cannot contain other top-level elements.
+/// All children are section elements like `h1` or `p`.
+/// Section elements cannot contain other section elements.
 ///
 /// ### Structure of [htmlBody]:
 ///
-/// * always starts with an opening top-level element like "\<p>" or "\<h1>"
-/// * always ends with a closing top-level element like "</p>"
-/// * children of a top-level element are a list of inline elements
+/// * always starts with an opening section element like "\<p>" or "\<h1>"
+/// * always ends with a closing section element like "</p>"
+/// * children of a section element are a list of inline elements
 /// * inline elements could be text-nodes or formats like `<b>` for bold
 /// * inline elements can be nested
 ///
@@ -31,7 +31,7 @@ class FormatusDocument {
   /// List of text nodes in sequence of occurrence
   List<FormatusNode> textNodes = [];
 
-  /// Single root element. All children are top-level html elements
+  /// Single root element. All children are section elements
   FormatusNode root = FormatusNode();
 
   /// Internal constructor
@@ -39,7 +39,7 @@ class FormatusDocument {
 
   factory FormatusDocument.empty() {
     FormatusDocument doc = FormatusDocument._();
-    doc.setupEmpty();
+    doc.clear();
     return doc;
   }
 
@@ -47,12 +47,12 @@ class FormatusDocument {
   factory FormatusDocument.fromHtml({
     required String htmlBody,
   }) {
-    FormatusDocument doc = FormatusDocument._();
     String cleanedHtml = FormatusDocument.cleanUpHtml(htmlBody);
     if (cleanedHtml.isEmpty) return FormatusDocument.empty();
     if (!cleanedHtml.startsWith('<')) {
       cleanedHtml = '<p>$cleanedHtml';
     }
+    FormatusDocument doc = FormatusDocument._();
     doc.root = FormatusParser().parse(htmlBody, doc.textNodes);
     doc.toPlainText();
     return doc;
@@ -75,6 +75,18 @@ class FormatusDocument {
       .replaceAll('\n', '')
       .replaceAll('\t', ' ')
       .replaceAll('  ', ' ');
+
+  ///
+  /// Clears the document tree by setting an empty text-node into a _paragraph_.
+  ///
+  void clear() {
+    textNodes.clear();
+    root = FormatusNode(format: Formatus.root);
+    FormatusNode emptyTextNode =
+        FormatusTree.createSubTree(textNodes, '', [Formatus.paragraph]);
+    FormatusTree.appendChild(textNodes, root, emptyTextNode.top);
+    textNodes.add(emptyTextNode);
+  }
 
   ///
   /// Applies `format` to text-node given by `index`.
@@ -176,7 +188,7 @@ class FormatusDocument {
         FormatusTree.removeTextNodesBetween(
             textNodes, leadNodeIndex + 1, tailNodeIndex);
 
-        //--- Right side is another top-level element -> move children
+        //--- Right side is another section element -> move children
         FormatusNode leadTopNode = leadNode.top;
         FormatusNode tailTopNode = tailNode.top;
         if (leadTopNode != tailTopNode) {
@@ -250,9 +262,6 @@ class FormatusDocument {
       }
     }
     _previousText = toPlainText();
-    if (_previousText.endsWith(' ')) {
-      _previousText = _previousText.substring(0, _previousText.length - 1);
-    }
   }
 
   ///
@@ -315,7 +324,7 @@ class FormatusDocument {
   }
 
   /// Delete a single line break
-  /// -> attach children of right top-level element to left one
+  /// -> attach children of right section element to left one
   void _handleLineBreakDelete(DeltaText deltaText) {
     int indexOfLineBreak = deltaText.headText.length;
     int leftTextNodeIndex = computeTextNodeIndex(indexOfLineBreak - 1);
@@ -330,19 +339,19 @@ class FormatusDocument {
   void _handleLineBreakInsert(DeltaText deltaText) {
     if (deltaText.isAtStart) {
       FormatusNode newNode =
-          FormatusTree.createSubTree(textNodes, ' ', [Formatus.paragraph]);
+          FormatusTree.createSubTree(textNodes, '', [Formatus.paragraph]);
       FormatusTree.insertChild(textNodes, root, 0, newNode.top);
       textNodes.insert(0, newNode);
     } else if (deltaText.isAtEnd) {
       FormatusNode newNode =
-          FormatusTree.createSubTree(textNodes, ' ', [Formatus.paragraph]);
+          FormatusTree.createSubTree(textNodes, '', [Formatus.paragraph]);
       FormatusTree.appendChild(textNodes, root, newNode.top);
       textNodes.add(newNode);
-    } else if (_isLineBreakInsertedBetweenTopLevelElements(deltaText)) {
-      //--- Insert new paragraph between the two top-level nodes
+    } else if (_isLineBreakInsertedBetweenSectionElements(deltaText)) {
+      //--- Insert new paragraph between the two section nodes
       int prevIndex = computeTextNodeIndex(deltaText.headText.length - 1);
       FormatusNode newTextNode =
-          FormatusTree.createSubTree(textNodes, ' ', [Formatus.paragraph]);
+          FormatusTree.createSubTree(textNodes, '', [Formatus.paragraph]);
       textNodes.insert(prevIndex + 1, newTextNode);
       int topLevelNodeIndex = textNodes[prevIndex].path[0].childIndexInParent;
       FormatusTree.insertChild(
@@ -360,7 +369,7 @@ class FormatusDocument {
             splitTextNode.text.substring(0, splitTextNode.textOffset);
       }
 
-      //--- Create new paragraph after split top-level node
+      //--- Create new paragraph after split section node
       List<Formatus> formatsInPath = splitTextNode.formatsInPath;
       formatsInPath[0] = Formatus.paragraph;
       FormatusNode newTextNode =
@@ -368,7 +377,7 @@ class FormatusDocument {
       FormatusNode newTopNode = newTextNode.top;
       FormatusTree.insertChild(textNodes, root, splitTopIndex + 1, newTopNode);
 
-      //--- append nodes of split top-level to new paragraph
+      //--- append nodes of split section to new paragraph
       int splitIndexBelowTopLevel = splitTextNode.path[1].childIndexInParent;
       for (int i = splitIndexBelowTopLevel + 1;
           i < splitTopNode.children.length;
@@ -386,7 +395,7 @@ class FormatusDocument {
     }
   }
 
-  bool _isLineBreakInsertedBetweenTopLevelElements(DeltaText deltaText) {
+  bool _isLineBreakInsertedBetweenSectionElements(DeltaText deltaText) {
     int i = deltaText.headText.length;
     return ((previousText[i - 1] == '\n') || (previousText[i] == '\n'))
         ? true
@@ -439,7 +448,7 @@ class FormatusDocument {
   }
 
   ///
-  /// Returns plain text with line breaks between top-level elements
+  /// Returns plain text with line breaks between section elements
   ///
   /// Used for [TextFormField.text]
   ///
@@ -453,13 +462,5 @@ class FormatusDocument {
     }
     _previousText = plain;
     return plain;
-  }
-
-  void setupEmpty() {
-    textNodes.clear();
-    root = FormatusNode(format: Formatus.root);
-    FormatusNode emptyTextNode =
-        FormatusTree.createSubTree(textNodes, ' ', [Formatus.paragraph]);
-    FormatusTree.appendChild(textNodes, root, emptyTextNode);
   }
 }

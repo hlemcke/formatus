@@ -17,29 +17,17 @@ class FormatusController extends TextEditingController {
   Set<Formatus> selectedFormats = {};
 
   ///
-  /// Internal constructor
-  ///
-  FormatusController._();
-
-  ///
-  /// Controller with no text
-  ///
-  factory FormatusController() {
-    return FormatusController.fromFormattedText(formattedText: '');
-  }
-
-  ///
   /// Creates a controller for [TextField] or [TextFormField].
   ///
-  factory FormatusController.fromFormattedText({
-    required String formattedText,
-    VoidCallback? onListen,
+  FormatusController({
+    String? formattedText,
   }) {
-    FormatusController ctrl = FormatusController._();
-    ctrl.document = FormatusDocument.fromHtml(htmlBody: formattedText);
-    ctrl._text = ctrl.document.toPlainText();
-    ctrl.addListener(ctrl._onListen);
-    return ctrl;
+    document = FormatusDocument.fromHtml(htmlBody: formattedText ?? '');
+    _text = document.toPlainText();
+    if (text.isEmpty || text == ' ') {
+      clear();
+    }
+    addListener(_onListen);
   }
 
   // TODO implement factory FormatusController.fromMarkdown
@@ -97,11 +85,25 @@ class FormatusController extends TextEditingController {
   }) =>
       FormatusTree.buildFormattedText(document.root.children);
 
+  /// Sets empty text with Paragraph and one empty _textNode_
+  @override
+  void clear() {
+    document.clear();
+    selectedFormats.clear();
+    selectedFormats.add(Formatus.paragraph);
+    _previousSelection = _emptySelection;
+    super.clear();
+  }
+
   /// Returns current text as a html formatted string
   String get formattedText => document.toHtml();
 
   /// Replaces current text with the parsed `html`
   set formattedText(String html) {
+    if (html.isEmpty) {
+      clear();
+      return;
+    }
     document = FormatusDocument.fromHtml(htmlBody: html);
     _text = document.toPlainText();
     value = TextEditingValue(text: text);
@@ -149,11 +151,7 @@ class FormatusController extends TextEditingController {
   void _onListen() {
     //--- Immediate handling of full deletion
     if (text.isEmpty) {
-      document.setupEmpty();
-      selectedFormats.clear();
-      selectedFormats.add(Formatus.paragraph);
-      _previousSelection = _emptySelection;
-      notifyListeners();
+      clear();
       return;
     }
 
@@ -170,7 +168,7 @@ class FormatusController extends TextEditingController {
       nextSelection: selection,
       nextText: text,
     );
-    debugPrint('=== _onlisten => $deltaText');
+    debugPrint('=== _onlisten [${selection.start}] => $deltaText');
     if (deltaText.hasDelta) {
       if (deltaText.isInsert) {
         DeltaFormat deltaFormat = DeltaFormat.fromDocument(
@@ -183,8 +181,6 @@ class FormatusController extends TextEditingController {
       }
     }
     _updateSelection();
-    debugPrint(
-        '=== $deltaText range: ${selection.baseOffset} ${selection.extentOffset}');
   }
 
   void _updateSelection() {

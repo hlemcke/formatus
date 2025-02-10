@@ -5,9 +5,10 @@ A plain Flutter Rich-Text-Editor without any dependencies.
 ## Features
 
 * Runs on all platforms
-* Supports multiple top-level and inline formats
+* Supports multiple section and inline formats
 * Small and easy to use
 * No dependencies to other packages
+* Includes a viewer for the formatted text
 
 ## Getting started
 
@@ -15,7 +16,7 @@ Add the latest version of *Formatus* to the `pubspec.yaml` file:
 
 ```yaml
 flutter:
-  formatus: ^1.0.1
+  formatus: ^1.1.0
 ```
 
 Create a `FormatusController` and a `FormatusBar`.
@@ -62,10 +63,10 @@ This section describes the use cases for `Formatus`.
 
 * Position caret -> updates `FormatusBar` with formats at caret position
 * Select a text range -> updates `FormatusBar` with formats from selection start
-* Activate another top-level format in `FormatusBar`
+* Activate another section-format in `FormatusBar`
   -> the current section (at caret position or at start of a selected text-range)
-  will be changed to the activated top-level format
-* Change an inline format in `FormatusBar` -> if a text range is selected
+  will be changed to the activated section-format
+* Change an inline-format in `FormatusBar` -> if a text range is selected
   then the selected text will be updated with the new format
 * Enter characters (via keyboard or by pasting from a clipboard) -> characters
   will be inserted at caret position. Current format settings will be applied.
