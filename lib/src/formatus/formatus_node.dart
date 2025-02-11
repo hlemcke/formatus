@@ -117,16 +117,6 @@ class FormatusNode {
     return '$html</${format.key}>';
   }
 
-  String _toHtml() {
-    if (isText) return text;
-    String html = '<${format.key}';
-    for (String key in attributes.keys) {
-      html += ' $key="${attributes[key]}"';
-    }
-    html += '>';
-    return '$html</${format.key}>';
-  }
-
   ///
   String toPlainText() {
     String plain = text;
