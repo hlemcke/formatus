@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:formatus/formatus.dart';
 
@@ -50,12 +49,17 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   late FormatusController controller;
   final FocusNode _formatusFocus = FocusNode(debugLabel: 'formatus');
+  String savedText = '';
 
   @override
   void initState() {
     super.initState();
     controller = FormatusController(
-        formattedText: textTemplates[initialTemplateKey] ?? '');
+        formattedText: textTemplates[initialTemplateKey] ?? '',
+        onChanged: (v) => setState(() {
+              debugPrint('controller changed to: "$v"');
+              savedText = v;
+            }));
   }
 
   @override
@@ -107,8 +111,6 @@ class _MyHomePageState extends State<MyHomePage> {
           SizedBox(height: 16),
           _buildSavedText(),
           SizedBox(height: 16),
-          if (kDebugMode) _buildTextNodes(),
-          if (kDebugMode) SizedBox(height: 16),
           _buildFormatusViewer(),
         ],
       );
@@ -126,11 +128,6 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget _buildSavedText() => Frame(
         label: 'Formatted Text',
         child: Text(controller.formattedText),
-      );
-
-  Widget _buildTextNodes() => Frame(
-        label: 'TextNodes',
-        child: Text(controller.document.textNodes.toString()),
       );
 
   Widget _buildTextPreselection() => DropdownMenu<String>(

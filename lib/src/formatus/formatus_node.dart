@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
-import 'package:formatus/formatus.dart';
+
+import 'formatus_model.dart';
 
 ///
 /// Node in document resembles an html-element with optional attributes.
@@ -67,7 +68,7 @@ class FormatusNode {
 
   bool get isEmpty => isText ? text.isEmpty : _children.isEmpty;
 
-  bool get isRoot => format == Formatus.root;
+  bool get isRoot => (format == Formatus.root) || (parent == null);
 
   bool get isText => format == Formatus.text;
 
@@ -76,7 +77,7 @@ class FormatusNode {
   /// Length of text in a text node. 0 for all other nodes.
   int get length => text.length;
 
-  /// Section tags have the single body element as parent
+  /// Section tags have the single body element (root) as parent
   FormatusNode? parent;
 
   /// Gets path from section (below `root`) down to this node.
@@ -101,6 +102,8 @@ class FormatusNode {
           : parent!.top;
 
   ///
+  /// Recursively produces formatted text
+  ///
   String toHtml() {
     if (isText) return text;
     String html = '<${format.key}';
@@ -114,6 +117,16 @@ class FormatusNode {
     return '$html</${format.key}>';
   }
 
+  String _toHtml() {
+    if (isText) return text;
+    String html = '<${format.key}';
+    for (String key in attributes.keys) {
+      html += ' $key="${attributes[key]}"';
+    }
+    html += '>';
+    return '$html</${format.key}>';
+  }
+
   ///
   String toPlainText() {
     String plain = text;
@@ -121,6 +134,41 @@ class FormatusNode {
       plain += child.toPlainText();
     }
     return plain;
+  }
+
+  ///
+  /// Recursively produce results
+  ///
+  FormatusNodeResults toResults() {
+    FormatusNodeResults results = FormatusNodeResults();
+    if (isText) {
+      // -> it's a leaf node
+      results.formattedText = text;
+      results.plainText = text;
+      results.textSpan = TextSpan(style: Formatus.text.style, text: text);
+      return results;
+    }
+    List<TextSpan> spans = [];
+    results.formattedText += '<${format.key}';
+    for (String key in attributes.keys) {
+      results.formattedText += ' $key="${attributes[key]}"';
+    }
+    results.formattedText += '>';
+
+    //--- Deep dive through children of this node
+    for (FormatusNode child in children) {
+      FormatusNodeResults childResults = child.toResults();
+      spans.add(childResults.textSpan);
+      results.formattedText += childResults.formattedText;
+      results.plainText += childResults.plainText;
+    }
+    results.formattedText += '</${format.key}>';
+    if (format.isSection) {
+      results.plainText += '\n';
+      spans.add(const TextSpan(text: '\n'));
+    }
+    results.textSpan = TextSpan(children: spans, style: format.style);
+    return results;
   }
 
   ///
@@ -139,4 +187,13 @@ class FormatusNode {
     }
     return TextSpan(children: spans, style: format.style);
   }
+}
+
+///
+/// Results when recursively walking tree
+///
+class FormatusNodeResults {
+  String plainText = '';
+  String formattedText = '';
+  TextSpan textSpan = TextSpan(text: '');
 }

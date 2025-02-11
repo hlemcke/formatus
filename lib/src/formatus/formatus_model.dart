@@ -77,9 +77,6 @@ enum Formatus {
     null,
   ),
 
-  /// Empty format used for placeholders
-  placeHolder('?', FormatusType.attribute, null, null),
-
   /// Section element header 1 (largest)
   header1(
     'h1',
@@ -126,6 +123,9 @@ enum Formatus {
   /// Splits text at current cursor position and inserts a horizontal ruler
   horizontalRule('hr', FormatusType.section, Text('-'), null),
 
+  /// Can be used to put a small gap between format actions
+  gap('?', FormatusType.bar, null, null),
+
   /// Inline element to italicize text
   italic(
     'i',
@@ -167,6 +167,9 @@ enum Formatus {
     ),
     TextStyle(fontSize: kDefaultFontSize),
   ),
+
+  /// Empty format used for placeholders to ensure null safety
+  placeHolder('?', FormatusType.attribute, null, null),
 
   /// Single root element in a [FormatusDocument]
   root(
@@ -227,12 +230,17 @@ enum Formatus {
     this.style,
   );
 
+  bool get isInline => type == FormatusType.inline;
+
   bool get isSection => type == FormatusType.section;
 
   static Formatus find(String text) => findEnum(text, Formatus.values,
       defaultValue: Formatus.text, withKey: true);
 }
 
+///
+///
+///
 class FormatusAnchor {
   String href;
   String name;
@@ -296,6 +304,9 @@ enum FormatusType {
 
   /// Attribute are applied to an element
   attribute,
+
+  /// Used on bar-specials like a gap
+  bar,
 
   /// Inline elements can be nested
   inline,

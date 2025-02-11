@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:formatus/src/formatus/formatus_controller.dart';
+import 'package:formatus/src/formatus/formatus_controller_impl.dart';
 
 void main() {
   group('DeltaText - Insertions', () {

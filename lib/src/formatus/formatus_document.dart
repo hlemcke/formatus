@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:formatus/formatus.dart';
 import 'package:formatus/src/formatus/formatus_tree.dart';
 
+import 'formatus_controller_impl.dart';
+import 'formatus_model.dart';
 import 'formatus_node.dart';
 import 'formatus_parser.dart';
 

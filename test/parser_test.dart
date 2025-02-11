@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:formatus/formatus.dart';
+import 'package:formatus/src/formatus/formatus_controller_impl.dart';
 
 void main() {
   group('ParserTests', () {
@@ -9,8 +10,8 @@ void main() {
 <h1>Formatus Features</h1>
 <p>Text with italic, bold and underlined words</p>
 ''';
-      FormatusController textController =
-          FormatusController(formattedText: html);
+      FormatusControllerImpl textController =
+          FormatusControllerImpl(formattedText: html);
       expect(textController.text,
           'Formatus Features\nText with italic, bold and underlined words');
     });

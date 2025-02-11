@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:formatus/formatus.dart';
+import 'package:formatus/src/formatus/formatus_controller_impl.dart';
 import 'package:formatus/src/formatus/formatus_node.dart';
 import 'package:formatus/src/formatus/formatus_tree.dart';
 

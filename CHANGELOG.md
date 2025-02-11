@@ -1,7 +1,10 @@
-## 1.1.1
+## 1.2.0
 
+* Added `Formatus.gap` to allow a small gap in formatting actions. If nothing is supplied
+  to `FormatusBar.actions` then this gap will separate section formats from inline format
+* Separated implementation of [FormatusBar] and [FormatusController] from their public API
 * Fixed bug when deleting last character in a single text node
-* Changed example/main.dart to set `TextFormField.showCursor: true` because otherwise _Flutter_
+* Changed example/main.dart to set `TextFormField.showCursor: true` because _Flutter_
   does not position cursor correctly when entering spaces at end of text
 
 ## 1.1.0

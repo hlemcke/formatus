@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:formatus/formatus.dart';
+import 'package:formatus/src/formatus/formatus_controller_impl.dart';
 import 'package:formatus/src/formatus/formatus_document.dart';
 
 void main() {

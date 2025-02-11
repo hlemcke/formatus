@@ -16,7 +16,7 @@ Add the latest version of *Formatus* to the `pubspec.yaml` file:
 
 ```yaml
 flutter:
-  formatus: ^1.1.0
+  formatus: ^1.2.0
 ```
 
 Create a `FormatusController` and a `FormatusBar`.
@@ -78,7 +78,7 @@ This section describes the use cases for `Formatus`.
 ## Additional information
 
 Please find additional information like architecture considerations at
-https://www.djarjo.com/en/formatus
+https://www.djarjo.com/formatus
 
 If you encounter any issues or have ideas for some enhancements please
 open a ticket at https://github.com/hlemcke/formatus
@@ -87,8 +87,9 @@ open a ticket at https://github.com/hlemcke/formatus
 ## Future Enhancements
 
 1. Add formats for lists: ordered and unordered
-2. Add action to change a color
+2. Add action to change text color
 3. Add action to insert an emoji. This should become an optional add-on action
    similar to `FormatusAnchor`. Could also include converting an emoji name
    into emoji inline (insert into current text node).
-4. Parse and export markdown
+4. Parse markdown as formatted input
+5. Export formatted text in markdown format
