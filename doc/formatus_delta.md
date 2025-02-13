@@ -1,43 +1,77 @@
 # Delta-Text Analysis
 
+[DeltaText] is `false` if current string (`curText)` is equal to previous string (`prevText`).
+
+Q: Should insert and update be handled identically?
+A: No because insert always adds text to only one single text-node without modifying the format-tree
+
+Q: How to determine if it's a deletion?
+A: Delete has: `added.isEmpty`
+
+Q: How to determine if it's an insert?
+A: Insert has: `added.isNotEmpty` AND `leadText + tailText == prevText`
+
+## Initial Computations
+
+1. all -> (prevSelection.start == 0) AND (prevText.length == prevSelection.end)
+2. start -> NOT all AND ((prevSelection.start == 0) OR (curSelection.start == 0))
+   * head = ''
+   * tail from end
+   * added is substring of curText minus tail
+3. end -> NOT start AND ((prevSelection.end == prevText.length) OR (curSelection.end == curText.end))
+   * tail = ''
+   * head from start until prevSelection.start
+   * added is substring of curText minus head
+4. middle -> NOT end
+   * head from start until prevSelection.start
+   * tail from end until prevSelection.end
+   * added is substring of curText minus head and minus tail
+
+## Follow-up Computations
+
+1. del -> added.isEmpty
+2. ins -> NOT del AND (leadText + tailText == prevText)
+3. upd -> NOT ins
+
 ## Delta-Types ordered by Type of Modification
 
-|=    Type    =|=  head  =|=  tail  =|= add =|
-|==============|==========|==========|=======|
-| Ins - start  |       "" | previous | added |
-| Ins - middle |     lead |     tail | added |
-| Ins - end    | previous |       "" | added |
-| Del - start  |       "" |     tail |    "" |
-| Del - middle |     lead |     tail |    "" |
-| Del - end    |     lead |       "" |    "" |
-| Upd - start  |       "" |     tail | added |
-| Upd - middle |     lead |     tail | added |
-| Upd - end    |     lead |       "" | added |
+|=    Type    =|= head =|= tail =|= add =|
+|==============|========|========|=======|
+| del - all    |     "" |     "" |    "" |
+| del - start  |     "" |   tail |    "" |
+| del - middle |   head |   tail |    "" |
+| del - end    |   head |     "" |    "" |
+| ins - all    |     "" |     "" | added |
+| ins - start  |     "" |   prev | added |
+| ins - middle |   head |   tail | added |
+| ins - end    |   prev |     "" | added |
+| upd - start  |     "" |   tail | added |
+| upd - middle |   head |   tail | added |
+| upd - end    |   head |     "" | added |
 
 ## Delta-Types ordered by Position of Modification
 
-|=    Type    =|=  head  =|=  tail  =|= add =|
-|==============|==========|==========|=======|
-| Start - Ins  |       "" | previous | added |
-| Start - Del  |       "" |     tail |    "" |
-| Start - Upd  |       "" |     tail | added |
-| Middle - Ins |     lead |     tail | added |
-| Middle - Del |     lead |     tail |    "" |
-| Middle - Upd |     lead |     tail | added |
-| End - Ins    | previous |       "" | added |
-| End - Del    |     lead |       "" |    "" |
-| End - Upd    |     lead |       "" | added |
+|=  Position  =|= head =|= tail =|= add =|
+|==============|========|========|=======|
+| all - del    |     "" |     "" |    "" |
+| all - ins    |     "" |     "" | added |
+| start - del  |     "" |   tail |    "" |
+| start - ins  |     "" |   prev | added |
+| start - upd  |     "" |   tail | added |
+| middle - del |   head |   tail |    "" |
+| middle - ins |   head |   tail | added |
+| middle - upd |   head |   tail | added |
+| end - del    |   head |     "" |    "" |
+| end - ins    |   prev |     "" | added |
+| end - upd    |   head |     "" | added |
 
-## Conclusions
+## Computations - Parts
 
-* `added.isEmpty` -> delete
-* `added.isNotEmpty` -> insert or update
+* head -> 
+## Computations - Type
 
-Q: Should insert and update be handled identically?
-A: No because insert always adds text to only one single text-node without modifying the tree
-
-Q: How to determine if it's an insert?
-A: Insert has: `added.isNotEmpty` AND `leading.length + trailing.length == previous.length`
+* Delete -> added.isEmpty
+* Insert -> added.isNotEmpty AND 
 
 ## Determine Text-Node
 
