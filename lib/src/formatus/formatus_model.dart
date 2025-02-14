@@ -69,10 +69,10 @@ enum Formatus {
     TextStyle(fontWeight: FontWeight.bold),
   ),
 
-  /// Inline format to set a color
+  /// Inline format to display text in a specified color
   color(
-    'color=',
-    FormatusType.attribute,
+    'color',
+    FormatusType.inline,
     Icon(Icons.format_color_text),
     null,
   ),
@@ -81,47 +81,26 @@ enum Formatus {
   header1(
     'h1',
     FormatusType.section,
-    Text(
-      'H1',
-      style: TextStyle(
-        fontSize: kDefaultFontSize * 1.2,
-        fontWeight: FontWeight.bold,
-      ),
-    ),
-    TextStyle(
-      fontSize: kDefaultFontSize * 2.0,
-      height: 2.0,
-    ),
+    FormatusActionText(text: 'H1'),
+    TextStyle(fontSize: kDefaultFontSize * 2.0, height: 2.0),
   ),
 
   /// Section element header 2 (larger)
-  header2(
-      'h2',
-      FormatusType.section,
-      Text(
-        'H2',
-        style: TextStyle(
-          fontSize: kDefaultFontSize * 1.2,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
+  header2('h2', FormatusType.section, FormatusActionText(text: 'H2'),
       TextStyle(fontSize: kDefaultFontSize * 1.7)),
 
   /// Section element header 3 (large)
-  header3(
-      'h3',
-      FormatusType.section,
-      Text(
-        'H3',
-        style: TextStyle(
-          fontSize: kDefaultFontSize * 1.2,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
+  header3('h3', FormatusType.section, FormatusActionText(text: 'H3'),
       TextStyle(fontSize: kDefaultFontSize * 1.4)),
 
-  /// Splits text at current cursor position and inserts a horizontal ruler
-  horizontalRule('hr', FormatusType.section, Text('-'), null),
+  /// Section element. Splits text at current cursor position
+  /// and inserts a horizontal ruler
+  horizontalRuler(
+    'hr',
+    FormatusType.section,
+    Text('-'),
+    null,
+  ),
 
   /// Can be used to put a small gap between format actions
   gap('?', FormatusType.bar, null, null),
@@ -146,7 +125,8 @@ enum Formatus {
     ),
   ),
 
-  /// Essentially one of the `li` elements of the enclosing `ol` element
+  /// Section element of an ordered list entry.
+  /// In html this would be an `li` element of the enclosing `ol`
   orderedList(
     'ol',
     FormatusType.section,
@@ -154,24 +134,23 @@ enum Formatus {
     null,
   ),
 
-  /// Contains text and other inline elements
+  /// Section element containing text and other inline elements
   paragraph(
     'p',
     FormatusType.section,
-    Text(
-      'P',
-      style: TextStyle(
-        fontSize: kDefaultFontSize * 1.2,
-        fontWeight: FontWeight.bold,
-      ),
-    ),
+    FormatusActionText(text: 'P'),
     TextStyle(fontSize: kDefaultFontSize),
   ),
 
   /// Empty format used for placeholders to ensure null safety
-  placeHolder('?', FormatusType.attribute, null, null),
+  placeHolder('?', FormatusType.none, null, null),
 
   /// Single root element in a [FormatusDocument]
+  ///
+  /// This element can have attributes:
+  /// * align = [[left, center, right]]
+  /// * color from [FormatusColor)
+  ///
   root(
     'body',
     FormatusType.root,
@@ -187,11 +166,26 @@ enum Formatus {
     TextStyle(decoration: TextDecoration.lineThrough),
   ),
 
-  /// TODO implement subscript
-  // subscript requires a suitable icon for the formatting action
-  // Example for H_2_O: TextSpan( text: 'H'),
-  // WidgetSpan(child: Transform.translate(
-  //  offset: Offset(2, 5), child: Text('2', style: TextStyle(fontSize: 20 )))
+  /// Inline format to make text smaller and put it a little bit below the line
+  ///
+  /// In markdown this would look like: `H_2_O`. In this case, digit 2 is not
+  /// underlined because it is prefixed with a non-blank char.
+  subscript(
+    'sub',
+    FormatusType.inline,
+    FormatusActionText(text: 'sub', typography: FormatusTypography.subscript),
+    TextStyle(),
+  ),
+
+  /// Inline format to make text smaller and put it a little bit above the line
+  ///
+  /// In markdown this would look like: `x^y`
+  superscript(
+    'sup',
+    FormatusType.inline,
+    FormatusActionText(text: 'sub', typography: FormatusTypography.superscript),
+    TextStyle(),
+  ),
 
   /// TODO implement superscript
   // superscript requires a suitable icon for the formatting action
@@ -210,7 +204,8 @@ enum Formatus {
     TextStyle(decoration: TextDecoration.underline),
   ),
 
-  /// Essentially one of the `li` elements of the enclosing `ul` element
+  /// Section element of an unordered list entry.
+  /// In html this would be an `li` element of the enclosing `ul`
   unorderedList(
     'ul',
     FormatusType.section,
@@ -236,6 +231,37 @@ enum Formatus {
 
   static Formatus find(String text) => findEnum(text, Formatus.values,
       defaultValue: Formatus.text, withKey: true);
+}
+
+///
+/// Format action displaying given `text`.
+/// `typography` defaults to normal text.
+///
+class FormatusActionText extends StatelessWidget {
+  const FormatusActionText({
+    super.key,
+    required this.text,
+    this.typography = FormatusTypography.normal,
+  });
+
+  final String text;
+  final FormatusTypography typography;
+
+  @override
+  Widget build(BuildContext context) =>
+      (typography == FormatusTypography.normal)
+          ? Text(
+              text,
+              style: TextStyle(
+                fontSize: kDefaultFontSize * 1.2,
+                fontWeight: FontWeight.bold,
+              ),
+            )
+          : Transform.translate(
+              offset: Offset(
+                  0, (typography == FormatusTypography.subscript) ? 4 : -4),
+              child: Text(text, textScaler: TextScaler.linear(0.7)),
+            );
 }
 
 ///
@@ -274,42 +300,65 @@ enum FormatusAttribute {
 /// HTML color names used in [Formatus]
 ///
 enum FormatusColor {
-  black('000000'),
-  blue('0000ff'),
-  cyan('00ffff'),
-  darkOrange('ff8c00'),
-  gold('ffd700'),
-  green('008000'),
-  orange('ffa500'),
-  red('ff0000'),
-  white('ffffff'),
-  yellow('ffff00');
+  aqua(0xFF0000),
+  black(0x000000),
+  blue(0x0000ff),
+  fuchsia(0xFF00FF),
+  grey(0x808080),
+  green(0x008000),
+  lime(0x00FF00),
+  maroon(0x800000),
+  navy(0x000080),
+  olive(0x808000),
+  orange(0xFFa500),
+  purple(0x800080),
+  red(0xFF0000),
+  silver(0xC0C0C0),
+  teal(0x008080),
+  white(0xFFFFFF),
+  yellow(0xFFFF00);
 
-  final String hexCode;
+  final int hex;
 
-  const FormatusColor(this.hexCode);
+  const FormatusColor(this.hex);
 
   String toHtml() => 'color:"$name"';
 
   static FormatusColor find(String text) => findEnum(text, FormatusColor.values,
-      defaultValue: FormatusColor.black, withKey: true);
+      defaultValue: FormatusColor.black, withKey: false);
+
+  /// Returns closest available color to given `value`
+  static FormatusColor findByValue(int value) {
+    List<FormatusColor> colors = FormatusColor.values;
+    colors.sort((a, b) => a.hex - b.hex);
+    for (int i = 0; i < colors.length; i++) {
+      if (colors[i].hex >= value) {
+        return (((colors[i - 1].hex + colors[i].hex) ~/ 2) < value)
+            ? colors[i]
+            : colors[i - 1];
+      }
+    }
+    return white;
+  }
 }
 
 ///
 /// Type of a [Formatus] action / style
 ///
 enum FormatusType {
-  /// Alignment will be applied to full text
+  /// Flutter supports alignment only for the whole text.
+  /// Therefor any action with this type will be applied as an attribute
+  /// to the outer \<body> element.
   alignment,
 
-  /// Attribute are applied to an element
-  attribute,
-
-  /// Used on bar-specials like a gap
+  /// Used for bar-actions like a gap which do not apply any format to the text
   bar,
 
   /// Inline elements can be nested
   inline,
+
+  /// No action or type at all
+  none,
 
   /// The single root element in [FormatusDocument]
   root,
@@ -349,3 +398,8 @@ dynamic findEnum(
   }
   return defaultValue;
 }
+
+///
+/// Typography values
+///
+enum FormatusTypography { normal, subscript, superscript }

@@ -30,9 +30,10 @@ Use `Formatus` like this:
 ```dart
   FocusNode focusNode = FocusNode(debugLabel: 'formatus');
   late FormatusController controller;
+  String savedText = '<p>some text</p>';
 
 void initState() {
-  controller = FormatusController.fromFormattedText( text );
+  controller = FormatusController( formattedText: savedText, onChanged: (v) => savedText = v );
 }
 
 Widget build(BuildContext context) => Column( children: [
@@ -57,6 +58,17 @@ void dispose() {
 
 ### Definition of Terms
 
+Caret
+: visible display of the cursor position 
+
+Format
+: All text has a format. Its format is specified by the section format and all inline formats applied to the text
+
+Section
+: All text belongs to a section. Each section has a format. Multiple sections are separated by a newline
+
+
+
 ### Use cases
 
 This section describes the use cases for `Formatus`.
@@ -64,16 +76,16 @@ This section describes the use cases for `Formatus`.
 * Position caret -> updates `FormatusBar` with formats at caret position
 * Select a text range -> updates `FormatusBar` with formats from selection start
 * Activate another section-format in `FormatusBar`
-  -> the current section (at caret position or at start of a selected text-range)
+  -> the current section (defined by caret position or start of a selected text-range)
   will be changed to the activated section-format
 * Change an inline-format in `FormatusBar` -> if a text range is selected
   then the selected text will be updated with the new format
 * Enter characters (via keyboard or by pasting from a clipboard) -> characters
-  will be inserted at caret position. Current format settings will be applied.
+  will be inserted at caret position. Current format settings will be applied
 * Delete characters -> if this includes one or more (requires a text-range)
   line-breaks then the text right of the deleted text will be integrated
   into the top-level node at deletion start
-* To just display the formatted text use `FormatusViewer`
+* Display the formatted text with `FormatusViewer`
 
 ## Additional information
 

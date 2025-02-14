@@ -37,15 +37,25 @@ void main() {
           FormatusController(formattedText: html);
       expect(textController.formattedText, html.replaceAll('\n', ''));
     });
+
+    //---
     test('Parse tags with attributes', () {
       String html = '''
 <h1>Formatus Features</h1>
-<p color="orange">Orange Text with <i>italic, <b>bold and <u>underlined</u></b> words</i></p>
-<p>Second paragraph references <a href="media:42">media object</a></p>
+<p><color orange>Orange Text with <i>italic, <b>bold and <u>underlined</u></b> words</i></color></p>
+<p>Second paragraph references <a media:42>media object</a></p>
 ''';
       FormatusController textController =
           FormatusController(formattedText: html);
       expect(textController.formattedText, html.replaceAll('\n', ''));
+    });
+
+    //---
+    test('Parse color tag and short closings', () {
+      String html = '<p><color blue>Blue</> with <b>bold</> words</>';
+      FormatusControllerImpl controller =
+          FormatusControllerImpl(formattedText: html);
+      expect(controller.document.textNodes.length, 4);
     });
   });
 }

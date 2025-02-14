@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:formatus/src/formatus/formatus_controller_impl.dart';
 
 void main() {
-  group('DeltaText - Insertions', () {
+  group('DeltaText - Inserts', () {
     ///
     test('text are identical', () {
       String text = 'identical';
@@ -12,14 +12,10 @@ void main() {
           prevText: text,
           nextSelection: const TextSelection(baseOffset: 5, extentOffset: 5),
           nextText: text);
-      expect(delta.hasDelta, false);
-      expect(delta.isAtEnd, false);
-      expect(delta.isAtStart, false);
-      expect(delta.isDelete, false);
-      expect(delta.isInsert, false);
-      expect(delta.isUpdate, false);
+      expect(delta.position, DeltaTextPosition.unknown);
+      expect(delta.type, DeltaTextType.none);
       expect(delta.headText, '');
-      expect(delta.added, '');
+      expect(delta.plusText, '');
       expect(delta.tailText, '');
     });
 
@@ -34,14 +30,10 @@ void main() {
           nextSelection: TextSelection(
               baseOffset: added.length, extentOffset: added.length),
           nextText: next);
-      expect(delta.hasDelta, true);
-      expect(delta.isAtEnd, false);
-      expect(delta.isAtStart, true);
-      expect(delta.isDelete, false);
-      expect(delta.isInsert, true);
-      expect(delta.isUpdate, false);
+      expect(delta.position, DeltaTextPosition.start);
+      expect(delta.type, DeltaTextType.insert);
       expect(delta.headText, '');
-      expect(delta.added, added);
+      expect(delta.plusText, added);
       expect(delta.tailText, prev);
     });
 
@@ -57,19 +49,15 @@ void main() {
           nextSelection:
               TextSelection(baseOffset: next.length, extentOffset: next.length),
           nextText: next);
-      expect(delta.hasDelta, true);
-      expect(delta.isAtEnd, true);
-      expect(delta.isAtStart, false);
-      expect(delta.isDelete, false);
-      expect(delta.isInsert, true);
-      expect(delta.isUpdate, false);
+      expect(delta.position, DeltaTextPosition.end);
+      expect(delta.type, DeltaTextType.insert);
       expect(delta.headText, prev);
-      expect(delta.added, added);
+      expect(delta.plusText, added);
       expect(delta.tailText, '');
     });
 
     ///
-    test('text is inserted in middle', () {
+    test('insert at middle', () {
       String head = 'some ';
       String added = 'inserted ';
       String tail = 'text';
@@ -77,27 +65,26 @@ void main() {
       String next = head + added + tail;
       DeltaText delta = DeltaText(
           prevSelection:
-              TextSelection(baseOffset: prev.length, extentOffset: prev.length),
+              TextSelection(baseOffset: head.length, extentOffset: head.length),
           prevText: prev,
           nextSelection: TextSelection(
               baseOffset: head.length + added.length,
               extentOffset: head.length + added.length),
           nextText: next);
-      expect(delta.hasDelta, true);
-      expect(delta.isAtEnd, false, reason: 'not at end');
-      expect(delta.isAtStart, false);
-      expect(delta.isDelete, false);
-      expect(delta.isInsert, true);
-      expect(delta.isUpdate, false);
+      expect(delta.position, DeltaTextPosition.middle);
+      expect(delta.type, DeltaTextType.insert);
       expect(delta.headText, head);
-      expect(delta.added, added);
+      expect(delta.plusText, added);
       expect(delta.tailText, tail);
     });
+
+    ///
+    test('insert at all', () {});
   });
 
   ///
   ///
-  group('DeltaText - Deletions', () {
+  group('DeltaText - Deletes', () {
     ///
     test('text deleted at start', () {
       String prev = 'some text';
@@ -108,14 +95,10 @@ void main() {
           prevText: prev,
           nextSelection: const TextSelection(baseOffset: 0, extentOffset: 0),
           nextText: next);
-      expect(delta.hasDelta, true);
-      expect(delta.isAtEnd, false);
-      expect(delta.isAtStart, true);
-      expect(delta.isDelete, true);
-      expect(delta.isInsert, false);
-      expect(delta.isUpdate, false);
+      expect(delta.position, DeltaTextPosition.start);
+      expect(delta.type, DeltaTextType.delete);
       expect(delta.headText, '');
-      expect(delta.added, '');
+      expect(delta.plusText, '');
       expect(delta.tailText, ' text');
     });
 
@@ -131,14 +114,10 @@ void main() {
           nextSelection:
               TextSelection(baseOffset: nextLen, extentOffset: nextLen),
           nextText: next);
-      expect(delta.hasDelta, true);
-      expect(delta.isAtEnd, true);
-      expect(delta.isAtStart, false);
-      expect(delta.isDelete, true);
-      expect(delta.isInsert, false);
-      expect(delta.isUpdate, false);
+      expect(delta.position, DeltaTextPosition.end);
+      expect(delta.type, DeltaTextType.delete);
       expect(delta.headText, next);
-      expect(delta.added, '');
+      expect(delta.plusText, '');
       expect(delta.tailText, '');
     });
 
@@ -151,21 +130,17 @@ void main() {
           prevText: prev,
           nextSelection: const TextSelection(baseOffset: 4, extentOffset: 4),
           nextText: next);
-      expect(delta.hasDelta, true);
-      expect(delta.isAtEnd, false);
-      expect(delta.isAtStart, false);
-      expect(delta.isDelete, true);
-      expect(delta.isInsert, false);
-      expect(delta.isUpdate, false);
+      expect(delta.position, DeltaTextPosition.middle);
+      expect(delta.type, DeltaTextType.delete);
       expect(delta.headText, 'some');
-      expect(delta.added, '');
+      expect(delta.plusText, '');
       expect(delta.tailText, 'xt');
     });
   });
 
   ///
   ///
-  group('Text delta tests == replacements', () {
+  group('DeltaText - Updates', () {
     ///
     test('text replaced at start', () {
       String prev = 'some text';
@@ -175,14 +150,10 @@ void main() {
           prevText: prev,
           nextSelection: const TextSelection(baseOffset: 5, extentOffset: 5),
           nextText: next);
-      expect(delta.hasDelta, true);
-      expect(delta.isAtEnd, false);
-      expect(delta.isAtStart, true);
-      expect(delta.isDelete, false);
-      expect(delta.isInsert, false);
-      expect(delta.isUpdate, true);
+      expect(delta.position, DeltaTextPosition.start);
+      expect(delta.type, DeltaTextType.update);
       expect(delta.headText, '');
-      expect(delta.added, 'other');
+      expect(delta.plusText, 'other');
       expect(delta.tailText, ' text');
     });
 
@@ -198,14 +169,10 @@ void main() {
           prevText: prev,
           nextSelection: TextSelection(baseOffset: j, extentOffset: j),
           nextText: next);
-      expect(delta.hasDelta, true);
-      expect(delta.isAtEnd, true);
-      expect(delta.isAtStart, false);
-      expect(delta.isDelete, false);
-      expect(delta.isInsert, false);
-      expect(delta.isUpdate, true);
+      expect(delta.position, DeltaTextPosition.end);
+      expect(delta.type, DeltaTextType.update);
       expect(delta.headText, 'some ');
-      expect(delta.added, 'drink');
+      expect(delta.plusText, 'drink');
       expect(delta.tailText, '');
     });
 
@@ -218,14 +185,10 @@ void main() {
           prevText: prev,
           nextSelection: const TextSelection(baseOffset: 6, extentOffset: 6),
           nextText: next);
-      expect(delta.hasDelta, true);
-      expect(delta.isAtEnd, false);
-      expect(delta.isAtStart, false);
-      expect(delta.isDelete, false);
-      expect(delta.isInsert, false);
-      expect(delta.isUpdate, true);
+      expect(delta.position, DeltaTextPosition.middle);
+      expect(delta.type, DeltaTextType.update);
       expect(delta.headText, 'som');
-      expect(delta.added, 'xxx');
+      expect(delta.plusText, 'xxx');
       expect(delta.tailText, 'ext');
     });
   });

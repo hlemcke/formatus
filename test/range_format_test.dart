@@ -9,7 +9,7 @@ void main() {
     test('No selection -> no format update', () {
       //--- given
       String prevHtml = '<h1>Title Line</h1>';
-      FormatusDocument doc = FormatusDocument.fromHtml(htmlBody: prevHtml);
+      FormatusDocument doc = FormatusDocument(body: prevHtml);
       DeltaFormat deltaFormat = DeltaFormat(
           selectedFormats: {Formatus.header1},
           textFormats: [Formatus.paragraph]);
@@ -27,7 +27,7 @@ void main() {
     test('Add format to first word', () {
       //--- given
       String prevHtml = '<h1>Title Line</h1>';
-      FormatusDocument doc = FormatusDocument.fromHtml(htmlBody: prevHtml);
+      FormatusDocument doc = FormatusDocument(body: prevHtml);
       DeltaFormat deltaFormat = DeltaFormat(
           selectedFormats: {Formatus.header1, Formatus.bold},
           textFormats: [Formatus.header1]);
@@ -48,7 +48,7 @@ void main() {
     test('Add format to last word', () {
       //--- given
       String prevHtml = '<h1>Title Line</h1>';
-      FormatusDocument doc = FormatusDocument.fromHtml(htmlBody: prevHtml);
+      FormatusDocument doc = FormatusDocument(body: prevHtml);
       DeltaFormat deltaFormat = DeltaFormat(
           selectedFormats: {Formatus.header1, Formatus.bold},
           textFormats: [Formatus.header1]);
@@ -69,7 +69,7 @@ void main() {
     test('Add format to middle word', () {
       //--- given
       String prevHtml = '<h1>Title middle Line</h1>';
-      FormatusDocument doc = FormatusDocument.fromHtml(htmlBody: prevHtml);
+      FormatusDocument doc = FormatusDocument(body: prevHtml);
       DeltaFormat deltaFormat = DeltaFormat(
           selectedFormats: {Formatus.header1, Formatus.bold},
           textFormats: [Formatus.header1]);
@@ -96,7 +96,7 @@ void main() {
     test('Remove format from middle word', () {
       //--- given
       String prevHtml = '<p>Some <b>bold</b> text</p>';
-      FormatusDocument doc = FormatusDocument.fromHtml(htmlBody: prevHtml);
+      FormatusDocument doc = FormatusDocument(body: prevHtml);
       DeltaFormat deltaFormat = DeltaFormat(
           selectedFormats: {Formatus.paragraph},
           textFormats: [Formatus.paragraph, Formatus.bold]);

@@ -9,11 +9,11 @@ void main() {
 const String initialTemplateKey = 'Long';
 const Map<String, String> textTemplates = {
   'Empty': '',
-  'Short': '<p color="blue">Blue with <b>bold</b> words</p>',
+  'Short': '<p><color blue>Blue</> with <b>bold</> words</>',
   initialTemplateKey: '''
 <h1>Formatus Features</h1>
 <h2>Text with <b>bold</b>, <i>italic</i> and <u>underlined</u> words</h2>.
-<p>Third <i>contains <s>nested</s> and</i> <u>under<b>line</b>d</u> text.</p>
+<p>Third line <i>contains <s>nested</s> and</i> <u>under<b>line</b>d</u> text.</p>
 ''',
 };
 
@@ -103,7 +103,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 const InputDecoration(focusedBorder: OutlineInputBorder()),
             focusNode: _formatusFocus,
             minLines: 3,
-            maxLines: 10,
+            maxLines: 7,
             onChanged: (_) => setState(() => ()),
             showCursor: true,
           ),

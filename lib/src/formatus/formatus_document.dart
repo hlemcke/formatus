@@ -45,25 +45,21 @@ class FormatusDocument {
   }
 
   /// Creates a new instance from the given html-text
-  factory FormatusDocument.fromHtml({
-    required String htmlBody,
+  factory FormatusDocument({
+    required String body,
   }) {
-    String cleanedHtml = FormatusDocument.cleanUpHtml(htmlBody);
-    if (cleanedHtml.isEmpty) return FormatusDocument.empty();
-    if (!cleanedHtml.startsWith('<')) {
-      cleanedHtml = '<p>$cleanedHtml';
+    String cleanBody = FormatusDocument.cleanUpHtml(body);
+    if (cleanBody.isEmpty) return FormatusDocument.empty();
+    if (!cleanBody.startsWith('<')) {
+      cleanBody = '<p>$cleanBody';
     }
     FormatusDocument doc = FormatusDocument._();
-    doc.root = FormatusParser().parse(htmlBody, doc.textNodes);
-    doc.toPlainText();
+    doc.root = FormatusParser().parse(body, doc.textNodes);
+    doc.computeNodeResults();
     return doc;
   }
 
   // TODO factory FormatusDocument.fromMarkdown({ required String markdownBody, })
-
-  /// Output from [toPlainText] for later [update]
-  String get previousText => _previousText;
-  String _previousText = '';
 
   ///
   /// Cleanup given text by:
@@ -137,48 +133,80 @@ class FormatusDocument {
     return 2;
   }
 
+  /// Same as [FormatusNodeResults].plainText
+  String get _plainText => nodeResults.plainText;
+
+  @visibleForTesting
+  String get plainText => _plainText;
+
   ///
   /// Returns index of text-node which contains given `charIndex`
   ///
-  int computeTextNodeIndex(int charIndex) =>
-      FormatusTree.computeIndex(textNodes, _previousText, charIndex);
+  int computeNodeIndex(int charIndex) =>
+      FormatusTree.computeIndex(textNodes, _plainText, charIndex);
+
+  /// Updated by [computeNodeResults]
+  FormatusNodeResults nodeResults = FormatusNodeResults();
+
+  /// Results after creation or any change automatically computed here
+  void computeNodeResults() {
+    nodeResults = FormatusNodeResults();
+    List<TextSpan> spans = [];
+    for (int i = 0; i < root.children.length; i++) {
+      if (i > 0) {
+        nodeResults.plainText += '\n';
+        spans.add(const TextSpan(text: '\n'));
+      }
+      FormatusNodeResults childResults = root.children[i].toResults();
+      spans.add(childResults.textSpan);
+      nodeResults.formattedText += childResults.formattedText;
+      nodeResults.plainText += childResults.plainText;
+    }
+    nodeResults.textSpan = TextSpan(children: spans, style: root.style);
+  }
 
   ///
   /// Handle cases for `delete` and `update`. A `DeltaFormat` cannot exist here!
   ///
   void handleDeleteAndUpdate(DeltaText diff) {
+    //--- Preparations
+    int headLength = diff.headText.length;
+    int prevLength = diff.prevText.length;
+    int tailLength = diff.tailText.length;
+
     //--- Line-break deleted
-    if (previousText[diff.headText.length] == '\n') {
+    if (diff.prevText[headLength] == '\n') {
       _handleLineBreakDelete(diff);
-    } else if (diff.isAtStart) {
-      int nodeIndex =
-          computeTextNodeIndex(_previousText.length - diff.tailText.length);
+    } else if (diff.position == DeltaTextPosition.all) {
+      clear();
+      textNodes[0].text += diff.plusText;
+    } else if (diff.position == DeltaTextPosition.start) {
+      int nodeIndex = computeNodeIndex(prevLength - tailLength);
       FormatusNode textNode = textNodes[nodeIndex];
       FormatusTree.removeTextNodesAhead(textNodes, nodeIndex);
       String remains = textNode.text.isEmpty
           ? ''
           : textNode.text.substring(textNode.textOffset);
-      textNode.text = diff.added + remains;
+      textNode.text = diff.plusText + remains;
       if (textNode.isEmpty) FormatusTree.dispose(textNodes, textNode);
-    } else if (diff.isAtEnd) {
-      int nodeIndex = computeTextNodeIndex(diff.headText.length);
+    } else if (diff.position == DeltaTextPosition.end) {
+      int nodeIndex = computeNodeIndex(headLength);
       FormatusNode textNode = textNodes[nodeIndex];
       FormatusTree.removeTextNodesBehind(textNodes, nodeIndex);
       textNode.text =
-          textNode.text.substring(0, textNode.textOffset) + diff.added;
+          textNode.text.substring(0, textNode.textOffset) + diff.plusText;
       if (textNode.isEmpty) FormatusTree.dispose(textNodes, textNode);
     } else {
-      int leadNodeIndex = computeTextNodeIndex(diff.headText.length);
+      int leadNodeIndex = computeNodeIndex(headLength);
       FormatusNode leadNode = textNodes[leadNodeIndex];
       int leadOffset = leadNode.textOffset;
-      int tailNodeIndex =
-          computeTextNodeIndex(_previousText.length - diff.tailText.length);
+      int tailNodeIndex = computeNodeIndex(prevLength - tailLength);
 
       //--- Deletion or replacement within same node
       if (leadNodeIndex == tailNodeIndex) {
         String pre = leadNode.text.substring(0, leadOffset);
         String post = leadNode.text.substring(leadNode.textOffset);
-        leadNode.text = pre + diff.added + post;
+        leadNode.text = pre + diff.plusText + post;
         if (leadNode.isEmpty) {
           FormatusTree.dispose(textNodes, leadNode);
         }
@@ -187,7 +215,7 @@ class FormatusDocument {
       else {
         //--- Adapt text-nodes
         FormatusNode tailNode = textNodes[tailNodeIndex];
-        leadNode.text = leadNode.text.substring(0, leadOffset) + diff.added;
+        leadNode.text = leadNode.text.substring(0, leadOffset) + diff.plusText;
         tailNode.text = tailNode.text.substring(tailNode.textOffset);
         FormatusTree.removeTextNodesBetween(
             textNodes, leadNodeIndex + 1, tailNodeIndex);
@@ -205,7 +233,7 @@ class FormatusDocument {
         }
       }
     }
-    toPlainText();
+    computeNodeResults();
   }
 
   ///
@@ -213,30 +241,30 @@ class FormatusDocument {
   ///
   void handleInsert(DeltaText deltaText, DeltaFormat deltaFormat) {
     FormatusNode textNode = FormatusNode();
-    if (deltaText.added == '\n') {
+    if (deltaText.plusText == '\n') {
       _handleLineBreakInsert(deltaText);
-    } else if (deltaText.isAtStart) {
+    } else if (deltaText.position == DeltaTextPosition.start) {
       textNode = textNodes.first;
       if (deltaFormat.hasDelta) {
         handleInsertWithDifferentFormat(
-            textNode, deltaText.added, true, deltaFormat);
+            textNode, deltaText.plusText, true, deltaFormat);
       } else {
-        textNode.text = deltaText.added + textNode.text;
+        textNode.text = deltaText.plusText + textNode.text;
       }
-    } else if (deltaText.isAtEnd) {
+    } else if (deltaText.position == DeltaTextPosition.end) {
       textNode = textNodes.last;
       if (deltaFormat.hasDelta) {
         handleInsertWithDifferentFormat(
-            textNode, deltaText.added, false, deltaFormat);
+            textNode, deltaText.plusText, false, deltaFormat);
       } else {
-        textNode.text = textNode.text + deltaText.added;
+        textNode.text = textNode.text + deltaText.plusText;
       }
     } else {
-      int nodeIndex = computeTextNodeIndex(deltaText.headText.length);
+      int nodeIndex = computeNodeIndex(deltaText.headText.length);
       textNode = textNodes[nodeIndex];
       if (!deltaFormat.hasDelta) {
         textNode.text = textNode.text.substring(0, textNode.textOffset) +
-            deltaText.added +
+            deltaText.plusText +
             textNode.text.substring(textNode.textOffset);
       }
       //--- Handle insert in middle with different format
@@ -247,7 +275,7 @@ class FormatusDocument {
 
         //--- Create and attach differently formatted nodes
         FormatusNode subTreeTop = handleInsertWithDifferentFormat(
-            textNode, deltaText.added, false, deltaFormat);
+            textNode, deltaText.plusText, false, deltaFormat);
 
         //--- Create and attach node with same format and rest of text
         if (tailText.isNotEmpty) {
@@ -265,7 +293,7 @@ class FormatusDocument {
         }
       }
     }
-    _previousText = toPlainText();
+    computeNodeResults();
   }
 
   ///
@@ -301,15 +329,16 @@ class FormatusDocument {
     if (selection.isCollapsed) return;
 
     //--- Determine first and last text-node from selection
-    int headTextIndex = computeTextNodeIndex(selection.start);
+    int headTextIndex = computeNodeIndex(selection.start);
     int headTextOffset = textNodes[headTextIndex].textOffset;
-    int tailTextIndex = computeTextNodeIndex(selection.end);
+    int tailTextIndex = computeNodeIndex(selection.end);
     int tailTextOffset = textNodes[tailTextIndex].textOffset;
 
     //--- Apply format to single node
     if (headTextIndex == tailTextIndex) {
       applyFormatToTextNode(
           format, headTextIndex, headTextOffset, tailTextOffset);
+      computeNodeResults();
       return;
     }
 
@@ -325,13 +354,14 @@ class FormatusDocument {
     for (int i = headTextIndex; i < tailTextIndex; i++) {
       applyFormatToTextNode(format, i, 0, 9999);
     }
+    computeNodeResults();
   }
 
   /// Delete a single line break
   /// -> attach children of right section element to left one
   void _handleLineBreakDelete(DeltaText deltaText) {
     int indexOfLineBreak = deltaText.headText.length;
-    int leftTextNodeIndex = computeTextNodeIndex(indexOfLineBreak - 1);
+    int leftTextNodeIndex = computeNodeIndex(indexOfLineBreak - 1);
     FormatusNode leftTopNode = textNodes[leftTextNodeIndex].top;
     int leftTopNodeIndex = leftTopNode.childIndexInParent;
     FormatusNode rightTopNode = root.children[leftTopNodeIndex + 1];
@@ -341,19 +371,19 @@ class FormatusDocument {
 
   /// Insert a line break -> at start, at end, within an element, between elements
   void _handleLineBreakInsert(DeltaText deltaText) {
-    if (deltaText.isAtStart) {
+    if (deltaText.position == DeltaTextPosition.start) {
       FormatusNode newNode =
           FormatusTree.createSubTree(textNodes, '', [Formatus.paragraph]);
       FormatusTree.insertChild(textNodes, root, 0, newNode.top);
       textNodes.insert(0, newNode);
-    } else if (deltaText.isAtEnd) {
+    } else if (deltaText.position == DeltaTextPosition.end) {
       FormatusNode newNode =
           FormatusTree.createSubTree(textNodes, '', [Formatus.paragraph]);
       FormatusTree.appendChild(textNodes, root, newNode.top);
       textNodes.add(newNode);
     } else if (_isLineBreakInsertedBetweenSectionElements(deltaText)) {
       //--- Insert new paragraph between the two section nodes
-      int prevIndex = computeTextNodeIndex(deltaText.headText.length - 1);
+      int prevIndex = computeNodeIndex(deltaText.headText.length - 1);
       FormatusNode newTextNode =
           FormatusTree.createSubTree(textNodes, '', [Formatus.paragraph]);
       textNodes.insert(prevIndex + 1, newTextNode);
@@ -362,8 +392,7 @@ class FormatusDocument {
           textNodes, root, topLevelNodeIndex + 1, newTextNode.top);
     } else {
       //--- Create new paragraph and fill with nodes right of split
-      int splitNodeIndex = FormatusTree.computeIndex(
-          textNodes, previousText, deltaText.headText.length);
+      int splitNodeIndex = computeNodeIndex(deltaText.headText.length);
       FormatusNode splitTextNode = textNodes[splitNodeIndex];
       FormatusNode splitTopNode = splitTextNode.top;
       int splitTopIndex = splitTopNode.childIndexInParent;
@@ -401,7 +430,8 @@ class FormatusDocument {
 
   bool _isLineBreakInsertedBetweenSectionElements(DeltaText deltaText) {
     int i = deltaText.headText.length;
-    return ((previousText[i - 1] == '\n') || (previousText[i] == '\n'))
+    return ((deltaText.prevText[i - 1] == '\n') ||
+            (deltaText.prevText[i] == '\n'))
         ? true
         : false;
   }
@@ -438,33 +468,5 @@ class FormatusDocument {
     for (FormatusNode child in node.children) {
       _optimize(child);
     }
-  }
-
-  ///
-  /// Returns this document as a string in html format
-  ///
-  String toHtml() {
-    String html = '';
-    for (FormatusNode node in root.children) {
-      html += node.toHtml();
-    }
-    return html;
-  }
-
-  ///
-  /// Returns plain text with line breaks between section elements
-  ///
-  /// Used for [TextFormField.text]
-  ///
-  String toPlainText() {
-    String plain = '';
-    bool isNotFirst = false;
-    for (FormatusNode topLevelNode in root.children) {
-      if (isNotFirst) plain += '\n';
-      isNotFirst = true;
-      plain += topLevelNode.toPlainText();
-    }
-    _previousText = plain;
-    return plain;
   }
 }

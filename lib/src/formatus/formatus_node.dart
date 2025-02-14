@@ -11,7 +11,7 @@ import 'formatus_model.dart';
 ///
 class FormatusNode {
   /// Tag attributes like href or color
-  final Map<String, dynamic> attributes = {};
+  final List<dynamic> attributes = [];
 
   /// Format of this node
   Formatus format;
@@ -104,15 +104,15 @@ class FormatusNode {
   ///
   /// Recursively produces formatted text
   ///
-  String toHtml() {
+  String toFormatted() {
     if (isText) return text;
     String html = '<${format.key}';
-    for (String key in attributes.keys) {
-      html += ' $key="${attributes[key]}"';
+    for (String value in attributes) {
+      html += ' $value';
     }
     html += '>';
     for (FormatusNode node in children) {
-      html += node.toHtml();
+      html += node.toFormatted();
     }
     return '$html</${format.key}>';
   }
@@ -140,23 +140,24 @@ class FormatusNode {
     }
     List<TextSpan> spans = [];
     results.formattedText += '<${format.key}';
-    for (String key in attributes.keys) {
-      results.formattedText += ' $key="${attributes[key]}"';
+    for (String attr in attributes) {
+      results.formattedText += ' $attr';
     }
     results.formattedText += '>';
 
     //--- Deep dive through children of this node
-    for (FormatusNode child in children) {
+    for (int i = 0; i < children.length; i++) {
+      FormatusNode child = children[i];
       FormatusNodeResults childResults = child.toResults();
+      if (child.format.isSection && (i > 0)) {
+        results.plainText += '\n';
+        spans.add(const TextSpan(text: '\n'));
+      }
       spans.add(childResults.textSpan);
       results.formattedText += childResults.formattedText;
       results.plainText += childResults.plainText;
     }
     results.formattedText += '</${format.key}>';
-    if (format.isSection) {
-      results.plainText += '\n';
-      spans.add(const TextSpan(text: '\n'));
-    }
     results.textSpan = TextSpan(children: spans, style: format.style);
     return results;
   }

@@ -1,77 +1,70 @@
 # Delta-Text Analysis
 
-[DeltaText] is `false` if current string (`curText)` is equal to previous string (`prevText`).
+[DeltaText] is `false` if next string (`nextText)` is equal to previous string (`prevText`).
 
 Q: Should insert and update be handled identically?
 A: No because insert always adds text to only one single text-node without modifying the format-tree
 
 Q: How to determine if it's a deletion?
-A: Delete has: `added.isEmpty`
+A: Delete has: `plusText.isEmpty`
 
 Q: How to determine if it's an insert?
-A: Insert has: `added.isNotEmpty` AND `leadText + tailText == prevText`
+A: Insert has: `plusText.isNotEmpty` AND `leadText + tailText == prevText`
 
 ## Initial Computations
 
 1. all -> (prevSelection.start == 0) AND (prevText.length == prevSelection.end)
-2. start -> NOT all AND ((prevSelection.start == 0) OR (curSelection.start == 0))
-   * head = ''
-   * tail from end
-   * added is substring of curText minus tail
-3. end -> NOT start AND ((prevSelection.end == prevText.length) OR (curSelection.end == curText.end))
-   * tail = ''
-   * head from start until prevSelection.start
-   * added is substring of curText minus head
+2. start -> NOT all AND ((prevSelection.start == 0) OR (nextSelection.start == 0))
+   * headText = ''
+   * tailText from end
+   * plusText is substring of nextText minus tail
+3. end -> NOT start AND ((prevSelection.end == prevText.length) OR (nextSelection.end == nextText.end))
+   * tailText = ''
+   * headText from start until prevSelection.start
+   * plusText is substring of nextText minus head
 4. middle -> NOT end
-   * head from start until prevSelection.start
-   * tail from end until prevSelection.end
-   * added is substring of curText minus head and minus tail
+   * headText from start until prevSelection.start
+   * tailText from end until prevSelection.end
+   * plusText is substring of nextText minus head and minus tail
 
 ## Follow-up Computations
 
-1. del -> added.isEmpty
+1. del -> plusText.isEmpty
 2. ins -> NOT del AND (leadText + tailText == prevText)
 3. upd -> NOT ins
 
 ## Delta-Types ordered by Type of Modification
 
-|=    Type    =|= head =|= tail =|= add =|
-|==============|========|========|=======|
-| del - all    |     "" |     "" |    "" |
-| del - start  |     "" |   tail |    "" |
-| del - middle |   head |   tail |    "" |
-| del - end    |   head |     "" |    "" |
-| ins - all    |     "" |     "" | added |
-| ins - start  |     "" |   prev | added |
-| ins - middle |   head |   tail | added |
-| ins - end    |   prev |     "" | added |
-| upd - start  |     "" |   tail | added |
-| upd - middle |   head |   tail | added |
-| upd - end    |   head |     "" | added |
+|=    Type    =|= head =|= tail =|= plus =|
+|==============|========|========|========|
+| del - all    |     "" |     "" |     "" |
+| del - start  |     "" |   tail |     "" |
+| del - middle |   head |   tail |     "" |
+| del - end    |   head |     "" |     "" |
+| ins - all    |     "" |     "" |   plus |
+| ins - start  |     "" |   prev |   plus |
+| ins - middle |   head |   tail |   plus |
+| ins - end    |   prev |     "" |   plus |
+| upd - start  |     "" |   tail |   plus |
+| upd - middle |   head |   tail |   plus |
+| upd - end    |   head |     "" |   plus |
 
 ## Delta-Types ordered by Position of Modification
 
-|=  Position  =|= head =|= tail =|= add =|
-|==============|========|========|=======|
-| all - del    |     "" |     "" |    "" |
-| all - ins    |     "" |     "" | added |
-| start - del  |     "" |   tail |    "" |
-| start - ins  |     "" |   prev | added |
-| start - upd  |     "" |   tail | added |
-| middle - del |   head |   tail |    "" |
-| middle - ins |   head |   tail | added |
-| middle - upd |   head |   tail | added |
-| end - del    |   head |     "" |    "" |
-| end - ins    |   prev |     "" | added |
-| end - upd    |   head |     "" | added |
+|=  Position  =|= head =|= tail =|= plus =|
+|==============|========|========|========|
+| all - del    |     "" |     "" |     "" |
+| all - ins    |     "" |     "" |   plus |
+| start - del  |     "" |   tail |     "" |
+| start - ins  |     "" |   prev |   plus |
+| start - upd  |     "" |   tail |   plus |
+| middle - del |   head |   tail |     "" |
+| middle - ins |   head |   tail |   plus |
+| middle - upd |   head |   tail |   plus |
+| end - del    |   head |     "" |     "" |
+| end - ins    |   prev |     "" |   plus |
+| end - upd    |   head |     "" |   plus |
 
-## Computations - Parts
-
-* head -> 
-## Computations - Type
-
-* Delete -> added.isEmpty
-* Insert -> added.isNotEmpty AND 
 
 ## Determine Text-Node
 

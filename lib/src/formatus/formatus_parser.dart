@@ -60,16 +60,9 @@ class FormatusParser {
     //--- Create node
     FormatusNode newNode = FormatusNode(format: Formatus.find(tagName));
 
-    //--- parse attributes
+    //--- parse attribute values
     for (String part in parts) {
-      List<String> kv = part.split("=");
-      String value = kv[1];
-      if (value.length > 2) {
-        value = value.startsWith("\"") ? value.substring(1) : value;
-        value =
-            value.endsWith("\"") ? value.substring(0, value.length - 1) : value;
-      }
-      newNode.attributes[kv[0]] = value;
+      newNode.attributes.add(part);
     }
 
     return _ParsedNode(node: newNode, offset: j + 1);
@@ -81,28 +74,28 @@ class FormatusParser {
   /// Returns the offset into `htmlBody` of the first character following the
   /// closing element.
   ///
-  int _parseTag(String htmlBody, int offset, FormatusNode parent,
+  int _parseTag(String body, int offset, FormatusNode parent,
       List<FormatusNode> textNodes) {
-    _ParsedNode? parsedNode = _parseElement(htmlBody, offset);
-    if (parsedNode == null) return htmlBody.length;
+    _ParsedNode? parsedNode = _parseElement(body, offset);
+    if (parsedNode == null) return body.length;
     FormatusNode node = parsedNode.node;
     FormatusTree.appendChild(textNodes, parent, node);
 
     //--- loop all content into text or nested inline until closing element
     offset = parsedNode.offset;
-    while (offset < htmlBody.length) {
-      if (htmlBody[offset] == '<') {
+    while (offset < body.length) {
+      if (body[offset] == '<') {
         //--- Closing tag
-        if (htmlBody[offset + 1] == '/') {
-          while (offset < htmlBody.length && htmlBody[offset] != '>') {
+        if (body[offset + 1] == '/') {
+          while (offset < body.length && body[offset] != '>') {
             offset++;
           }
           return offset + 1;
         }
         //--- Opening tag -> must be a nested inline tag
-        offset = _parseTag(htmlBody, offset, node, textNodes);
+        offset = _parseTag(body, offset, node, textNodes);
       } else {
-        offset = _parseText(htmlBody, offset, node, textNodes);
+        offset = _parseText(body, offset, node, textNodes);
       }
     }
     return offset;
@@ -126,7 +119,7 @@ class FormatusParser {
   }
 }
 
-/// Parser often need both node and resulting text offset
+/// Parser often needs both node and resulting text offset
 class _ParsedNode {
   FormatusNode node;
   int offset;

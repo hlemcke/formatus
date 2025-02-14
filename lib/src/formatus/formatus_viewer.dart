@@ -9,7 +9,7 @@ class FormatusViewer extends StatelessWidget {
     super.key,
     required String formattedText,
   }) {
-    doc = FormatusDocument.fromHtml(htmlBody: formattedText);
+    doc = FormatusDocument(body: formattedText);
   }
 
   @override
