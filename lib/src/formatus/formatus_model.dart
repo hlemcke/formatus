@@ -125,6 +125,9 @@ enum Formatus {
     ),
   ),
 
+  /// Line-breaks are automatically inserted between sections
+  lineBreak('', FormatusType.section, null, null),
+
   /// Section element of an ordered list entry.
   /// In html this would be an `li` element of the enclosing `ol`
   orderedList(
@@ -229,6 +232,9 @@ enum Formatus {
 
   bool get isSection => type == FormatusType.section;
 
+  @override
+  String toString() => '<$key>';
+
   static Formatus find(String text) => findEnum(text, Formatus.values,
       defaultValue: Formatus.text, withKey: true);
 }
@@ -280,20 +286,6 @@ class FormatusAnchor {
 
   @override
   String toString() => toHtml();
-}
-
-///
-/// HTML attribute names used in [Formatus]
-///
-enum FormatusAttribute {
-  /// TextStyle.backgroundColor
-  bgcolor,
-
-  /// TextStyle.color
-  color,
-
-  /// only usable in link element
-  href,
 }
 
 ///

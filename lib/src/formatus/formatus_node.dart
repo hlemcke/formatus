@@ -10,180 +10,110 @@ import 'formatus_model.dart';
 /// Cannot extend [TextSpan] here because its immutable and we need `parent`.
 ///
 class FormatusNode {
-  /// Tag attributes like href or color
-  final List<dynamic> attributes = [];
+  /// Optional attribute color
+  Color? color;
 
-  /// Format of this node
-  Formatus format;
+  /// Optional attribute href
+  String href = '';
 
-  /// Style of this node
-  TextStyle style = const TextStyle();
+  /// Formats of this node
+  List<Formatus> formats;
 
-  /// Non empty only if this is a text node (`format == Formatus.text`)
-  String text = '';
+  /// Text part of this node
+  String text;
 
   ///
-  /// Creates a new node
+  /// Constructor for a new node
   ///
   FormatusNode({
-    this.format = Formatus.paragraph,
-    this.style = const TextStyle(),
-    this.text = '',
-  }) {
-    if (text.isNotEmpty) {
-      format = Formatus.text;
-    }
-  }
+    required this.formats,
+    required this.text,
+  });
 
-  /// Single final empty node to be used as placeholder
+  /// Automatically inserted between sections
+  static final FormatusNode lineBreak =
+      FormatusNode(formats: [Formatus.lineBreak], text: '\n');
+
+  /// Single final empty node to be used as placeholder to ensure null safety
   static final FormatusNode placeHolder =
-      FormatusNode(format: Formatus.placeHolder);
+      FormatusNode(formats: [Formatus.placeHolder], text: '');
 
-  List<FormatusNode> get children => _children;
-  final List<FormatusNode> _children = [];
-
-  /// Index of this node in parents children. Relevant in path
-  int get childIndexInParent =>
-      (parent == null) ? -1 : parent!.children.indexOf(this);
-
-  /// Gets depths in tree. Returns 0 for a section node
-  int get depth => path.last == this ? path.length : parent?.depth ?? 0;
-
-  ///
-  /// Gets formats from path without `root`-format
-  ///
-  List<Formatus> get formatsInPath {
-    List<Formatus> formats = [];
-    FormatusNode? node = isText ? parent : this;
-    while ((node != null) && (node.format != Formatus.root)) {
-      formats.insert(0, node.format);
-      node = node.parent;
+  /// Applies `selectedFormats` to `formats` by removing missing formats
+  /// and by appending additional formats
+  void applyFormats(Set<Formatus> selectedFormats) {
+    Set<Formatus> toRemove = formats.toSet().difference(selectedFormats);
+    for (Formatus formatus in toRemove) {
+      formats.remove(formatus);
     }
-    return formats;
+    Set<Formatus> toAdd = selectedFormats.difference(formats.toSet());
+    formats.addAll(toAdd);
   }
 
-  bool get hasChildren => children.isNotEmpty;
+  /// Returns a deep clone of this one
+  FormatusNode clone() => FormatusNode(formats: formats.toList(), text: text)
+    ..color = color
+    ..href = href;
 
-  bool get hasParent => parent != null;
-
-  bool get isEmpty => isText ? text.isEmpty : _children.isEmpty;
-
-  bool get isRoot => (format == Formatus.root) || (parent == null);
-
-  bool get isText => format == Formatus.text;
-
-  bool get isSection => format.type == FormatusType.section;
-
-  /// Length of text in a text node. 0 for all other nodes.
-  int get length => text.length;
-
-  /// Section tags have the single body element (root) as parent
-  FormatusNode? parent;
-
-  /// Gets path from section (below `root`) down to this node.
-  List<FormatusNode> get path {
-    List<FormatusNode> path = [];
-    FormatusNode? node = this;
-    while ((node != null) && (node.format != Formatus.root)) {
-      path.insert(0, node);
-      node = node.parent;
-    }
-    return path;
-  }
-
-  /// Offset into this nodes `text` of cursor position.
-  int textOffset = -1;
-
-  /// Gets top node (below `root`) of this subtree
-  FormatusNode get top => (parent == null)
-      ? this
-      : (parent!.format == Formatus.root)
-          ? this
-          : parent!.top;
-
-  ///
-  /// Recursively produces formatted text
-  ///
-  String toFormatted() {
-    if (isText) return text;
-    String html = '<${format.key}';
-    for (String value in attributes) {
-      html += ' $value';
-    }
-    html += '>';
-    for (FormatusNode node in children) {
-      html += node.toFormatted();
-    }
-    return '$html</${format.key}>';
-  }
-
-  ///
-  String toPlainText() {
-    String plain = text;
-    for (FormatusNode child in children) {
-      plain += child.toPlainText();
-    }
-    return plain;
-  }
-
-  ///
-  /// Recursively produce results
-  ///
-  FormatusNodeResults toResults() {
-    FormatusNodeResults results = FormatusNodeResults();
-    if (isText) {
-      // -> it's a leaf node
-      results.formattedText = text;
-      results.plainText = text;
-      results.textSpan = TextSpan(style: Formatus.text.style, text: text);
-      return results;
-    }
-    List<TextSpan> spans = [];
-    results.formattedText += '<${format.key}';
-    for (String attr in attributes) {
-      results.formattedText += ' $attr';
-    }
-    results.formattedText += '>';
-
-    //--- Deep dive through children of this node
-    for (int i = 0; i < children.length; i++) {
-      FormatusNode child = children[i];
-      FormatusNodeResults childResults = child.toResults();
-      if (child.format.isSection && (i > 0)) {
-        results.plainText += '\n';
-        spans.add(const TextSpan(text: '\n'));
+  /// Returns `true` if `other` has a different list of formats
+  bool hasSameFormats(Object other) {
+    if ((other is FormatusNode) && (formats.length == other.formats.length)) {
+      for (int i = 0; i < formats.length; i++) {
+        if (formats[i] != other.formats[i]) return false;
       }
-      spans.add(childResults.textSpan);
-      results.formattedText += childResults.formattedText;
-      results.plainText += childResults.plainText;
+      return true;
     }
-    results.formattedText += '</${format.key}>';
-    results.textSpan = TextSpan(children: spans, style: format.style);
-    return results;
+    return false;
   }
+
+  /// Returns `true` if this is an anchor node
+  bool get isAnchor => formats.last == Formatus.anchor;
+
+  /// Returns `true` if this is a line-break between two sections
+  bool get isLineBreak => formats[0] == Formatus.lineBreak;
+
+  bool get isNotLineBreak => !isLineBreak;
+
+  /// Length of text
+  int get length => text.length;
 
   ///
   @override
-  String toString() => text.isNotEmpty
-      ? '[$textOffset] "$text"'
-      : '<${format.key}> ${_children.length}';
-
-  TextSpan toTextSpan() {
-    if (text.isNotEmpty) {
-      return TextSpan(style: Formatus.text.style, text: text);
+  String toString() {
+    String str = '';
+    for (Formatus formatus in formats) {
+      str += '<${formatus.key}>';
     }
-    List<TextSpan> spans = [];
-    for (FormatusNode child in children) {
-      spans.add(child.toTextSpan());
-    }
-    return TextSpan(children: spans, style: format.style);
+    return '$str -> "$text"';
   }
 }
 
 ///
-/// Results when recursively walking tree
+/// Result from [FormatusDocument.computeMeta()]
 ///
-class FormatusNodeResults {
+class NodeMeta {
+  /// Length of text in node
+  int get length => node.length;
+
+  FormatusNode node = FormatusNode.placeHolder;
+
+  /// Index into [FormatusDocument.textNodes]
+  int nodeIndex = -1;
+
+  /// Nodes text starts at this offset:
+  /// 0 <= textStart <= previousText.length - node.text.length
+  int textBegin = -1;
+
+  /// Offset into nodes `text`: 0 <= textOffset <= node.text.length
+  int textOffset = -1;
+
+  @override
+  String toString() => '[$nodeIndex] $textBegin + $textOffset -> $node';
+}
+
+///
+/// Results to update formatted text and [TextField]
+///
+class FormatusResults {
   String plainText = '';
   String formattedText = '';
   TextSpan textSpan = TextSpan(text: '');

@@ -12,11 +12,11 @@ void main() {
           prevText: text,
           nextSelection: const TextSelection(baseOffset: 5, extentOffset: 5),
           nextText: text);
-      expect(delta.position, DeltaTextPosition.unknown);
       expect(delta.type, DeltaTextType.none);
-      expect(delta.headText, '');
-      expect(delta.plusText, '');
-      expect(delta.tailText, '');
+      expect(delta.headLength, -1);
+      expect(delta.textAdded, '');
+      expect(delta.tailLength, -1);
+      expect(delta.tailLength, -1);
     });
 
     ///
@@ -30,11 +30,11 @@ void main() {
           nextSelection: TextSelection(
               baseOffset: added.length, extentOffset: added.length),
           nextText: next);
-      expect(delta.position, DeltaTextPosition.start);
       expect(delta.type, DeltaTextType.insert);
-      expect(delta.headText, '');
-      expect(delta.plusText, added);
-      expect(delta.tailText, prev);
+      expect(delta.headLength, 0);
+      expect(delta.textAdded, added);
+      expect(delta.tailLength, prev.length);
+      expect(delta.tailOffset, 0);
     });
 
     ///
@@ -49,15 +49,15 @@ void main() {
           nextSelection:
               TextSelection(baseOffset: next.length, extentOffset: next.length),
           nextText: next);
-      expect(delta.position, DeltaTextPosition.end);
       expect(delta.type, DeltaTextType.insert);
-      expect(delta.headText, prev);
-      expect(delta.plusText, added);
-      expect(delta.tailText, '');
+      expect(delta.headLength, prev.length);
+      expect(delta.textAdded, added);
+      expect(delta.tailLength, 0);
+      expect(delta.tailOffset, prev.length);
     });
 
     ///
-    test('insert at middle', () {
+    test('insert inside', () {
       String head = 'some ';
       String added = 'inserted ';
       String tail = 'text';
@@ -71,11 +71,11 @@ void main() {
               baseOffset: head.length + added.length,
               extentOffset: head.length + added.length),
           nextText: next);
-      expect(delta.position, DeltaTextPosition.middle);
       expect(delta.type, DeltaTextType.insert);
-      expect(delta.headText, head);
-      expect(delta.plusText, added);
-      expect(delta.tailText, tail);
+      expect(delta.headLength, head.length);
+      expect(delta.textAdded, added);
+      expect(delta.tailLength, tail.length);
+      expect(delta.tailOffset, head.length);
     });
 
     ///
@@ -95,11 +95,12 @@ void main() {
           prevText: prev,
           nextSelection: const TextSelection(baseOffset: 0, extentOffset: 0),
           nextText: next);
-      expect(delta.position, DeltaTextPosition.start);
       expect(delta.type, DeltaTextType.delete);
-      expect(delta.headText, '');
-      expect(delta.plusText, '');
-      expect(delta.tailText, ' text');
+      expect(delta.headLength, 0);
+      expect(delta.textAdded, '');
+      expect(delta.tailLength, next.length);
+      expect(delta.tailOffset, 4);
+      expect(delta.textRemoved, 'some');
     });
 
     ///
@@ -114,11 +115,12 @@ void main() {
           nextSelection:
               TextSelection(baseOffset: nextLen, extentOffset: nextLen),
           nextText: next);
-      expect(delta.position, DeltaTextPosition.end);
       expect(delta.type, DeltaTextType.delete);
-      expect(delta.headText, next);
-      expect(delta.plusText, '');
-      expect(delta.tailText, '');
+      expect(delta.headLength, nextLen);
+      expect(delta.textAdded, '');
+      expect(delta.tailLength, 0);
+      expect(delta.tailOffset, 9);
+      expect(delta.textRemoved, 'text');
     });
 
     ///
@@ -130,11 +132,12 @@ void main() {
           prevText: prev,
           nextSelection: const TextSelection(baseOffset: 4, extentOffset: 4),
           nextText: next);
-      expect(delta.position, DeltaTextPosition.middle);
       expect(delta.type, DeltaTextType.delete);
-      expect(delta.headText, 'some');
-      expect(delta.plusText, '');
-      expect(delta.tailText, 'xt');
+      expect(delta.headLength, 4);
+      expect(delta.textAdded, '');
+      expect(delta.tailLength, 2);
+      expect(delta.tailOffset, 7);
+      expect(delta.textRemoved, ' te');
     });
   });
 
@@ -150,11 +153,12 @@ void main() {
           prevText: prev,
           nextSelection: const TextSelection(baseOffset: 5, extentOffset: 5),
           nextText: next);
-      expect(delta.position, DeltaTextPosition.start);
       expect(delta.type, DeltaTextType.update);
-      expect(delta.headText, '');
-      expect(delta.plusText, 'other');
-      expect(delta.tailText, ' text');
+      expect(delta.headLength, 0);
+      expect(delta.textAdded, 'other');
+      expect(delta.tailLength, ' text'.length);
+      expect(delta.tailOffset, 4);
+      expect(delta.textRemoved, 'some');
     });
 
     ///
@@ -169,11 +173,12 @@ void main() {
           prevText: prev,
           nextSelection: TextSelection(baseOffset: j, extentOffset: j),
           nextText: next);
-      expect(delta.position, DeltaTextPosition.end);
       expect(delta.type, DeltaTextType.update);
-      expect(delta.headText, 'some ');
-      expect(delta.plusText, 'drink');
-      expect(delta.tailText, '');
+      expect(delta.headLength, i);
+      expect(delta.textAdded, 'drink');
+      expect(delta.tailLength, 0);
+      expect(delta.tailOffset, prev.length);
+      expect(delta.textRemoved, 'text');
     });
 
     ///
@@ -185,11 +190,12 @@ void main() {
           prevText: prev,
           nextSelection: const TextSelection(baseOffset: 6, extentOffset: 6),
           nextText: next);
-      expect(delta.position, DeltaTextPosition.middle);
       expect(delta.type, DeltaTextType.update);
-      expect(delta.headText, 'som');
-      expect(delta.plusText, 'xxx');
-      expect(delta.tailText, 'ext');
+      expect(delta.headLength, 3);
+      expect(delta.textAdded, 'xxx');
+      expect(delta.tailLength, 3);
+      expect(delta.tailOffset, 'some t'.length);
+      expect(delta.textRemoved, 'e t');
     });
   });
 }

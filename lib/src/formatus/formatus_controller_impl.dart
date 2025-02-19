@@ -3,7 +3,6 @@ import 'package:formatus/formatus.dart';
 
 import 'formatus_document.dart';
 import 'formatus_node.dart';
-import 'formatus_tree.dart';
 
 ///
 /// [FormatusController] displays the tree-like structure of a
@@ -37,50 +36,48 @@ class FormatusControllerImpl extends TextEditingController
     String? formattedText,
     this.onChanged,
   }) {
-    document = FormatusDocument(body: formattedText ?? '');
+    document = FormatusDocument(formatted: formattedText ?? '');
     _rememberNodeResults();
-    _text = document.nodeResults.plainText;
+    _text = document.results.plainText;
     addListener(_onListen);
   }
 
   // TODO implement factory FormatusController.fromMarkdown
 
-  /// Returns anchor element  at cursor position or `null` if there is none
+  /// Returns anchor element at cursor position or `null` if there is none
   FormatusAnchor? get anchorAtCursor {
-    int nodeIndex = computeTextNodeIndex(selection.baseOffset);
-    FormatusNode node = document.textNodes[nodeIndex];
-    if (node.parent!.format == Formatus.anchor) {
-      FormatusAnchor anchor = FormatusAnchor(
-          href: node.parent!.attributes[0] ?? '', name: node.text);
-      return anchor;
-    }
-    return null;
+    NodeMeta meta = document.computeMeta(selection.baseOffset);
+    return meta.node.isAnchor
+        ? FormatusAnchor(href: meta.node.href, name: meta.node.text)
+        : null;
   }
 
-  /// Inserts or updates anchor at cursor position. Deletes is if `null`
+  /// Inserts or updates anchor at cursor position. Deletes it if `null`
   set anchorAtCursor(FormatusAnchor? anchor) {
-    int nodeIndex = computeTextNodeIndex(selection.baseOffset);
-    FormatusNode node = document.textNodes[nodeIndex];
+    NodeMeta meta = document.computeMeta(selection.baseOffset);
+    FormatusNode node = meta.node;
 
     //--- Anchor exists at cursor position
-    if (node.parent!.format == Formatus.anchor) {
-      //--- Update existing anchor
-      if (anchor != null) {
-        node.text = anchor.name;
-        node.parent!.attributes[0] = anchor.href;
+    if (node.isAnchor) {
+      if (anchor == null) {
+        document.textNodes.removeAt(meta.nodeIndex);
       } else {
-        //--- Delete existing anchor
-        FormatusTree.dispose(document.textNodes, node);
+        node.text = anchor.name;
+        node.href = anchor.href;
       }
-    } else {
-      //--- Insert a new anchor element at cursor position
-      if (anchor != null) {
-        FormatusNode anchorTextNode = FormatusTree.createSubTree(
-            document.textNodes, anchor.name, [Formatus.anchor]);
-        anchorTextNode.parent!.attributes[0] = anchor.href;
-        // TODO split current textNode and insert anchorNode between
-      } // else do nothing because there is no anchor and none is created
+    } else if (anchor == null) {
+      return;
     }
+
+    //--- Anchor to be inserted at cursor position
+    else {
+      FormatusNode anchorNode =
+          FormatusNode(formats: node.formats, text: anchor.name);
+      anchorNode.href = anchor.href;
+      anchorNode.formats.add(Formatus.anchor);
+      // TODO insert anchor node at cursor position
+    }
+    document.computeResults();
   }
 
   ///
@@ -92,7 +89,7 @@ class FormatusControllerImpl extends TextEditingController
     TextStyle? style,
     required bool withComposing,
   }) =>
-      document.nodeResults.textSpan;
+      document.results.textSpan;
 
   /// Sets empty text with Paragraph and one empty _textNode_
   @override
@@ -102,17 +99,16 @@ class FormatusControllerImpl extends TextEditingController
     selectedFormats.clear();
     selectedFormats.add(Formatus.paragraph);
     _prevSelection = _emptySelection;
-    document.computeNodeResults();
+    document.computeResults();
     _rememberNodeResults();
   }
 
   /// Computes index to text node
-  int computeTextNodeIndex(int charIndex) =>
-      document.computeNodeIndex(charIndex);
+  // int computeTextNodeIndex(int charIndex) => document.computeMeta(charIndex);
 
   /// Returns formatted text
   @override
-  String get formattedText => document.nodeResults.formattedText;
+  String get formattedText => document.results.formattedText;
 
   /// Replaces current text with `formatted`
   @override
@@ -121,16 +117,16 @@ class FormatusControllerImpl extends TextEditingController
       clear();
       return;
     }
-    document = FormatusDocument(body: formatted);
+    document = FormatusDocument(formatted: formatted);
     _rememberNodeResults();
-    _text = document.nodeResults.plainText;
+    _text = document.results.plainText;
     value = TextEditingValue(text: text);
   }
 
   List<Formatus> get formatsAtCursor {
     if (!selection.isValid) return [];
-    int nodeIndex = computeTextNodeIndex(selection.start);
-    return document.textNodes[nodeIndex].formatsInPath;
+    NodeMeta meta = document.computeMeta(selection.start);
+    return meta.node.formats;
   }
 
   @override
@@ -143,31 +139,24 @@ class FormatusControllerImpl extends TextEditingController
   set _text(String textForSuper) => super.text = textForSuper;
 
   /// Updates formats in selected text range.
-  /// Immediately returns if no text is selected.
+  /// `selectedFormats`are already updated by [FormatusBar]
   void updateInlineFormat(Formatus formatus, bool isSet) {
     if (selection.isCollapsed) return;
-    DeltaFormat deltaFormat = isSet
-        ? DeltaFormat.added(selectedFormats: selectedFormats, added: formatus)
-        : DeltaFormat.removed(
-            selectedFormats: selectedFormats, removed: formatus);
-    document.updateFormatOfSelection(deltaFormat, selection);
+    document.updateInlineFormat(selection, selectedFormats);
     _rememberNodeResults();
   }
 
   /// Changes section-format at current cursor position
   void updateSectionFormat(Formatus formatus) {
-    int textNodeIndex = computeTextNodeIndex(selection.baseOffset);
-    FormatusNode textNode = document.textNodes[textNodeIndex];
-    textNode.path.first.format = formatus;
-    document.computeNodeResults();
+    document.updateSectionFormat(selection.start, formatus);
     _rememberNodeResults();
   }
 
   /// Used to determine if to fire `onChanged`
-  FormatusNodeResults _prevNodeResults = FormatusNodeResults();
+  FormatusResults _prevNodeResults = FormatusResults();
 
   @visibleForTesting
-  FormatusNodeResults get prevNodeResults => _prevNodeResults;
+  FormatusResults get prevNodeResults => _prevNodeResults;
 
   /// Used to determine range difference
   TextSelection _prevSelection = _emptySelection;
@@ -183,7 +172,21 @@ class FormatusControllerImpl extends TextEditingController
   /// content of the text field changes.
   ///
   void _onListen() {
-    //--- Determine deletion / insertion / replacement
+    //--- Immediate handling of full deletion
+    if (text.isEmpty) {
+      debugPrint('=== _onListen -> clear()');
+      clear();
+      return;
+    }
+
+    //--- Immediate handling of unmodified text but possible range change
+    if (_prevNodeResults.plainText == text) {
+      debugPrint('=== _onListen -> update selection');
+      _updateSelection();
+      return;
+    }
+
+    //--- Determine delete / insert / update
     DeltaText deltaText = DeltaText(
       prevSelection: _prevSelection,
       prevText: _prevNodeResults.plainText,
@@ -191,29 +194,9 @@ class FormatusControllerImpl extends TextEditingController
       nextText: text,
     );
     debugPrint(
-        '=== _onlisten [${selection.start},${selection.end}] => $deltaText');
+        '=== _onListen [${selection.start},${selection.end}] => $deltaText');
 
-    //--- Immediate handling of full deletion
-    if (text.isEmpty) {
-      clear();
-      return;
-    }
-
-    //--- Immediate handling of unmodified text but possible range change
-    if (_prevNodeResults.plainText == text) {
-      _updateSelection();
-      return;
-    }
-
-    if (deltaText.type == DeltaTextType.insert) {
-      int nodeIndex = document.computeNodeIndex(selection.start);
-      DeltaFormat deltaFormat = DeltaFormat(
-          textFormats: document.textNodes[nodeIndex].formatsInPath,
-          selectedFormats: selectedFormats);
-      document.handleInsert(deltaText, deltaFormat);
-    } else {
-      document.handleDeleteAndUpdate(deltaText);
-    }
+    document.updateText(deltaText, selectedFormats);
     _rememberNodeResults();
   }
 
@@ -222,15 +205,14 @@ class FormatusControllerImpl extends TextEditingController
     _onListen();
   }
 
-  /// Computes [FormatusNodeResults] and fires [onChanged]
+  /// Computes [FormatusResults] and fires [onChanged]
   /// if `formattedText` has changed.
   void _rememberNodeResults() {
-    if ((_prevNodeResults.formattedText !=
-            document.nodeResults.formattedText) &&
+    if ((_prevNodeResults.formattedText != document.results.formattedText) &&
         (onChanged != null)) {
-      onChanged!(document.nodeResults.formattedText);
+      onChanged!(document.results.formattedText);
     }
-    _prevNodeResults = document.nodeResults;
+    _prevNodeResults = document.results;
     _updateSelection();
   }
 
@@ -241,99 +223,57 @@ class FormatusControllerImpl extends TextEditingController
 }
 
 ///
-/// Difference between formats selected in [FormatusBar] and `textFormats`.
-///
-class DeltaFormat {
-  final List<Formatus> textFormats;
-  final Set<Formatus> selectedFormats;
-
-  List<Formatus> get added => _added;
-  final List<Formatus> _added = [];
-
-  List<Formatus> get removed => _removed;
-  final List<Formatus> _removed = [];
-
-  List<Formatus> get same => _same;
-  final List<Formatus> _same = [];
-
-  bool get hasDelta => added.isNotEmpty || removed.isNotEmpty;
-
-  ///
-  /// Constructor takes formats.
-  ///
-  DeltaFormat({
-    required this.textFormats,
-    required this.selectedFormats,
-  }) {
-    for (Formatus formatus in textFormats) {
-      if (selectedFormats.contains(formatus)) {
-        _same.add(formatus);
-      } else {
-        _removed.add(formatus);
-      }
-    }
-    for (Formatus formatus in selectedFormats) {
-      if (!textFormats.contains(formatus)) {
-        _added.add(formatus);
-      }
-    }
-  }
-
-  factory DeltaFormat.added({
-    required Set<Formatus> selectedFormats,
-    required Formatus added,
-  }) =>
-      DeltaFormat(
-          textFormats: (selectedFormats..remove(added)).toList(),
-          selectedFormats: selectedFormats..add(added));
-
-  factory DeltaFormat.removed({
-    required Set<Formatus> selectedFormats,
-    required Formatus removed,
-  }) =>
-      DeltaFormat(
-          textFormats: selectedFormats.toList(),
-          selectedFormats: selectedFormats..remove(removed));
-
-  @override
-  String toString() => '-:$removed, =:$same, +:$added';
-}
-
-///
-/// Delta between two texts provides position and type of change.
+/// Delta between previous and current text
 ///
 class DeltaText {
-  /// Position of modification
-  DeltaTextPosition position = DeltaTextPosition.unknown;
+  /// Returns `true` if all text is selected
+  bool get isAll => _isAll;
+  bool _isAll = false;
+
+  bool get isAtEnd => _tailLength == 0;
+
+  bool get isAtStart => _headLength == 0;
+
+  bool get isInsert => type == DeltaTextType.insert;
+
+  bool get isModified => type == DeltaTextType.none;
+
+  /// Length of leading text in front of modification
+  int get headLength => _headLength;
+  int _headLength = -1;
+
+  /// Current selection
+  final TextSelection nextSelection;
+
+  /// Previous selection before change
+  final TextSelection prevSelection;
+
+  /// Length of trailing text behind modification
+  int get tailLength => _tailLength;
+  int _tailLength = -1;
+
+  /// Offset into previous text to start of tail
+  int get tailOffset => _tailOffset;
+  int _tailOffset = -1;
+
+  /// Text which is added
+  String get textAdded => _textAdded;
+  String _textAdded = '';
+
+  /// Text which is removed
+  String get textRemoved => _textRemoved;
+  String _textRemoved = '';
 
   /// Type of modification
   DeltaTextType type = DeltaTextType.none;
-
-  /// Leading characters which are identical in both texts
-  String get headText => _headText;
-  String _headText = '';
-
-  final TextSelection nextSelection;
-  final String nextText;
-
-  /// Text which is added
-  String get plusText => _plusText;
-  String _plusText = '';
-
-  final TextSelection prevSelection;
-  final String prevText;
-
-  /// Trailing characters which are identical in both texts
-  String get tailText => _tailText;
-  String _tailText = '';
 
   ///
   /// Computes unmodifiable delta text
   ///
   DeltaText({
-    required this.prevText,
+    required String prevText,
     required this.prevSelection,
-    required this.nextText,
+    required String nextText,
     required this.nextSelection,
   }) {
     //--- Text is unchanged
@@ -344,70 +284,39 @@ class DeltaText {
 
     //--- All text deleted
     if (nextText.isEmpty) {
-      position = DeltaTextPosition.all;
+      _isAll = true;
       type = DeltaTextType.delete;
       return;
     }
 
-    //--- All text selected
-    if ((prevSelection.start == 0) && (prevSelection.end >= prevText.length)) {
-      position = DeltaTextPosition.all;
-      type = prevText.isNotEmpty ? DeltaTextType.update : DeltaTextType.insert;
-      _plusText = nextText;
+    //--- Computations
+    _headLength = (prevSelection.start < nextSelection.start)
+        ? prevSelection.start
+        : nextSelection.start;
+    int prevLen = prevText.length;
+    int nextLen = nextText.length;
+    int prevTailLen = prevLen - prevSelection.end;
+    int nextTailLen = nextLen - nextSelection.end;
+    _tailLength = (prevTailLen < nextTailLen) ? prevTailLen : nextTailLen;
+    _tailOffset = prevLen - _tailLength;
+    _isAll = (prevSelection.start == 0) && (prevSelection.end >= prevLen);
+
+    //--- Insert
+    if (_headLength + _tailLength == prevLen) {
+      type = DeltaTextType.insert;
+      _textAdded = nextText.substring(_headLength, nextLen - _tailLength);
       return;
     }
 
-    //--- Compute text parts
-    String prevHead = prevSelection.textBefore(prevText);
-    String nextTail = nextSelection.textAfter(nextText);
-    _headText = _computeHead(prevHead, nextText);
-    _tailText = _computeTail(prevText, nextTail);
-    _plusText =
-        nextText.substring(_headText.length, nextText.length - tailText.length);
-
-    //--- determine position of change
-    if ((prevSelection.start == 0) || (nextSelection.start == 0)) {
-      position = DeltaTextPosition.start;
-    } else if ((prevSelection.end >= prevText.length) ||
-        (nextSelection.end >= nextText.length)) {
-      position = DeltaTextPosition.end;
-    } else {
-      position = DeltaTextPosition.middle;
-    }
-
-    //--- determine type of change
-    type = plusText.isEmpty
-        ? DeltaTextType.delete
-        : (headText + tailText == prevText)
-            ? DeltaTextType.insert
-            : DeltaTextType.update;
-  }
-
-  /// Identical heading text is computed from left to right
-  String _computeHead(String prev, String next) {
-    int i = 0;
-    while (i < prev.length && i < next.length && prev[i] == next[i]) {
-      i++;
-    }
-    return (i > 0) ? prev.substring(0, i) : '';
-  }
-
-  /// Identical trailing text is computed from right to left
-  String _computeTail(String prev, String next) {
-    int i = prev.length;
-    int j = next.length;
-    while ((i > 0) && j > 0 && (prev[i - 1] == next[j - 1])) {
-      i--;
-      j--;
-    }
-    return prev.substring((i < 0) ? 0 : i);
+    _textAdded = nextText.substring(_headLength, nextLen - _tailLength);
+    _textRemoved = prevText.substring(_headLength, prevLen - _tailLength);
+    type = textAdded.isEmpty ? DeltaTextType.delete : DeltaTextType.update;
   }
 
   @override
-  String toString() => '${type.name} at ${position.name} =>'
-      ' plus="$plusText", head="$headText", tail="$tailText"';
+  String toString() => isAll
+      ? '${type.name} at all => plus="$textAdded"'
+      : '${type.name} from $_headLength remain=$_tailLength => plus="$textAdded"';
 }
-
-enum DeltaTextPosition { all, end, middle, start, unknown }
 
 enum DeltaTextType { delete, insert, none, update }

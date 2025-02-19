@@ -1,27 +1,29 @@
-import 'package:formatus/src/formatus/formatus_tree.dart';
-
 import 'formatus_model.dart';
 import 'formatus_node.dart';
 
 class FormatusParser {
   ///
-  /// Parses `htmlBody` and returns a root-node.
+  /// Parses `htmlBody` and returns the list of text-nodes
   ///
-  FormatusNode parse(String htmlBody, List<FormatusNode> textNodes) {
-    FormatusNode root = FormatusNode(format: Formatus.root);
+  List<FormatusNode> parse(String htmlBody) {
+    List<FormatusNode> nodes = [];
     if (htmlBody.isEmpty) {
-      FormatusNode paragraphNode = FormatusNode()..format = Formatus.paragraph;
-      FormatusTree.appendChild(textNodes, root, paragraphNode);
-      FormatusNode textNode = FormatusNode()..format = Formatus.text;
-      FormatusTree.appendChild(textNodes, paragraphNode, textNode);
-      textNodes.add(textNode);
-    } else {
-      int offset = 0;
-      while (offset < htmlBody.length) {
-        offset = _parseTag(htmlBody, offset, root, textNodes);
-      }
+      FormatusNode node = FormatusNode(formats: [Formatus.paragraph], text: '');
+      nodes.add(node);
+      return nodes;
     }
-    return root;
+    int offset = 0;
+    while (offset < htmlBody.length) {
+      //--- Insert line-break between sections
+      if (offset > 0) {
+        nodes.add(FormatusNode.lineBreak);
+      }
+      //--- skip any characters between sections
+      offset = htmlBody.indexOf('<', offset);
+      if (offset < 0) break;
+      offset = _parseSection(htmlBody, offset, nodes);
+    }
+    return nodes;
   }
 
   String extractWord(String text, int offset) {
@@ -35,13 +37,47 @@ class FormatusParser {
   }
 
   ///
-  /// Parses a single element starting with "<" until ">".
+  /// Parses an opening html element, all its children and the closing element.
   ///
-  /// The returned [_ParsedNode] contains the new node and the
+  /// Returns the offset into `htmlBody` of the first character following the
+  /// closing element.
+  ///
+  int _parseSection(String body, int offset, List<FormatusNode> nodes) {
+    List<Formatus> formats = [];
+    while (offset < body.length) {
+      _ParsedTag? section = _parseTag(body, offset);
+      if (section == null) {
+        return body.length;
+      }
+      if (section.isClosing) {
+        formats.removeLast();
+        if (formats.isEmpty) return section.offset;
+      } else {
+        formats.add(section.formatus);
+      }
+      offset = section.offset;
+
+      //--- If followed by text then create new node
+      if (offset < body.length) {
+        int end = body.indexOf('<', offset);
+        if (end > offset) {
+          FormatusNode node = FormatusNode(
+              formats: formats.toList(), text: body.substring(offset, end));
+          nodes.add(node);
+          offset = end;
+        }
+      }
+    }
+    return body.length;
+  }
+
+  ///
+  /// Parses a single tag starting with "<" until ">".
+  ///
+  /// The returned [_ParsedTag] contains the new node and the
   /// offset to first character following the closing ">".
   ///
-  _ParsedNode? _parseElement(String htmlBody, int offset) {
-    //--- skip blanks between section tags
+  _ParsedTag? _parseTag(String htmlBody, int offset) {
     int i = htmlBody.indexOf('<', offset);
     if (i < 0) {
       return null;
@@ -50,82 +86,32 @@ class FormatusParser {
     if (j < 0) {
       throw FormatException('Missing ">" in tag ${htmlBody.substring(i)}');
     }
-
-    String nodeText = htmlBody.substring(i + 1, j);
-    nodeText = nodeText.trim();
-    String tagName = extractWord(htmlBody, i + 1);
-    List<String> parts = nodeText.split(' ');
-    parts.removeAt(0); // remove tagName
-
-    //--- Create node
-    FormatusNode newNode = FormatusNode(format: Formatus.find(tagName));
-
-    //--- parse attribute values
-    for (String part in parts) {
-      newNode.attributes.add(part);
+    _ParsedTag tag = _ParsedTag();
+    tag.offset = j + 1;
+    String content = htmlBody.substring(i + 1, j).trim();
+    if (content.startsWith('/')) {
+      tag.isClosing = true;
+    } else {
+      List<String> parts = content.split(' ');
+      tag.formatus = Formatus.find(parts[0]);
+      tag.attributes.addAll(parts.sublist(1));
     }
-
-    return _ParsedNode(node: newNode, offset: j + 1);
-  }
-
-  ///
-  /// Parses an opening html element, all children and the closing element.
-  ///
-  /// Returns the offset into `htmlBody` of the first character following the
-  /// closing element.
-  ///
-  int _parseTag(String body, int offset, FormatusNode parent,
-      List<FormatusNode> textNodes) {
-    _ParsedNode? parsedNode = _parseElement(body, offset);
-    if (parsedNode == null) return body.length;
-    FormatusNode node = parsedNode.node;
-    FormatusTree.appendChild(textNodes, parent, node);
-
-    //--- loop all content into text or nested inline until closing element
-    offset = parsedNode.offset;
-    while (offset < body.length) {
-      if (body[offset] == '<') {
-        //--- Closing tag
-        if (body[offset + 1] == '/') {
-          while (offset < body.length && body[offset] != '>') {
-            offset++;
-          }
-          return offset + 1;
-        }
-        //--- Opening tag -> must be a nested inline tag
-        offset = _parseTag(body, offset, node, textNodes);
-      } else {
-        offset = _parseText(body, offset, node, textNodes);
-      }
-    }
-    return offset;
-  }
-
-  ///
-  /// Creates a new text node and attaches it to given `parent`.
-  /// Advances offset to next `<`.
-  ///
-  int _parseText(String htmlBody, int offset, FormatusNode parent,
-      List<FormatusNode> textNodes) {
-    int initialOffset = offset;
-    while ((offset < htmlBody.length) && (htmlBody[offset] != '<')) {
-      offset++;
-    }
-    FormatusNode textNode = FormatusNode()..format = Formatus.text;
-    textNode.text = htmlBody.substring(initialOffset, offset);
-    FormatusTree.appendChild(textNodes, parent, textNode);
-    textNodes.add(textNode);
-    return offset;
+    return tag;
   }
 }
 
-/// Parser often needs both node and resulting text offset
-class _ParsedNode {
-  FormatusNode node;
-  int offset;
+///
+/// Result of parsing a single tag
+///
+class _ParsedTag {
+  List<String> attributes = [];
+  Formatus formatus = Formatus.placeHolder;
+  bool isClosing = false;
+  int offset = -1;
 
-  _ParsedNode({
-    required this.node,
-    required this.offset,
-  });
+  _ParsedTag();
+
+  @override
+  String toString() =>
+      '<${isClosing ? "/" : ""}${formatus.key}> offset=$offset';
 }

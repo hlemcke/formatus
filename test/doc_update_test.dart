@@ -5,53 +5,55 @@ import 'package:formatus/src/formatus/formatus_controller_impl.dart';
 import 'package:formatus/src/formatus/formatus_document.dart';
 
 void main() {
-  group('Change text in selected range', () {
-    test('replace at all - single node', () {
+  group('Document - update text in selected range', () {
+    test('update all in single section', () {
       //--- given
-      String prevHtml = '<h1>Title Line</h1>';
+      String formatted = '<h1>Title Line</h1>';
       String newText = 'Formatus';
-      FormatusDocument doc = FormatusDocument(body: prevHtml);
+      FormatusDocument doc = FormatusDocument(formatted: formatted);
+      String prevText = doc.results.plainText;
       DeltaText deltaText = DeltaText(
-          prevText: doc.plainText,
+          prevText: prevText,
           prevSelection:
-              TextSelection(baseOffset: 0, extentOffset: doc.plainText.length),
+              TextSelection(baseOffset: 0, extentOffset: prevText.length),
           nextText: newText,
           nextSelection:
               TextSelection(baseOffset: 0, extentOffset: newText.length));
 
       //--- when
-      doc.handleDeleteAndUpdate(deltaText);
+      doc.updateText(deltaText, {Formatus.header1});
 
       //--- then
-      expect(deltaText.position, DeltaTextPosition.all);
+      expect(deltaText.isAll, true);
       expect(deltaText.type, DeltaTextType.update);
       expect(doc.textNodes.length, 1);
-      expect(doc.textNodes[0].formatsInPath, [Formatus.header1]);
+      expect(doc.textNodes[0].formats, [Formatus.paragraph]);
       expect(doc.textNodes[0].text, newText);
     });
 
     //---
-    test('replace at all - three nodes', () {
+    test('update all - three sections', () {
       //--- given
-      String prevHtml = '<h1>Title Line</h1><p>Second</p><h3>third</h3>';
+      String formatted = '<h1>Title Line</h1><p>Second</p><h3>third</h3>';
       String newText = 'Formatus';
-      FormatusDocument doc = FormatusDocument(body: prevHtml);
+      FormatusDocument doc = FormatusDocument(formatted: formatted);
+      String prevText = doc.results.plainText;
       DeltaText deltaText = DeltaText(
-          prevText: doc.plainText,
+          prevText: prevText,
           prevSelection:
-              TextSelection(baseOffset: 0, extentOffset: doc.plainText.length),
+              TextSelection(baseOffset: 0, extentOffset: prevText.length),
           nextText: newText,
           nextSelection:
               TextSelection(baseOffset: 0, extentOffset: newText.length));
 
       //--- when
-      doc.handleDeleteAndUpdate(deltaText);
+      doc.updateText(deltaText, {Formatus.paragraph});
 
       //--- then
-      expect(deltaText.position, DeltaTextPosition.all);
+      expect(deltaText.isAll, true);
       expect(deltaText.type, DeltaTextType.update);
       expect(doc.textNodes.length, 1);
-      expect(doc.textNodes[0].formatsInPath, [Formatus.header1]);
+      expect(doc.textNodes[0].formats, [Formatus.paragraph]);
       expect(doc.textNodes[0].text, newText);
     });
   });
