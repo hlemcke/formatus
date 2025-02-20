@@ -184,8 +184,11 @@ class FormatusDocument {
 
     //--- Remove last element from path and close tags from it
     void reducePath() {
-      TextSpan span = TextSpan(
-          children: path.last.textSpans, style: path.last.formatus.style);
+      TextStyle? style = (path.last.formatus == Formatus.color)
+          ? TextStyle(
+              color: Color(FormatusColor.find(path.last.attribute).argb))
+          : path.last.formatus.style;
+      TextSpan span = TextSpan(children: path.last.textSpans, style: style);
       if (path.length < 2) {
         sections.add(span);
       } else {
@@ -208,7 +211,9 @@ class FormatusDocument {
           }
         }
         if (path.length < i + 1) {
-          path.add(_ResultNode()..formatus = nodeFormat);
+          path.add(_ResultNode()
+            ..attribute = node.attribute
+            ..formatus = nodeFormat);
           results.formattedText += node.isLineBreak
               ? ''
               : '<${nodeFormat.key}${node.attribute.isEmpty ? "" : " ${node.attribute}"}>';
@@ -456,6 +461,7 @@ class FormatusDocument {
 /// Internal class only used by [FormatusDocument.computeResults()]
 ///
 class _ResultNode {
+  String attribute = '';
   Formatus formatus = Formatus.placeHolder;
   List<TextSpan> textSpans = [];
 

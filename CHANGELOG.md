@@ -1,3 +1,6 @@
+## 1.3.0
+* Refactored internal structure to ease changes due to text editing
+
 ## 1.2.1
 * Added optional `onChanged` parameter to [FormatusController] which will be invoked with updated
   `formattedText`

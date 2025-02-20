@@ -177,17 +177,17 @@ enum Formatus {
     'sub',
     FormatusType.inline,
     FormatusActionText(text: 'sub', typography: FormatusTypography.subscript),
-    TextStyle(),
+    null,
   ),
 
   /// Inline format to make text smaller and put it a little bit above the line
   ///
   /// In markdown this would look like: `x^y`
   superscript(
-    'sup',
+    'super',
     FormatusType.inline,
-    FormatusActionText(text: 'sub', typography: FormatusTypography.superscript),
-    TextStyle(),
+    FormatusActionText(text: 'sup', typography: FormatusTypography.superscript),
+    null,
   ),
 
   /// TODO implement superscript
@@ -292,27 +292,27 @@ class FormatusAnchor {
 /// HTML color names used in [Formatus]
 ///
 enum FormatusColor {
-  aqua(0xFF0000),
-  black(0x000000),
-  blue(0x0000ff),
-  fuchsia(0xFF00FF),
-  grey(0x808080),
-  green(0x008000),
-  lime(0x00FF00),
-  maroon(0x800000),
-  navy(0x000080),
-  olive(0x808000),
-  orange(0xFFa500),
-  purple(0x800080),
-  red(0xFF0000),
-  silver(0xC0C0C0),
-  teal(0x008080),
-  white(0xFFFFFF),
-  yellow(0xFFFF00);
+  aqua(0xFFFF0000),
+  black(0xFF000000),
+  blue(0xFF0000ff),
+  fuchsia(0xFFFF00FF),
+  grey(0xFF808080),
+  green(0xFF008000),
+  lime(0xFF00FF00),
+  maroon(0xFF800000),
+  navy(0xFF000080),
+  olive(0xFF808000),
+  orange(0xFFFFa500),
+  purple(0xFF800080),
+  red(0xFFFF0000),
+  silver(0xFFC0C0C0),
+  teal(0xFF008080),
+  white(0xFFFFFFFF),
+  yellow(0xFFFFFF00);
 
-  final int hex;
+  final int argb;
 
-  const FormatusColor(this.hex);
+  const FormatusColor(this.argb);
 
   String toHtml() => 'color:"$name"';
 
@@ -322,10 +322,10 @@ enum FormatusColor {
   /// Returns closest available color to given `value`
   static FormatusColor findByValue(int value) {
     List<FormatusColor> colors = FormatusColor.values;
-    colors.sort((a, b) => a.hex - b.hex);
+    colors.sort((a, b) => a.argb - b.argb);
     for (int i = 0; i < colors.length; i++) {
-      if (colors[i].hex >= value) {
-        return (((colors[i - 1].hex + colors[i].hex) ~/ 2) < value)
+      if (colors[i].argb >= value) {
+        return (((colors[i - 1].argb + colors[i].argb) ~/ 2) < value)
             ? colors[i]
             : colors[i - 1];
       }

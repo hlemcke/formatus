@@ -120,18 +120,38 @@ class _FormatusBarState extends State<FormatusBarImpl> {
     widget.controller.anchorAtCursor = result;
   }
 
+  Future<void> _onSelectColor() async {
+    showAdaptiveDialog(
+      context: context,
+      builder: (BuildContext context) => Dialog(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              for (FormatusColor col in FormatusColor.values)
+                Container(
+                  color: Color(col.argb),
+                  height: kMinInteractiveDimension,
+                  width: 2 * kMinInteractiveDimension,
+                  child: Text(col.name),
+                )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   ///
   /// Toggles format button
   ///
   /// Only one section format may be active at any time.
   ///
   void _onToggleAction(Formatus formatus) {
-    //--- Special handling if anchor is present in formatting actions
     if (formatus == Formatus.anchor) {
       _onEditAnchor();
-      return;
-    }
-    if (formatus.isSection) {
+    } else if (formatus == Formatus.color) {
+      _onSelectColor();
+    } else if (formatus.isSection) {
       _deactivateSectionActions();
       _selectedFormats.add(formatus);
       widget.controller.updateSectionFormat(formatus);
@@ -191,8 +211,9 @@ final List<FormatusAction> _defaultActions = [
   FormatusAction(formatus: Formatus.bold),
   FormatusAction(formatus: Formatus.underline),
   FormatusAction(formatus: Formatus.strikeThrough),
-  FormatusAction(formatus: Formatus.subscript),
-  FormatusAction(formatus: Formatus.superscript),
+  // FormatusAction(formatus: Formatus.subscript),
+  // FormatusAction(formatus: Formatus.superscript),
+  // FormatusAction(formatus: Formatus.color),
   anchorAction,
 ];
 

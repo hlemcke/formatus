@@ -68,7 +68,6 @@ Section
 : All text belongs to a section. Each section has a format. Multiple sections are separated by a newline
 
 
-
 ### Use cases
 
 This section describes the use cases for `Formatus`.
@@ -98,10 +97,14 @@ open a ticket at https://github.com/hlemcke/formatus
 
 ## Future Enhancements
 
-1. Add formats for lists: ordered and unordered
-2. Add action to change text color
-3. Add action to insert an emoji. This should become an optional add-on action
+1. Add format for superscript
+2. Add format for subscript
+3. Add format to change text color
+4. Add format to change text color
+5. Add format for unordered list
+6. Add format for ordered list (auto-counting)
+7. Add action to insert an emoji. This should become an optional add-on action
    similar to `FormatusAnchor`. Could also include converting an emoji name
    into emoji inline (insert into current text node).
-4. Parse markdown as formatted input
-5. Export formatted text in markdown format
+8. Parse markdown as formatted input
+9. Export formatted text in markdown format
