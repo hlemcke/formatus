@@ -10,11 +10,8 @@ import 'formatus_model.dart';
 /// Cannot extend [TextSpan] here because its immutable and we need `parent`.
 ///
 class FormatusNode {
-  /// Optional attribute color
-  Color? color;
-
-  /// Optional attribute href
-  String href = '';
+  /// Optional attribute like color or href
+  String attribute = '';
 
   /// Formats of this node
   List<Formatus> formats;
@@ -51,8 +48,7 @@ class FormatusNode {
 
   /// Returns a deep clone of this one
   FormatusNode clone() => FormatusNode(formats: formats.toList(), text: text)
-    ..color = color
-    ..href = href;
+    ..attribute = attribute;
 
   /// Returns `true` if `other` has a different list of formats
   bool hasSameFormats(Object other) {

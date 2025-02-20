@@ -123,5 +123,23 @@ void main() {
       expect(nodes[7].formats, [Formatus.paragraph]);
       expect(nodes[7].text, 'stu');
     });
+
+    //---
+    test('parse color blue', () {
+      //--- given
+      String formatted = '<p>abc <color blue>def</color></p>';
+      FormatusParser parser = FormatusParser();
+
+      //--- when
+      List<FormatusNode> nodes = parser.parse(formatted);
+
+      //--- then
+      expect(nodes.length, 2);
+      expect(nodes[0].formats, [Formatus.paragraph]);
+      expect(nodes[0].text, 'abc ');
+      expect(nodes[1].formats, [Formatus.paragraph, Formatus.color]);
+      expect(nodes[1].text, 'def');
+      expect(nodes[1].attribute, 'blue');
+    });
   });
 }

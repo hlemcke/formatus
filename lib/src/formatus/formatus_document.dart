@@ -138,6 +138,14 @@ class FormatusDocument {
   /// Returns meta information about node found at `charIndex`
   ///
   NodeMeta computeMeta(int charIndex) {
+    if (charIndex >= results.plainText.length) {
+      FormatusNode last = textNodes.last;
+      return NodeMeta()
+        ..node = last
+        ..nodeIndex = textNodes.length - 1
+        ..textBegin = results.plainText.length - last.length
+        ..textOffset = last.length;
+    }
     int charCount = 0;
     int nodeIndex = 0;
     while (nodeIndex < textNodes.length - 1) {
@@ -149,7 +157,8 @@ class FormatusDocument {
     }
 
     //--- Use previous node based on first char of this one
-    if ((charCount == charIndex) &&
+    if ((nodeIndex > 0) &&
+        (charCount == charIndex) &&
         results.plainText.isNotEmpty &&
         [' ', ',', '\n'].contains(results.plainText[charIndex])) {
       nodeIndex--;
@@ -200,8 +209,9 @@ class FormatusDocument {
         }
         if (path.length < i + 1) {
           path.add(_ResultNode()..formatus = nodeFormat);
-          results.formattedText +=
-              node.isLineBreak ? '' : '<${nodeFormat.key}>';
+          results.formattedText += node.isLineBreak
+              ? ''
+              : '<${nodeFormat.key}${node.attribute.isEmpty ? "" : " ${node.attribute}"}>';
         }
       }
       //--- Cleanup additional path elements
@@ -295,12 +305,25 @@ class FormatusDocument {
     //--- change within same node
     if (metaStart.nodeIndex == metaEnd.nodeIndex) {
       FormatusNode node = metaStart.node;
-      node.text = node.text.substring(0, metaStart.textOffset) +
-          deltaText.textAdded +
-          node.text.substring(metaEnd.textOffset);
-      if (deltaText.isInsert) {
-        applyFormatsToTextNode(metaStart.nodeIndex, formats,
-            metaStart.textOffset, metaEnd.textOffset);
+      //--- Insert with different format
+      if (deltaText.isInsert && !node.hasSameFormats(formats)) {
+        FormatusNode newNode =
+            FormatusNode(formats: formats.toList(), text: deltaText.textAdded);
+        if (metaStart.textOffset == 0) {
+          textNodes.insert(metaStart.nodeIndex, newNode);
+        } else if (metaStart.textOffset >= metaStart.length) {
+          textNodes.insert(metaStart.nodeIndex + 1, newNode);
+        } else {
+          FormatusNode clone = node.clone();
+          textNodes.insert(metaStart.nodeIndex, newNode);
+          textNodes.insert(metaStart.nodeIndex, clone);
+          clone.text = clone.text.substring(0, metaStart.textOffset);
+          node.text = node.text.substring(metaStart.textOffset);
+        }
+      } else {
+        node.text = node.text.substring(0, metaStart.textOffset) +
+            deltaText.textAdded +
+            node.text.substring(metaEnd.textOffset);
       }
     }
 

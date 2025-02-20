@@ -48,7 +48,7 @@ class FormatusControllerImpl extends TextEditingController
   FormatusAnchor? get anchorAtCursor {
     NodeMeta meta = document.computeMeta(selection.baseOffset);
     return meta.node.isAnchor
-        ? FormatusAnchor(href: meta.node.href, name: meta.node.text)
+        ? FormatusAnchor(href: meta.node.attribute ?? '', name: meta.node.text)
         : null;
   }
 
@@ -63,7 +63,7 @@ class FormatusControllerImpl extends TextEditingController
         document.textNodes.removeAt(meta.nodeIndex);
       } else {
         node.text = anchor.name;
-        node.href = anchor.href;
+        node.attribute = anchor.href;
       }
     } else if (anchor == null) {
       return;
@@ -73,7 +73,7 @@ class FormatusControllerImpl extends TextEditingController
     else {
       FormatusNode anchorNode =
           FormatusNode(formats: node.formats, text: anchor.name);
-      anchorNode.href = anchor.href;
+      anchorNode.attribute = anchor.href;
       anchorNode.formats.add(Formatus.anchor);
       // TODO insert anchor node at cursor position
     }
@@ -174,14 +174,14 @@ class FormatusControllerImpl extends TextEditingController
   void _onListen() {
     //--- Immediate handling of full deletion
     if (text.isEmpty) {
-      debugPrint('=== _onListen -> clear()');
+      // debugPrint('=== _onListen -> clear()');
       clear();
       return;
     }
 
     //--- Immediate handling of unmodified text but possible range change
     if (_prevNodeResults.plainText == text) {
-      debugPrint('=== _onListen -> update selection');
+      // debugPrint('=== _onListen -> update selection');
       _updateSelection();
       return;
     }

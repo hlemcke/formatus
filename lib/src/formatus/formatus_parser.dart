@@ -63,6 +63,7 @@ class FormatusParser {
         if (end > offset) {
           FormatusNode node = FormatusNode(
               formats: formats.toList(), text: body.substring(offset, end));
+          node.attribute = section.attribute;
           nodes.add(node);
           offset = end;
         }
@@ -94,7 +95,7 @@ class FormatusParser {
     } else {
       List<String> parts = content.split(' ');
       tag.formatus = Formatus.find(parts[0]);
-      tag.attributes.addAll(parts.sublist(1));
+      tag.attribute = (parts.length > 1) ? parts[1] : '';
     }
     return tag;
   }
@@ -104,7 +105,7 @@ class FormatusParser {
 /// Result of parsing a single tag
 ///
 class _ParsedTag {
-  List<String> attributes = [];
+  String attribute = '';
   Formatus formatus = Formatus.placeHolder;
   bool isClosing = false;
   int offset = -1;
@@ -112,6 +113,6 @@ class _ParsedTag {
   _ParsedTag();
 
   @override
-  String toString() =>
-      '<${isClosing ? "/" : ""}${formatus.key}> offset=$offset';
+  String toString() => '<${isClosing ? "/" : ""}${formatus.key}'
+      '${attribute.isEmpty ? "" : " $attribute"}> offset=$offset';
 }

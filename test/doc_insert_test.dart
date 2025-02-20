@@ -46,9 +46,9 @@ void main() {
       doc.updateText(deltaText, {Formatus.paragraph});
 
       //--- then
-      expect(doc.textNodes.length, 9);
+      expect(doc.textNodes.length, 10);
       expect(doc.results.plainText, 'X$prevText');
-      expect(doc.results.formattedText, '<h1>X${formatted.substring(4)}');
+      expect(doc.results.formattedText, '<p>X</p>$formatted');
     });
 
     ///
@@ -121,7 +121,7 @@ void main() {
     });
 
     ///
-    test('Insert single char inside first inline', () {
+    test('Insert single char inside first inline with same format', () {
       //--- given
       String formatted = '''<h1>abc <b>bold</b></h1><p>def</p>''';
       FormatusDocument doc = FormatusDocument(formatted: formatted);
@@ -135,12 +135,41 @@ void main() {
           nextSelection: TextSelection(baseOffset: 7, extentOffset: 7));
 
       //--- when
-      doc.updateText(deltaText, {Formatus.paragraph});
+      doc.updateText(deltaText, {Formatus.header1, Formatus.bold});
 
       //--- then
       expect(doc.textNodes.length, 4);
       expect(doc.results.plainText, nextText);
       expect(doc.results.formattedText, '<h1>abc <b>boXld</b></h1><p>def</p>');
+    });
+  });
+
+  ///
+  group('Document - Insert with different format', () {
+    ///
+    test('Insert single char inside first inline with different format', () {
+      //--- given
+      String formatted = '''<h1>abc <b>bold</b></h1><p>def</p>''';
+      FormatusDocument doc = FormatusDocument(formatted: formatted);
+      expect(doc.textNodes.length, 4);
+      String prevText = doc.results.plainText;
+      String nextText = 'abc boXld\ndef';
+      DeltaText deltaText = DeltaText(
+          prevText: prevText,
+          prevSelection: TextSelection(baseOffset: 6, extentOffset: 6),
+          nextText: nextText,
+          nextSelection: TextSelection(baseOffset: 7, extentOffset: 7));
+
+      //--- when
+      doc.updateText(deltaText, {Formatus.header1, Formatus.underline});
+
+      //--- then
+      expect(doc.textNodes.length, 6);
+      expect(doc.results.plainText, nextText);
+      expect(
+          doc.results.formattedText,
+          '<h1>abc <b>bo</b><u>X</u>'
+          '<b>ld</b></h1><p>def</p>');
     });
   });
 }
