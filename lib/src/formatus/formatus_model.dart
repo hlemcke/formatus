@@ -292,46 +292,32 @@ class FormatusAnchor {
 /// HTML color names used in [Formatus]
 ///
 enum FormatusColor {
-  aqua(0xFFFF0000),
-  black(0xFF000000),
-  blue(0xFF0000ff),
-  fuchsia(0xFFFF00FF),
-  grey(0xFF808080),
-  green(0xFF008000),
-  lime(0xFF00FF00),
-  maroon(0xFF800000),
-  navy(0xFF000080),
-  olive(0xFF808000),
-  orange(0xFFFFa500),
-  purple(0xFF800080),
-  red(0xFFFF0000),
-  silver(0xFFC0C0C0),
-  teal(0xFF008080),
-  white(0xFFFFFFFF),
-  yellow(0xFFFFFF00);
+  aqua('0xFF00FFFF'),
+  black('0xFF000000'),
+  blue('0xFF0000ff'),
+  fuchsia('0xFFFF00FF'),
+  grey('0xFF808080'),
+  green('0xFF008000'),
+  lime('0xFF00FF00'),
+  maroon('0xFF800000'),
+  navy('0xFF000080'),
+  olive('0xFF808000'),
+  orange('0xFFFFa500'),
+  purple('0xFF800080'),
+  red('0xFFFF0000'),
+  silver('0xFFC0C0C0'),
+  teal('0xFF008080'),
+  white('0xFFFFFFFF'),
+  yellow('0xFFFFFF00');
 
-  final int argb;
+  final String key;
 
-  const FormatusColor(this.argb);
+  const FormatusColor(this.key);
 
   String toHtml() => 'color:"$name"';
 
   static FormatusColor find(String text) => findEnum(text, FormatusColor.values,
-      defaultValue: FormatusColor.black, withKey: false);
-
-  /// Returns closest available color to given `value`
-  static FormatusColor findByValue(int value) {
-    List<FormatusColor> colors = FormatusColor.values;
-    colors.sort((a, b) => a.argb - b.argb);
-    for (int i = 0; i < colors.length; i++) {
-      if (colors[i].argb >= value) {
-        return (((colors[i - 1].argb + colors[i].argb) ~/ 2) < value)
-            ? colors[i]
-            : colors[i - 1];
-      }
-    }
-    return white;
-  }
+      defaultValue: FormatusColor.black, withKey: true);
 }
 
 ///

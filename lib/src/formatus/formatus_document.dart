@@ -43,13 +43,10 @@ class FormatusDocument {
   factory FormatusDocument({
     required String formatted,
   }) {
-    String cleanBody = FormatusDocument.cleanUpHtml(formatted);
-    if (cleanBody.isEmpty) return FormatusDocument.empty();
-    if (!cleanBody.startsWith('<')) {
-      cleanBody = '<p>$cleanBody';
-    }
     FormatusDocument doc = FormatusDocument._();
-    doc.textNodes = FormatusParser().parse(formatted);
+    if (formatted.isNotEmpty) {
+      doc.textNodes = FormatusParser().parse(formatted);
+    }
     doc.computeResults();
     return doc;
   }
@@ -61,18 +58,6 @@ class FormatusDocument {
 
   /// List of text nodes in sequence of occurrence
   List<FormatusNode> textNodes = [];
-
-  ///
-  /// Cleanup given text by:
-  /// * remove cr+lf
-  /// * replace tab with space
-  /// * replace multiple spaces with one space
-  ///
-  static String cleanUpHtml(String htmlBody) => htmlBody
-      .replaceAll('\r', '')
-      .replaceAll('\n', '')
-      .replaceAll('\t', ' ')
-      .replaceAll('  ', ' ');
 
   ///
   /// Clears the document tree by setting an empty text-node into a _paragraph_.
@@ -156,11 +141,14 @@ class FormatusDocument {
       nodeIndex++;
     }
 
-    //--- Use previous node based on first char of this one
+    //--- Back to previous node if:
+    // a) there is a previous node
+    // b) at start of this one (charCount == charIndex)
+    // c) and previous is no LF or ends with space
     if ((nodeIndex > 0) &&
         (charCount == charIndex) &&
-        results.plainText.isNotEmpty &&
-        [' ', ',', '\n'].contains(results.plainText[charIndex])) {
+        textNodes[nodeIndex - 1].isNotLineBreak &&
+        !textNodes[nodeIndex - 1].text.endsWith(' ')) {
       nodeIndex--;
       charCount -= textNodes[nodeIndex].length;
     }
@@ -175,63 +163,7 @@ class FormatusDocument {
   ///
   /// Computes `formattedText` and results for [TextField]
   ///
-  void computeResults() {
-    results.plainText = '';
-    results.formattedText = '';
-    List<TextSpan> sections = [];
-    List<_ResultNode> path = [];
-    _joinNodesWithSameFormat();
-
-    //--- Remove last element from path and close tags from it
-    void reducePath() {
-      TextStyle? style = (path.last.formatus == Formatus.color)
-          ? TextStyle(
-              color: Color(FormatusColor.find(path.last.attribute).argb))
-          : path.last.formatus.style;
-      TextSpan span = TextSpan(children: path.last.textSpans, style: style);
-      if (path.length < 2) {
-        sections.add(span);
-      } else {
-        path[path.length - 2].textSpans.add(span);
-      }
-      if (path.last.formatus != Formatus.lineBreak) {
-        results.formattedText += '</${path.last.formatus.key}>';
-      }
-      path.removeLast();
-    }
-
-    //--- Loop text nodes
-    for (FormatusNode node in textNodes) {
-      //--- Loop formats of text node
-      for (int i = 0; i < node.formats.length; i++) {
-        Formatus nodeFormat = node.formats[i];
-        if ((path.length > i) && (path[i].formatus != nodeFormat)) {
-          while (path.length > i) {
-            reducePath();
-          }
-        }
-        if (path.length < i + 1) {
-          path.add(_ResultNode()
-            ..attribute = node.attribute
-            ..formatus = nodeFormat);
-          results.formattedText += node.isLineBreak
-              ? ''
-              : '<${nodeFormat.key}${node.attribute.isEmpty ? "" : " ${node.attribute}"}>';
-        }
-      }
-      //--- Cleanup additional path elements
-      while (path.length > node.formats.length) {
-        reducePath();
-      }
-      path.last.textSpans.add(TextSpan(text: node.text));
-      results.formattedText += node.isLineBreak ? '' : node.text;
-      results.plainText += node.text;
-    }
-    while (path.isNotEmpty) {
-      reducePath();
-    }
-    results.textSpan = TextSpan(children: sections, style: Formatus.root.style);
-  }
+  void computeResults() => results.compute(textNodes);
 
   ///
   /// Apply `formats` to selected text-range.
@@ -419,22 +351,6 @@ class FormatusDocument {
   }
 
   ///
-  /// Joins nodes having same format by appending text of next node to current
-  /// one then deleting next one.
-  ///
-  void _joinNodesWithSameFormat() {
-    int nodeIndex = 0;
-    while (nodeIndex < textNodes.length - 1) {
-      if (textNodes[nodeIndex].hasSameFormats(textNodes[nodeIndex + 1])) {
-        textNodes[nodeIndex].text += textNodes[nodeIndex + 1].text;
-        textNodes.removeAt(nodeIndex + 1);
-        continue;
-      }
-      nodeIndex++;
-    }
-  }
-
-  ///
   void _setupEmptyDocument() {
     textNodes.clear();
     FormatusNode para = FormatusNode(formats: [Formatus.paragraph], text: '');
@@ -455,16 +371,4 @@ class FormatusDocument {
       textNodes[i].formats[0] = currentSection;
     }
   }
-}
-
-///
-/// Internal class only used by [FormatusDocument.computeResults()]
-///
-class _ResultNode {
-  String attribute = '';
-  Formatus formatus = Formatus.placeHolder;
-  List<TextSpan> textSpans = [];
-
-  @override
-  String toString() => '<${formatus.key}> ${textSpans.length}';
 }

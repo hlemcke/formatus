@@ -127,7 +127,7 @@ void main() {
     //---
     test('parse color blue', () {
       //--- given
-      String formatted = '<p>abc <color blue>def</color></p>';
+      String formatted = '<p>abc <color 0xFF0000ff>def</color></p>';
       FormatusParser parser = FormatusParser();
 
       //--- when
@@ -139,7 +139,35 @@ void main() {
       expect(nodes[0].text, 'abc ');
       expect(nodes[1].formats, [Formatus.paragraph, Formatus.color]);
       expect(nodes[1].text, 'def');
-      expect(nodes[1].attribute, 'blue');
+      expect(nodes[1].attribute, '0xFF0000ff');
+    });
+
+    //---
+    test('parse long example', () {
+      //--- given
+      String formatted = '''
+<h1>Formatus Features</h1>
+<h2>Text with <b>bold</b>, <i>italic</i> and <u>underlined</u> words</h2>.
+<p>Third line <i>contains <s>nested</s> and</i> <u>under<b>line</b>d</u> text.</p>
+''';
+      FormatusParser parser = FormatusParser();
+
+      //--- when
+      List<FormatusNode> nodes = parser.parse(formatted);
+
+      //--- then
+      int i = 0;
+      expect(nodes.length, 19);
+      expect(nodes[i].formats, [Formatus.header1]);
+      expect(nodes[i++].text, 'Formatus Features');
+      expect(nodes[i++].isLineBreak, true);
+      expect(nodes[i].formats, [Formatus.header2]);
+      expect(nodes[i++].text, 'Text with ');
+      expect(nodes[i].formats, [Formatus.header2, Formatus.bold]);
+      expect(nodes[i++].text, 'bold');
+      expect(nodes[i].formats, [Formatus.header2]);
+      expect(nodes[i++].text, ', ');
+      // TODO append expects for remaining nodes
     });
   });
 }

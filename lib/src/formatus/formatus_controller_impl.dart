@@ -48,7 +48,7 @@ class FormatusControllerImpl extends TextEditingController
   FormatusAnchor? get anchorAtCursor {
     NodeMeta meta = document.computeMeta(selection.baseOffset);
     return meta.node.isAnchor
-        ? FormatusAnchor(href: meta.node.attribute ?? '', name: meta.node.text)
+        ? FormatusAnchor(href: meta.node.attribute, name: meta.node.text)
         : null;
   }
 
@@ -140,7 +140,8 @@ class FormatusControllerImpl extends TextEditingController
 
   /// Updates formats in selected text range.
   /// `selectedFormats`are already updated by [FormatusBar]
-  void updateInlineFormat(Formatus formatus, bool isSet) {
+  void updateInlineFormat(Formatus formatus, bool isSet,
+      {String attribute = ''}) {
     if (selection.isCollapsed) return;
     document.updateInlineFormat(selection, selectedFormats);
     _rememberNodeResults();
@@ -245,6 +246,10 @@ class DeltaText {
   /// Current selection
   final TextSelection nextSelection;
 
+  /// Length of previous text
+  int get prevLength => _prevLength;
+  int _prevLength = -1;
+
   /// Previous selection before change
   final TextSelection prevSelection;
 
@@ -276,6 +281,7 @@ class DeltaText {
     required String nextText,
     required this.nextSelection,
   }) {
+    _prevLength = prevText.length;
     //--- Text is unchanged
     if (prevText == nextText) {
       type = DeltaTextType.none;
@@ -293,30 +299,31 @@ class DeltaText {
     _headLength = (prevSelection.start < nextSelection.start)
         ? prevSelection.start
         : nextSelection.start;
-    int prevLen = prevText.length;
     int nextLen = nextText.length;
-    int prevTailLen = prevLen - prevSelection.end;
+    int prevTailLen = _prevLength - prevSelection.end;
     int nextTailLen = nextLen - nextSelection.end;
     _tailLength = (prevTailLen < nextTailLen) ? prevTailLen : nextTailLen;
-    _tailOffset = prevLen - _tailLength;
-    _isAll = (prevSelection.start == 0) && (prevSelection.end >= prevLen);
+    _tailOffset = _prevLength - _tailLength;
+    _isAll = (prevSelection.start == 0) && (prevSelection.end >= _prevLength);
 
     //--- Insert
-    if (_headLength + _tailLength == prevLen) {
+    if (_headLength + _tailLength == _prevLength) {
       type = DeltaTextType.insert;
       _textAdded = nextText.substring(_headLength, nextLen - _tailLength);
       return;
     }
 
     _textAdded = nextText.substring(_headLength, nextLen - _tailLength);
-    _textRemoved = prevText.substring(_headLength, prevLen - _tailLength);
+    _textRemoved = prevText.substring(_headLength, _prevLength - _tailLength);
     type = textAdded.isEmpty ? DeltaTextType.delete : DeltaTextType.update;
   }
 
   @override
   String toString() => isAll
       ? '${type.name} at all => plus="$textAdded"'
-      : '${type.name} from $_headLength remain=$_tailLength => plus="$textAdded"';
+      : '${type.name} [$_headLength..${_prevLength - _tailLength}]'
+          ' => ${textAdded.isEmpty ? '' : 'plus="$textAdded"'}'
+          '${textRemoved.isEmpty ? '' : ' removed="$textRemoved"'}';
 }
 
 enum DeltaTextType { delete, insert, none, update }

@@ -3,25 +3,40 @@ import 'formatus_node.dart';
 
 class FormatusParser {
   ///
-  /// Parses `htmlBody` and returns the list of text-nodes
+  /// Cleanup given text by:
   ///
-  List<FormatusNode> parse(String htmlBody) {
+  /// * remove cr
+  /// * remove lf
+  /// * replace tab with space
+  /// * replace multiple spaces with one space
+  ///
+  String cleanUpFormatted(String formatted) => formatted
+      .replaceAll('\r', '')
+      .replaceAll('\n', '')
+      .replaceAll('\t', ' ')
+      .replaceAll('  ', ' ');
+
+  ///
+  /// Parses `formatted` and returns list of text-nodes
+  ///
+  List<FormatusNode> parse(String formatted) {
+    formatted = cleanUpFormatted(formatted);
     List<FormatusNode> nodes = [];
-    if (htmlBody.isEmpty) {
+    if (formatted.isEmpty) {
       FormatusNode node = FormatusNode(formats: [Formatus.paragraph], text: '');
       nodes.add(node);
       return nodes;
     }
     int offset = 0;
-    while (offset < htmlBody.length) {
+    while (offset < formatted.length) {
       //--- Insert line-break between sections
       if (offset > 0) {
         nodes.add(FormatusNode.lineBreak);
       }
       //--- skip any characters between sections
-      offset = htmlBody.indexOf('<', offset);
+      offset = formatted.indexOf('<', offset);
       if (offset < 0) break;
-      offset = _parseSection(htmlBody, offset, nodes);
+      offset = _parseSection(formatted, offset, nodes);
     }
     return nodes;
   }
