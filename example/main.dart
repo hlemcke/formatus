@@ -9,7 +9,7 @@ void main() {
 const String initialTemplateKey = 'Long';
 const Map<String, String> textTemplates = {
   'Empty': '',
-  'Short': '<p><color blue>Blue</> with <b>bold</> words</>',
+  'Short': '<p><color 0xFF0000ff>Blue</> with <b>bold</> words</>',
   initialTemplateKey: '''
 <h1>Formatus Features</h1>
 <h2>Text with <b>bold</b>, <i>italic</i> and <u>underlined</u> words</h2>.

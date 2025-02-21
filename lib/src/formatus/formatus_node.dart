@@ -10,8 +10,12 @@ import 'formatus_model.dart';
 /// Cannot extend [TextSpan] here because its immutable and we need `parent`.
 ///
 class FormatusNode {
-  /// Optional attribute like color or href
-  String attribute = '';
+  /// Optional attribute
+  ///
+  /// * color -> hex string
+  /// * anchor -> href
+  /// * image -> src
+  String? attribute;
 
   /// Formats of this node
   List<Formatus> formats;
@@ -50,6 +54,9 @@ class FormatusNode {
   FormatusNode clone() => FormatusNode(formats: formats.toList(), text: text)
     ..attribute = attribute;
 
+  /// Returns `true` if last format requires an attribue
+  bool get hasAttribute => formats.last.withAttribute;
+
   /// Returns `true` if `other` has a different list of formats
   bool hasSameFormats(Object other) {
     if ((other is FormatusNode) && (formats.length == other.formats.length)) {
@@ -61,8 +68,11 @@ class FormatusNode {
     return false;
   }
 
-  /// Returns `true` if this is an anchor node
+  /// Returns `true` if last format is anchor
   bool get isAnchor => formats.last == Formatus.anchor;
+
+  /// Returns `true` if last format is color
+  bool get isColor => formats.last == Formatus.color;
 
   /// Returns `true` if this is a line-break between two sections
   bool get isLineBreak => formats[0] == Formatus.lineBreak;
@@ -125,7 +135,7 @@ class FormatusResults {
     void reducePath() {
       TextStyle? style = (path.last.formatus == Formatus.color)
           ? TextStyle(
-              color: Color(int.tryParse(path.last.attribute) ?? 0xFFFFFFFF))
+              color: Color(int.tryParse(path.last.attribute!) ?? 0xFFFFFFFF))
           : path.last.formatus.style;
       TextSpan span = TextSpan(children: path.last.textSpans, style: style);
       if (path.length < 2) {
@@ -151,11 +161,12 @@ class FormatusResults {
         }
         if (path.length < i + 1) {
           path.add(_ResultNode()
-            ..attribute = node.attribute
-            ..formatus = nodeFormat);
-          formattedText += node.isLineBreak
-              ? ''
-              : '<${nodeFormat.key}${node.attribute.isEmpty ? "" : " ${node.attribute}"}>';
+            ..formatus = nodeFormat
+            ..attribute = node.attribute);
+          if (node.isNotLineBreak) {
+            formattedText += '<${nodeFormat.key}'
+                '${node.hasAttribute ? " ${node.attribute}" : ""}>';
+          }
         }
       }
       //--- Cleanup additional path elements
@@ -193,7 +204,7 @@ class FormatusResults {
 /// Internal class only used by [FormatusDocument.computeResults()]
 ///
 class _ResultNode {
-  String attribute = '';
+  String? attribute;
   Formatus formatus = Formatus.placeHolder;
   List<TextSpan> textSpans = [];
 

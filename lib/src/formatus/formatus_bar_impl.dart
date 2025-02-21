@@ -8,7 +8,7 @@ import 'formatus_model.dart';
 /// Actions to format text.
 ///
 class FormatusBarImpl extends StatefulWidget implements FormatusBar {
-  /// Actions to be included in the toolbar. Defaults to all actions.
+  /// Actions to be included in the toolbar (see [_defaultActions])
   late final List<FormatusAction> actions;
 
   final WrapAlignment alignment;
@@ -79,7 +79,7 @@ class FormatusBarImpl extends StatefulWidget implements FormatusBar {
 class _FormatusBarState extends State<FormatusBarImpl> {
   late final FormatusControllerImpl _ctrl;
 
-  String _selectedColor = FormatusColor.black.key;
+  String? get _selectedColor => _ctrl.selectedColor;
 
   Set<Formatus> get _selectedFormats => _ctrl.selectedFormats;
 
@@ -151,8 +151,9 @@ class _FormatusBarState extends State<FormatusBarImpl> {
     String? argb = await _showColorDialog();
     debugPrint('argb = $argb');
     if (argb != null) {
-      _ctrl.updateInlineFormat(Formatus.color, true, attribute: argb);
-      setState(() => _selectedColor = argb);
+      _ctrl.selectedColor = argb;
+      _ctrl.updateInlineFormat(Formatus.color, true);
+      setState(() => widget.textFieldFocus?.requestFocus());
     }
   }
 
@@ -164,10 +165,7 @@ class _FormatusBarState extends State<FormatusBarImpl> {
               children: [
                 for (FormatusColor col in FormatusColor.values)
                   InkWell(
-                    onTap: () {
-                      _selectedColor = col.key;
-                      Navigator.pop(context, col.key);
-                    },
+                    onTap: () => Navigator.pop(context, col.key),
                     child: Tooltip(
                       message: col.name,
                       child: Container(
@@ -200,24 +198,24 @@ class _FormatusButton extends StatelessWidget {
   final FormatusAction action;
   final bool isSelected;
   final VoidCallback? onPressed;
-  final String textColor;
+  final String? textColor;
 
   const _FormatusButton({
     required this.action,
     this.isSelected = false,
     this.onPressed,
-    required this.textColor,
+    this.textColor,
   });
 
   @override
   Widget build(BuildContext context) => (action.formatus == Formatus.gap)
       ? SizedBox(height: 8, width: 8)
       : IconButton(
-          color: Color(int.tryParse(
-                  ((action.formatus == Formatus.color) && isSelected)
-                      ? textColor
-                      : FormatusColor.black.key) ??
-              0xff0000ff),
+          color: ((action.formatus == Formatus.color) &&
+                  isSelected &&
+                  (textColor != null))
+              ? Color(int.parse(textColor!))
+              : null,
           icon: action.icon,
           isSelected: isSelected,
           key: ValueKey<String>(action.formatus.name),

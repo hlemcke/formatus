@@ -64,9 +64,9 @@ void main() {
     });
 
     ///
-    test('Compute results for inline with color blue', () {
+    test('Compute results for first inline with color blue', () {
       //--- given
-      String formatted = '<p>abc <color 0xFF0000ff>def</color></p>';
+      String formatted = '<p><color 0xFF0000ff>abc</color> def</p>';
 
       //--- when
       FormatusDocument doc = FormatusDocument(formatted: formatted);
@@ -75,7 +75,22 @@ void main() {
       expect(doc.textNodes.length, 2);
       expect(doc.results.plainText, 'abc def');
       expect(doc.results.formattedText,
-          '<p>abc <color 0xFF0000ff>def</color></p>');
+          '<p><color 0xFF0000ff>abc</color> def</p>');
+    });
+
+    ///
+    test('Compute results for second inline with color blue', () {
+      //--- given
+      String formatted = '<p>abc <color 0xFF0000ff>def</color> ghi</p>';
+
+      //--- when
+      FormatusDocument doc = FormatusDocument(formatted: formatted);
+
+      //--- then
+      expect(doc.textNodes.length, 3);
+      expect(doc.results.plainText, 'abc def ghi');
+      expect(doc.results.formattedText,
+          '<p>abc <color 0xFF0000ff>def</color> ghi</p>');
     });
   });
 }

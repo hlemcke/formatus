@@ -8,44 +8,11 @@ const double kDefaultFontSize = 14.0;
 /// Formats for:
 /// * Sections
 /// * Inlines
-/// * attributes (like color)
 ///
 /// Each entry provides default values for [FormatusAction] widget
-/// and display format.
+/// and display format. Some entries require an attribute.
 ///
 enum Formatus {
-  /// Outer format to align all text in the center
-  alignCenter(
-    'align="center"',
-    FormatusType.alignment,
-    Icon(Icons.format_align_center),
-    null,
-  ),
-
-  /// Outer format to justify all text within the width of the text field
-  alignJustify(
-    'align="justify"',
-    FormatusType.alignment,
-    Icon(Icons.format_align_justify),
-    null,
-  ),
-
-  /// Outer format to align all text left
-  alignLeft(
-    'align="left"',
-    FormatusType.alignment,
-    Icon(Icons.format_align_left),
-    null,
-  ),
-
-  /// Outer format to align all text right
-  alignRight(
-    'align="right"',
-    FormatusType.alignment,
-    Icon(Icons.format_align_right),
-    null,
-  ),
-
   /// An html anchor element:
   /// ```
   /// <a href="url">displayed text</a>
@@ -59,6 +26,7 @@ enum Formatus {
     FormatusType.inline,
     Icon(Icons.link),
     TextStyle(color: Colors.purpleAccent, decoration: TextDecoration.underline),
+    true,
   ),
 
   /// Inline format to display bold text
@@ -67,6 +35,7 @@ enum Formatus {
     FormatusType.inline,
     Icon(Icons.format_bold),
     TextStyle(fontWeight: FontWeight.bold),
+    false,
   ),
 
   /// Inline format to display text in a specified color
@@ -75,23 +44,20 @@ enum Formatus {
     FormatusType.inline,
     Icon(Icons.format_color_text),
     null,
+    true,
   ),
 
   /// Section element header 1 (largest)
-  header1(
-    'h1',
-    FormatusType.section,
-    FormatusActionText(text: 'H1'),
-    TextStyle(fontSize: kDefaultFontSize * 2.0, height: 2.0),
-  ),
+  header1('h1', FormatusType.section, FormatusActionText(text: 'H1'),
+      TextStyle(fontSize: kDefaultFontSize * 2.0, height: 2.0), false),
 
   /// Section element header 2 (larger)
   header2('h2', FormatusType.section, FormatusActionText(text: 'H2'),
-      TextStyle(fontSize: kDefaultFontSize * 1.7)),
+      TextStyle(fontSize: kDefaultFontSize * 1.7), false),
 
   /// Section element header 3 (large)
   header3('h3', FormatusType.section, FormatusActionText(text: 'H3'),
-      TextStyle(fontSize: kDefaultFontSize * 1.4)),
+      TextStyle(fontSize: kDefaultFontSize * 1.4), false),
 
   /// Section element. Splits text at current cursor position
   /// and inserts a horizontal ruler
@@ -100,10 +66,11 @@ enum Formatus {
     FormatusType.section,
     Text('-'),
     null,
+    false,
   ),
 
   /// Can be used to put a small gap between format actions
-  gap('?', FormatusType.bar, null, null),
+  gap('?', FormatusType.bar, null, null, false),
 
   /// Inline element to italicize text
   italic(
@@ -111,6 +78,7 @@ enum Formatus {
     FormatusType.inline,
     Icon(Icons.format_italic),
     TextStyle(fontStyle: FontStyle.italic),
+    false,
   ),
 
   /// Splits text at cursor position and inserts an image selected
@@ -123,10 +91,11 @@ enum Formatus {
       color: Colors.deepPurpleAccent,
       decoration: TextDecoration.underline,
     ),
+    true,
   ),
 
   /// Line-breaks are automatically inserted between sections
-  lineBreak('', FormatusType.section, null, null),
+  lineBreak('', FormatusType.section, null, null, false),
 
   /// Section element of an ordered list entry.
   /// In html this would be an `li` element of the enclosing `ol`
@@ -135,6 +104,7 @@ enum Formatus {
     FormatusType.section,
     Icon(Icons.format_list_numbered),
     null,
+    false,
   ),
 
   /// Section element containing text and other inline elements
@@ -143,10 +113,11 @@ enum Formatus {
     FormatusType.section,
     FormatusActionText(text: 'P'),
     TextStyle(fontSize: kDefaultFontSize),
+    false,
   ),
 
   /// Empty format used for placeholders to ensure null safety
-  placeHolder('?', FormatusType.none, null, null),
+  placeHolder('?', FormatusType.none, null, null, false),
 
   /// Single root element in a [FormatusDocument]
   ///
@@ -159,6 +130,7 @@ enum Formatus {
     FormatusType.root,
     null,
     TextStyle(fontSize: kDefaultFontSize),
+    false,
   ),
 
   /// Inline format to strike through text
@@ -167,6 +139,7 @@ enum Formatus {
     FormatusType.inline,
     Icon(Icons.format_strikethrough),
     TextStyle(decoration: TextDecoration.lineThrough),
+    false,
   ),
 
   /// Inline format to make text smaller and put it a little bit below the line
@@ -178,6 +151,7 @@ enum Formatus {
     FormatusType.inline,
     FormatusActionText(text: 'sub', typography: FormatusTypography.subscript),
     null,
+    false,
   ),
 
   /// Inline format to make text smaller and put it a little bit above the line
@@ -188,6 +162,7 @@ enum Formatus {
     FormatusType.inline,
     FormatusActionText(text: 'sup', typography: FormatusTypography.superscript),
     null,
+    false,
   ),
 
   /// TODO implement superscript
@@ -197,7 +172,7 @@ enum Formatus {
   //  offset: Offset(2, -10), child: Text('y', style: TextStyle(fontSize: 20 )))
 
   /// plain text node -> format derived from parent nodes
-  text('', FormatusType.inline, null, null),
+  text('', FormatusType.inline, null, null, false),
 
   /// Inline format to underline text
   underline(
@@ -205,6 +180,7 @@ enum Formatus {
     FormatusType.inline,
     Icon(Icons.format_underline),
     TextStyle(decoration: TextDecoration.underline),
+    false,
   ),
 
   /// Section element of an unordered list entry.
@@ -214,8 +190,10 @@ enum Formatus {
     FormatusType.section,
     Icon(Icons.format_list_bulleted),
     null,
+    false,
   );
 
+  final bool withAttribute;
   final String key;
   final FormatusType type;
   final Widget? icon;
@@ -226,6 +204,7 @@ enum Formatus {
     this.type,
     this.icon,
     this.style,
+    this.withAttribute,
   );
 
   bool get isInline => type == FormatusType.inline;
