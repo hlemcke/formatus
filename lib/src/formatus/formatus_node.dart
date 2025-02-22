@@ -39,34 +39,34 @@ class FormatusNode {
   static final FormatusNode placeHolder =
       FormatusNode(formats: [Formatus.placeHolder], text: '');
 
+  ///
   /// Applies `selectedFormats` to `formats` by removing missing formats
-  /// and by appending additional formats
-  void applyFormats(Set<Formatus> selectedFormats) {
+  /// and by appending additional ones.
+  ///
+  void applyFormats(Set<Formatus> selectedFormats, String? selectedColor) {
     Set<Formatus> toRemove = formats.toSet().difference(selectedFormats);
     for (Formatus formatus in toRemove) {
       formats.remove(formatus);
     }
     Set<Formatus> toAdd = selectedFormats.difference(formats.toSet());
     formats.addAll(toAdd);
+    //--- Apply color
+    if (formats.contains(Formatus.color)) {
+      attribute = selectedColor;
+    }
   }
 
   /// Returns a deep clone of this one
   FormatusNode clone() => FormatusNode(formats: formats.toList(), text: text)
     ..attribute = attribute;
 
-  /// Returns `true` if last format requires an attribue
+  /// Returns `true` if last format requires an attribute
   bool get hasAttribute => formats.last.withAttribute;
 
-  /// Returns `true` if `other` has a different list of formats
-  bool hasSameFormats(Object other) {
-    if ((other is FormatusNode) && (formats.length == other.formats.length)) {
-      for (int i = 0; i < formats.length; i++) {
-        if (formats[i] != other.formats[i]) return false;
-      }
-      return true;
-    }
-    return false;
-  }
+  /// Returns `true` if `others` are the same formats
+  bool hasSameFormats(Set<Formatus> others) =>
+      (formats.length == others.length) &&
+      formats.toSet().difference(others).isEmpty;
 
   /// Returns `true` if last format is anchor
   bool get isAnchor => formats.last == Formatus.anchor;
@@ -124,12 +124,15 @@ class FormatusResults {
   String formattedText = '';
   TextSpan textSpan = TextSpan(text: '');
 
-  void compute(List<FormatusNode> textNodes) {
-    plainText = '';
-    formattedText = '';
+  FormatusResults();
+
+  ///
+  /// Must be called after `textNodes` are updated
+  ///
+  factory FormatusResults.fromNodes(List<FormatusNode> textNodes) {
+    FormatusResults results = FormatusResults();
     List<TextSpan> sections = [];
     List<_ResultNode> path = [];
-    _joinNodesWithSameFormat(textNodes);
 
     //--- Remove last elements from path and close tags
     void reducePath() {
@@ -144,10 +147,13 @@ class FormatusResults {
         path[path.length - 2].textSpans.add(span);
       }
       if (path.last.formatus != Formatus.lineBreak) {
-        formattedText += '</${path.last.formatus.key}>';
+        results.formattedText += '</${path.last.formatus.key}>';
       }
       path.removeLast();
     }
+
+    //--- Condense similar nodes
+    results._joinNodesWithSameFormat(textNodes);
 
     //--- Loop text nodes
     for (FormatusNode node in textNodes) {
@@ -162,10 +168,10 @@ class FormatusResults {
         if (path.length < i + 1) {
           path.add(_ResultNode()
             ..formatus = nodeFormat
-            ..attribute = node.attribute);
+            ..attribute = nodeFormat.withAttribute ? node.attribute : null);
           if (node.isNotLineBreak) {
-            formattedText += '<${nodeFormat.key}'
-                '${node.hasAttribute ? " ${node.attribute}" : ""}>';
+            results.formattedText += '<${nodeFormat.key}'
+                '${nodeFormat.withAttribute ? " ${node.attribute}" : ""}>';
           }
         }
       }
@@ -174,23 +180,27 @@ class FormatusResults {
         reducePath();
       }
       path.last.textSpans.add(TextSpan(text: node.text));
-      formattedText += node.isLineBreak ? '' : node.text;
-      plainText += node.text;
+      results.formattedText += node.isLineBreak ? '' : node.text;
+      results.plainText += node.text;
     }
     while (path.isNotEmpty) {
       reducePath();
     }
-    textSpan = TextSpan(children: sections, style: Formatus.root.style);
+    results.textSpan = TextSpan(children: sections, style: Formatus.root.style);
+    return results;
   }
 
   ///
-  /// Joins nodes having same format by appending text of next node to current
-  /// one then deleting next one.
+  /// Joins nodes having same format and same attribute
+  /// by appending text of next node to current one then deleting next one.
   ///
   void _joinNodesWithSameFormat(List<FormatusNode> textNodes) {
     int nodeIndex = 0;
     while (nodeIndex < textNodes.length - 1) {
-      if (textNodes[nodeIndex].hasSameFormats(textNodes[nodeIndex + 1])) {
+      if (textNodes[nodeIndex]
+              .hasSameFormats(textNodes[nodeIndex + 1].formats.toSet()) &&
+          (textNodes[nodeIndex].attribute ==
+              textNodes[nodeIndex + 1].attribute)) {
         textNodes[nodeIndex].text += textNodes[nodeIndex + 1].text;
         textNodes.removeAt(nodeIndex + 1);
         continue;

@@ -76,15 +76,15 @@ class FormatusDocument {
   /// * 1 = format applied to head or tail
   /// * 2 = format applied to range within text
   ///
-  int applyFormatsToTextNode(
-      int nodeIndex, Set<Formatus> formats, int start, int end) {
+  int applyFormatsToTextNode(int nodeIndex, Set<Formatus> formats, int start,
+      int end, String? selectedColor) {
     if (start == end) return 0;
     FormatusNode node = textNodes[nodeIndex];
 
     if (start <= 0) {
       //--- apply format to full node
       if (end >= node.length) {
-        node.applyFormats(formats);
+        node.applyFormats(formats, selectedColor);
         return 0;
       }
 
@@ -93,7 +93,7 @@ class FormatusDocument {
       tail.text = tail.text.substring(end);
       textNodes.insert(nodeIndex + 1, tail);
       node.text = node.text.substring(0, end);
-      node.applyFormats(formats);
+      node.applyFormats(formats, selectedColor);
       return 1;
     }
 
@@ -103,7 +103,7 @@ class FormatusDocument {
       head.text = head.text.substring(0, start);
       textNodes.insert(nodeIndex, head);
       node.text = node.text.substring(start);
-      node.applyFormats(formats);
+      node.applyFormats(formats, selectedColor);
       return 1;
     }
 
@@ -115,7 +115,7 @@ class FormatusDocument {
     tail.text = tail.text.substring(end);
     textNodes.insert(nodeIndex + 2, tail);
     node.text = node.text.substring(start, end);
-    node.applyFormats(formats);
+    node.applyFormats(formats, selectedColor);
     return 2;
   }
 
@@ -163,12 +163,13 @@ class FormatusDocument {
   ///
   /// Computes `formattedText` and results for [TextField]
   ///
-  void computeResults() => results.compute(textNodes);
+  void computeResults() => results = FormatusResults.fromNodes(textNodes);
 
   ///
   /// Apply `formats` to selected text-range.
   ///
-  void updateInlineFormat(TextSelection selection, Set<Formatus> formats) {
+  void updateInlineFormat(
+      TextSelection selection, Set<Formatus> formats, String? selectedColor) {
     if (selection.isCollapsed) return;
 
     //--- Determine first and last text-node from selection
@@ -178,7 +179,7 @@ class FormatusDocument {
     //--- Apply format to single node
     if (headMeta.nodeIndex == tailMeta.nodeIndex) {
       applyFormatsToTextNode(headMeta.nodeIndex, formats, headMeta.textOffset,
-          tailMeta.textOffset);
+          tailMeta.textOffset, selectedColor);
       computeResults();
       return;
     }
@@ -187,15 +188,16 @@ class FormatusDocument {
     int firstNode = headMeta.nodeIndex +
         1 +
         applyFormatsToTextNode(headMeta.nodeIndex, formats, headMeta.textOffset,
-            headMeta.node.length);
+            headMeta.node.length, selectedColor);
 
     //--- Apply format to last text-node in selection
     int lastNode = tailMeta.nodeIndex - 1;
-    applyFormatsToTextNode(tailMeta.nodeIndex, formats, 0, tailMeta.textOffset);
+    applyFormatsToTextNode(
+        tailMeta.nodeIndex, formats, 0, tailMeta.textOffset, selectedColor);
 
     //--- Apply formats to all nodes in between
     for (int i = firstNode; i <= lastNode && i < textNodes.length; i++) {
-      applyFormatsToTextNode(i, formats, 0, 9999);
+      applyFormatsToTextNode(i, formats, 0, 9999, selectedColor);
     }
     computeResults();
   }
@@ -218,7 +220,8 @@ class FormatusDocument {
   ///
   /// Handle cases for modified text
   ///
-  void updateText(DeltaText deltaText, Set<Formatus> formats) {
+  void updateText(
+      DeltaText deltaText, Set<Formatus> formats, String? selectedColor) {
     //--- Handle line break insert
     if (deltaText.textAdded == '\n') {
       _handleLineBreakInsert(deltaText);
@@ -277,7 +280,7 @@ class FormatusDocument {
         firstIndexToDelete--;
       } else if (deltaText.isInsert) {
         applyFormatsToTextNode(metaStart.nodeIndex, formats,
-            metaStart.textOffset, metaStart.node.length);
+            metaStart.textOffset, metaStart.node.length, selectedColor);
       }
 
       //--- cut text in last node or remove it completely

@@ -271,25 +271,26 @@ class FormatusAnchor {
 /// HTML color names used in [Formatus]
 ///
 enum FormatusColor {
-  aqua('0xFF00FFFF'),
+  none(null), // to clear color
+  aqua('0xFF00ffff'),
   black('0xFF000000'),
   blue('0xFF0000ff'),
-  fuchsia('0xFFFF00FF'),
+  fuchsia('0xFFff00ff'),
   grey('0xFF808080'),
   green('0xFF008000'),
-  lime('0xFF00FF00'),
+  lime('0xFF00ff00'),
   maroon('0xFF800000'),
   navy('0xFF000080'),
   olive('0xFF808000'),
-  orange('0xFFFFa500'),
+  orange('0xFFffa500'),
   purple('0xFF800080'),
-  red('0xFFFF0000'),
+  red('0xFFff0000'),
   silver('0xFFC0C0C0'),
   teal('0xFF008080'),
-  white('0xFFFFFFFF'),
-  yellow('0xFFFFFF00');
+  white('0xFFffffff'),
+  yellow('0xFFffff00');
 
-  final String key;
+  final String? key;
 
   const FormatusColor(this.key);
 

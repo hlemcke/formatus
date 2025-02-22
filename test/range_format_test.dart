@@ -14,7 +14,7 @@ void main() {
           const TextSelection(baseOffset: 6, extentOffset: 6);
 
       //--- when
-      doc.updateInlineFormat(selection, {Formatus.underline});
+      doc.updateInlineFormat(selection, {Formatus.underline}, null);
 
       //--- then
       expect(doc.textNodes.length, 1);
@@ -31,7 +31,8 @@ void main() {
           const TextSelection(baseOffset: 0, extentOffset: 5);
 
       //--- when
-      doc.updateInlineFormat(selection, {Formatus.header1, Formatus.bold});
+      doc.updateInlineFormat(
+          selection, {Formatus.header1, Formatus.bold}, null);
 
       //--- then
       expect(doc.textNodes.length, 2);
@@ -50,7 +51,8 @@ void main() {
           const TextSelection(baseOffset: 6, extentOffset: 10);
 
       //--- when
-      doc.updateInlineFormat(selection, {Formatus.header1, Formatus.bold});
+      doc.updateInlineFormat(
+          selection, {Formatus.header1, Formatus.bold}, null);
 
       //--- then
       expect(doc.textNodes.length, 2);
@@ -69,7 +71,8 @@ void main() {
           const TextSelection(baseOffset: 6, extentOffset: 10);
 
       //--- when
-      doc.updateInlineFormat(selection, {Formatus.header1, Formatus.bold});
+      doc.updateInlineFormat(
+          selection, {Formatus.header1, Formatus.bold}, null);
 
       //--- then
       expect(doc.textNodes.length, 3);
@@ -92,7 +95,7 @@ void main() {
           const TextSelection(baseOffset: 5, extentOffset: 9);
 
       //--- when
-      doc.updateInlineFormat(selection, {Formatus.paragraph});
+      doc.updateInlineFormat(selection, {Formatus.paragraph}, null);
 
       //--- then
       expect(doc.textNodes.length, 1);

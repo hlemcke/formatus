@@ -99,6 +99,7 @@ class FormatusControllerImpl extends TextEditingController
   void clear() {
     super.clear();
     document.clear();
+    selectedColor = null;
     selectedFormats.clear();
     selectedFormats.add(Formatus.paragraph);
     _prevSelection = _emptySelection;
@@ -142,11 +143,10 @@ class FormatusControllerImpl extends TextEditingController
   set _text(String textForSuper) => super.text = textForSuper;
 
   /// Updates formats in selected text range.
-  /// `selectedFormats`are already updated by [FormatusBar]
-  void updateInlineFormat(Formatus formatus, bool isSet,
-      {String attribute = ''}) {
+  /// [FormatusBar] has already updated `selectedFormats` and `selectedColor`
+  void updateInlineFormat(Formatus formatus) {
     if (selection.isCollapsed) return;
-    document.updateInlineFormat(selection, selectedFormats);
+    document.updateInlineFormat(selection, selectedFormats, selectedColor);
     _rememberNodeResults();
   }
 
@@ -200,7 +200,7 @@ class FormatusControllerImpl extends TextEditingController
     debugPrint(
         '=== _onListen [${selection.start},${selection.end}] => $deltaText');
 
-    document.updateText(deltaText, selectedFormats);
+    document.updateText(deltaText, selectedFormats, selectedColor);
     _rememberNodeResults();
   }
 
@@ -212,6 +212,8 @@ class FormatusControllerImpl extends TextEditingController
   /// Computes [FormatusResults] and fires [onChanged]
   /// if `formattedText` has changed.
   void _rememberNodeResults() {
+    print(
+        'prevFormat=${_prevNodeResults.formattedText}\nnextFormat=${document.results.formattedText}');
     if ((_prevNodeResults.formattedText != document.results.formattedText) &&
         (onChanged != null)) {
       onChanged!(document.results.formattedText);
@@ -224,9 +226,7 @@ class FormatusControllerImpl extends TextEditingController
     _prevSelection = TextSelection(
         baseOffset: selection.baseOffset, extentOffset: selection.extentOffset);
     NodeMeta meta = document.computeMeta(selection.baseOffset);
-    if (meta.node.isColor) {
-      selectedColor = meta.node.attribute;
-    }
+    selectedColor = meta.node.attribute;
   }
 }
 
