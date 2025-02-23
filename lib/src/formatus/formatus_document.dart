@@ -4,6 +4,7 @@ import 'formatus_controller_impl.dart';
 import 'formatus_model.dart';
 import 'formatus_node.dart';
 import 'formatus_parser.dart';
+import 'formatus_results.dart';
 
 ///
 /// HTML formatted document parsed into a tree-like structure.
@@ -207,6 +208,7 @@ class FormatusDocument {
   ///
   void updateSectionFormat(int cursorIndex, Formatus newSectionFormat) {
     NodeMeta meta = computeMeta(cursorIndex);
+    meta.node.formats[0] = newSectionFormat;
     Formatus oldSectionFormat = meta.node.formats[0];
     for (int i = meta.nodeIndex;
         (i > 0) && (textNodes[i].formats[0] == oldSectionFormat);

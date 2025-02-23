@@ -249,8 +249,8 @@ final List<FormatusAction> _defaultActions = [
   FormatusAction(formatus: Formatus.bold),
   FormatusAction(formatus: Formatus.underline),
   FormatusAction(formatus: Formatus.strikeThrough),
-  // FormatusAction(formatus: Formatus.subscript),
-  // FormatusAction(formatus: Formatus.superscript),
+  FormatusAction(formatus: Formatus.subscript),
+  FormatusAction(formatus: Formatus.superscript),
   FormatusAction(formatus: Formatus.color),
   anchorAction,
 ];

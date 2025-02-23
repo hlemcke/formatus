@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 
 import 'formatus_model.dart';
 
@@ -68,16 +68,22 @@ class FormatusNode {
       (formats.length == others.length) &&
       formats.toSet().difference(others).isEmpty;
 
+  /// Returns `true` if last format is color
+  bool get hasColor => formats.contains(Formatus.color);
+
   /// Returns `true` if last format is anchor
   bool get isAnchor => formats.last == Formatus.anchor;
-
-  /// Returns `true` if last format is color
-  bool get hasColor => formats.last == Formatus.color;
 
   /// Returns `true` if this is a line-break between two sections
   bool get isLineBreak => formats[0] == Formatus.lineBreak;
 
   bool get isNotLineBreak => !isLineBreak;
+
+  /// Returns `true` if this nodes text is formatted as subscript
+  bool get isSubscript => formats.contains(Formatus.subscript);
+
+  /// Returns `true` if this nodes text is formatted as superscript
+  bool get isSuperscript => formats.contains(Formatus.superscript);
 
   /// Length of text
   int get length => text.length;
@@ -114,110 +120,4 @@ class NodeMeta {
 
   @override
   String toString() => '[$nodeIndex] $textBegin + $textOffset -> $node';
-}
-
-///
-/// Results to update formatted text and [TextField]
-///
-class FormatusResults {
-  String plainText = '';
-  String formattedText = '';
-  TextSpan textSpan = TextSpan(text: '');
-
-  FormatusResults();
-
-  ///
-  /// Must be called after `textNodes` are updated
-  ///
-  factory FormatusResults.fromNodes(List<FormatusNode> textNodes) {
-    FormatusResults results = FormatusResults();
-    List<TextSpan> sections = [];
-    List<_ResultNode> path = [];
-
-    //--- Remove last elements from path and close tags
-    void reducePath() {
-      TextStyle? style = (path.last.formatus == Formatus.color)
-          ? TextStyle(
-              color: Color(int.tryParse(path.last.attribute!) ?? 0xFFFFFFFF))
-          : path.last.formatus.style;
-      TextSpan span = TextSpan(children: path.last.textSpans, style: style);
-      if (path.length < 2) {
-        sections.add(span);
-      } else {
-        path[path.length - 2].textSpans.add(span);
-      }
-      if (path.last.formatus != Formatus.lineBreak) {
-        results.formattedText += '</${path.last.formatus.key}>';
-      }
-      path.removeLast();
-    }
-
-    //--- Condense similar nodes
-    results._joinNodesWithSameFormat(textNodes);
-
-    //--- Loop text nodes
-    for (FormatusNode node in textNodes) {
-      //--- Loop formats of text node
-      for (int i = 0; i < node.formats.length; i++) {
-        Formatus nodeFormat = node.formats[i];
-        if ((path.length > i) && (path[i].formatus != nodeFormat)) {
-          while (path.length > i) {
-            reducePath();
-          }
-        }
-        if (path.length < i + 1) {
-          path.add(_ResultNode()
-            ..formatus = nodeFormat
-            ..attribute = nodeFormat.withAttribute ? node.attribute : null);
-          if (node.isNotLineBreak) {
-            results.formattedText += '<${nodeFormat.key}'
-                '${nodeFormat.withAttribute ? " ${node.attribute}" : ""}>';
-          }
-        }
-      }
-      //--- Cleanup additional path elements
-      while (path.length > node.formats.length) {
-        reducePath();
-      }
-      path.last.textSpans.add(TextSpan(text: node.text));
-      results.formattedText += node.isLineBreak ? '' : node.text;
-      results.plainText += node.text;
-    }
-    while (path.isNotEmpty) {
-      reducePath();
-    }
-    results.textSpan = TextSpan(children: sections, style: Formatus.root.style);
-    return results;
-  }
-
-  ///
-  /// Joins nodes having same format and same attribute
-  /// by appending text of next node to current one then deleting next one.
-  ///
-  void _joinNodesWithSameFormat(List<FormatusNode> textNodes) {
-    int nodeIndex = 0;
-    while (nodeIndex < textNodes.length - 1) {
-      if (textNodes[nodeIndex]
-              .hasSameFormats(textNodes[nodeIndex + 1].formats.toSet()) &&
-          (textNodes[nodeIndex].attribute ==
-              textNodes[nodeIndex + 1].attribute)) {
-        textNodes[nodeIndex].text += textNodes[nodeIndex + 1].text;
-        textNodes.removeAt(nodeIndex + 1);
-        continue;
-      }
-      nodeIndex++;
-    }
-  }
-}
-
-///
-/// Internal class only used by [FormatusDocument.computeResults()]
-///
-class _ResultNode {
-  String? attribute;
-  Formatus formatus = Formatus.placeHolder;
-  List<TextSpan> textSpans = [];
-
-  @override
-  String toString() => '<${formatus.key}> ${textSpans.length}';
 }

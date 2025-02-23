@@ -12,5 +12,5 @@ class FormatusViewer extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => RichText(text: doc.results.textSpan);
+  Widget build(BuildContext context) => RichText(text: doc.results.viewerSpan);
 }

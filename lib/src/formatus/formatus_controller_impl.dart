@@ -3,6 +3,7 @@ import 'package:formatus/formatus.dart';
 
 import 'formatus_document.dart';
 import 'formatus_node.dart';
+import 'formatus_results.dart';
 
 ///
 /// [FormatusController] displays the tree-like structure of a

@@ -149,7 +149,7 @@ enum Formatus {
   subscript(
     'sub',
     FormatusType.inline,
-    FormatusActionText(text: 'sub', typography: FormatusTypography.subscript),
+    FormatusActionText(text: 'sub'),
     null,
     false,
   ),
@@ -160,7 +160,7 @@ enum Formatus {
   superscript(
     'super',
     FormatusType.inline,
-    FormatusActionText(text: 'sup', typography: FormatusTypography.superscript),
+    FormatusActionText(text: 'sup'),
     null,
     false,
   ),
@@ -226,26 +226,25 @@ class FormatusActionText extends StatelessWidget {
   const FormatusActionText({
     super.key,
     required this.text,
-    this.typography = FormatusTypography.normal,
   });
 
   final String text;
-  final FormatusTypography typography;
 
   @override
-  Widget build(BuildContext context) =>
-      (typography == FormatusTypography.normal)
-          ? Text(
+  Widget build(BuildContext context) => (text == 'sub')
+      ? Transform.translate(
+          offset: Offset(0, 4),
+          child: Text(text, textScaler: TextScaler.linear(0.7)))
+      : (text == 'sup')
+          ? Transform.translate(
+              offset: Offset(0, -4),
+              child: Text(text, textScaler: TextScaler.linear(0.7)))
+          : Text(
               text,
               style: TextStyle(
                 fontSize: kDefaultFontSize * 1.2,
                 fontWeight: FontWeight.bold,
               ),
-            )
-          : Transform.translate(
-              offset: Offset(
-                  0, (typography == FormatusTypography.subscript) ? 4 : -4),
-              child: Text(text, textScaler: TextScaler.linear(0.7)),
             );
 }
 
@@ -356,8 +355,3 @@ dynamic findEnum(
   }
   return defaultValue;
 }
-
-///
-/// Typography values
-///
-enum FormatusTypography { normal, subscript, superscript }
