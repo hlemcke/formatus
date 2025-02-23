@@ -15,7 +15,7 @@ class FormatusNode {
   /// * color -> hex string
   /// * anchor -> href
   /// * image -> src
-  String? attribute;
+  String attribute = '';
 
   /// Formats of this node
   List<Formatus> formats;
@@ -43,7 +43,7 @@ class FormatusNode {
   /// Applies `selectedFormats` to `formats` by removing missing formats
   /// and by appending additional ones.
   ///
-  void applyFormats(Set<Formatus> selectedFormats, String? selectedColor) {
+  void applyFormats(Set<Formatus> selectedFormats, String selectedColor) {
     Set<Formatus> toRemove = formats.toSet().difference(selectedFormats);
     for (Formatus formatus in toRemove) {
       formats.remove(formatus);
@@ -72,7 +72,7 @@ class FormatusNode {
   bool get isAnchor => formats.last == Formatus.anchor;
 
   /// Returns `true` if last format is color
-  bool get isColor => formats.last == Formatus.color;
+  bool get hasColor => formats.last == Formatus.color;
 
   /// Returns `true` if this is a line-break between two sections
   bool get isLineBreak => formats[0] == Formatus.lineBreak;

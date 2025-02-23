@@ -21,7 +21,7 @@ void main() {
       expect(deltaText.type, DeltaTextType.insert);
 
       //--- when
-      doc.updateText(deltaText, {Formatus.header1}, null);
+      doc.updateText(deltaText, {Formatus.header1}, '');
 
       //--- then
       expect(doc.textNodes.length, 3);
@@ -42,7 +42,7 @@ void main() {
       expect(deltaText.type, DeltaTextType.insert);
 
       //--- when
-      doc.updateText(deltaText, {Formatus.header1}, null);
+      doc.updateText(deltaText, {Formatus.header1}, '');
 
       //--- then
       expect(doc.textNodes.length, 3);
@@ -63,7 +63,7 @@ void main() {
       expect(deltaText.type, DeltaTextType.insert);
 
       //--- when
-      doc.updateText(deltaText, {Formatus.header1}, null);
+      doc.updateText(deltaText, {Formatus.header1}, '');
 
       //--- then
       expect(doc.textNodes.length, 5);
@@ -85,7 +85,7 @@ void main() {
       expect(deltaText.type, DeltaTextType.insert);
 
       //--- when
-      doc.updateText(deltaText, {Formatus.header1}, null);
+      doc.updateText(deltaText, {Formatus.header1}, '');
 
       //--- then
       expect(doc.textNodes.length, 5);
@@ -108,7 +108,7 @@ void main() {
       expect(deltaText.type, DeltaTextType.insert);
 
       //--- when
-      doc.updateText(deltaText, {Formatus.header1}, null);
+      doc.updateText(deltaText, {Formatus.header1}, '');
 
       //--- then
       expect(doc.textNodes.length, 5);
@@ -134,7 +134,7 @@ void main() {
       expect(deltaText.type, DeltaTextType.insert);
 
       //--- when
-      doc.updateText(deltaText, {Formatus.header1}, null);
+      doc.updateText(deltaText, {Formatus.header1}, '');
 
       //--- then
       expect(doc.textNodes.length, 4);
@@ -156,7 +156,7 @@ void main() {
       expect(deltaText.type, DeltaTextType.insert);
 
       //--- when
-      doc.updateText(deltaText, {Formatus.header1}, null);
+      doc.updateText(deltaText, {Formatus.header1}, '');
 
       //--- then
       expect(doc.textNodes.length, 3);
@@ -176,7 +176,7 @@ void main() {
       expect(deltaText.type, DeltaTextType.insert);
 
       //--- when
-      doc.updateText(deltaText, {Formatus.header1}, null);
+      doc.updateText(deltaText, {Formatus.header1}, '');
 
       //--- then
       expect(doc.textNodes.length, 4);
@@ -201,7 +201,7 @@ void main() {
       expect(deltaText.type, DeltaTextType.delete);
 
       //--- when
-      doc.updateText(deltaText, {Formatus.header1}, null);
+      doc.updateText(deltaText, {Formatus.header1}, '');
 
       //--- then
       expect(doc.textNodes.length, 1);
@@ -223,7 +223,7 @@ void main() {
       expect(deltaText.type, DeltaTextType.delete);
 
       //--- when
-      doc.updateText(deltaText, {Formatus.header1}, null);
+      doc.updateText(deltaText, {Formatus.header1}, '');
 
       //--- then
       expect(doc.textNodes.length, 1);
@@ -245,7 +245,7 @@ void main() {
       expect(deltaText.type, DeltaTextType.delete);
 
       //--- when
-      doc.updateText(deltaText, {Formatus.header1}, null);
+      doc.updateText(deltaText, {Formatus.header1}, '');
 
       //--- then
       expect(doc.textNodes.length, 1);

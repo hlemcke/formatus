@@ -77,7 +77,7 @@ class FormatusDocument {
   /// * 2 = format applied to range within text
   ///
   int applyFormatsToTextNode(int nodeIndex, Set<Formatus> formats, int start,
-      int end, String? selectedColor) {
+      int end, String selectedColor) {
     if (start == end) return 0;
     FormatusNode node = textNodes[nodeIndex];
 
@@ -169,7 +169,7 @@ class FormatusDocument {
   /// Apply `formats` to selected text-range.
   ///
   void updateInlineFormat(
-      TextSelection selection, Set<Formatus> formats, String? selectedColor) {
+      TextSelection selection, Set<Formatus> formats, String selectedColor) {
     if (selection.isCollapsed) return;
 
     //--- Determine first and last text-node from selection
@@ -221,7 +221,7 @@ class FormatusDocument {
   /// Handle cases for modified text
   ///
   void updateText(
-      DeltaText deltaText, Set<Formatus> formats, String? selectedColor) {
+      DeltaText deltaText, Set<Formatus> formats, String selectedColor) {
     //--- Handle line break insert
     if (deltaText.textAdded == '\n') {
       _handleLineBreakInsert(deltaText);
@@ -249,6 +249,9 @@ class FormatusDocument {
       if (deltaText.isInsert && !node.hasSameFormats(formats)) {
         FormatusNode newNode =
             FormatusNode(formats: formats.toList(), text: deltaText.textAdded);
+        if (newNode.hasColor) {
+          newNode.attribute = selectedColor;
+        }
         if (metaStart.textOffset == 0) {
           textNodes.insert(metaStart.nodeIndex, newNode);
         } else if (metaStart.textOffset >= metaStart.length) {

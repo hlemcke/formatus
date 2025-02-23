@@ -21,7 +21,7 @@ void main() {
           nextSelection: TextSelection(baseOffset: 0, extentOffset: 0));
 
       //--- when
-      doc.updateText(deltaText, {Formatus.header1}, null);
+      doc.updateText(deltaText, {Formatus.header1}, '');
 
       //--- then
       expect(doc.textNodes.length, 3);

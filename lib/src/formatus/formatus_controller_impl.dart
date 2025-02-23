@@ -22,8 +22,8 @@ class FormatusControllerImpl extends TextEditingController
   /// Tree-like structure with nodes for formatting and text leaf nodes
   late FormatusDocument document;
 
-  /// Has a value if current node contains [Formatus.color]
-  String? selectedColor;
+  /// If current node contains [Formatus.color] then this is colors hex code
+  String selectedColor = '';
 
   /// Formats set by cursor positioning and modified by user selection.
   Set<Formatus> selectedFormats = {};
@@ -51,7 +51,7 @@ class FormatusControllerImpl extends TextEditingController
   FormatusAnchor? get anchorAtCursor {
     NodeMeta meta = document.computeMeta(selection.baseOffset);
     return meta.node.isAnchor
-        ? FormatusAnchor(href: meta.node.attribute!, name: meta.node.text)
+        ? FormatusAnchor(href: meta.node.attribute, name: meta.node.text)
         : null;
   }
 
@@ -99,7 +99,7 @@ class FormatusControllerImpl extends TextEditingController
   void clear() {
     super.clear();
     document.clear();
-    selectedColor = null;
+    selectedColor = '';
     selectedFormats.clear();
     selectedFormats.add(Formatus.paragraph);
     _prevSelection = _emptySelection;
@@ -212,8 +212,6 @@ class FormatusControllerImpl extends TextEditingController
   /// Computes [FormatusResults] and fires [onChanged]
   /// if `formattedText` has changed.
   void _rememberNodeResults() {
-    print(
-        'prevFormat=${_prevNodeResults.formattedText}\nnextFormat=${document.results.formattedText}');
     if ((_prevNodeResults.formattedText != document.results.formattedText) &&
         (onChanged != null)) {
       onChanged!(document.results.formattedText);

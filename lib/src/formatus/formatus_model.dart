@@ -271,7 +271,7 @@ class FormatusAnchor {
 /// HTML color names used in [Formatus]
 ///
 enum FormatusColor {
-  none(null), // to clear color
+  none(''), // to clear color
   aqua('0xFF00ffff'),
   black('0xFF000000'),
   blue('0xFF0000ff'),
@@ -290,7 +290,7 @@ enum FormatusColor {
   white('0xFFffffff'),
   yellow('0xFFffff00');
 
-  final String? key;
+  final String key;
 
   const FormatusColor(this.key);
 

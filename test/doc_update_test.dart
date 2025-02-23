@@ -21,7 +21,7 @@ void main() {
               TextSelection(baseOffset: 0, extentOffset: newText.length));
 
       //--- when
-      doc.updateText(deltaText, {Formatus.header1}, null);
+      doc.updateText(deltaText, {Formatus.header1}, '');
 
       //--- then
       expect(deltaText.isAll, true);
@@ -47,7 +47,7 @@ void main() {
               TextSelection(baseOffset: 0, extentOffset: newText.length));
 
       //--- when
-      doc.updateText(deltaText, {Formatus.paragraph}, null);
+      doc.updateText(deltaText, {Formatus.paragraph}, '');
 
       //--- then
       expect(deltaText.isAll, true);

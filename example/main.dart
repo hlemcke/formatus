@@ -56,10 +56,7 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
     controller = FormatusController(
         formattedText: textTemplates[initialTemplateKey] ?? '',
-        onChanged: (v) => setState(() {
-              debugPrint('controller changed to: "$v"');
-              savedText = v;
-            }));
+        onChanged: (v) => setState(() => savedText = v));
   }
 
   @override

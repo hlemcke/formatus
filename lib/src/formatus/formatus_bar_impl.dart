@@ -79,7 +79,7 @@ class FormatusBarImpl extends StatefulWidget implements FormatusBar {
 class _FormatusBarState extends State<FormatusBarImpl> {
   late final FormatusControllerImpl _ctrl;
 
-  String? get _selectedColor => _ctrl.selectedColor;
+  String get _selectedColor => _ctrl.selectedColor;
 
   Set<Formatus> get _selectedFormats => _ctrl.selectedFormats;
 
@@ -149,22 +149,25 @@ class _FormatusBarState extends State<FormatusBarImpl> {
 
   void _selectAndRememberColor() async {
     String? argb = await _showColorDialog();
-    debugPrint('argb = $argb');
-    _ctrl.selectedColor = argb;
+    _ctrl.selectedColor = argb ?? '';
+    debugPrint('argb=$argb selCol=${_ctrl.selectedColor}');
     if (argb == null) {
       _selectedFormats.remove(Formatus.color);
     } else {
       _selectedFormats.add(Formatus.color);
     }
     _ctrl.updateInlineFormat(Formatus.color);
-    widget.textFieldFocus?.requestFocus();
+    setState(() => widget.textFieldFocus?.requestFocus());
   }
 
   Future<String?> _showColorDialog() => showAdaptiveDialog<String>(
         context: context,
         builder: (BuildContext context) => Dialog(
           child: SingleChildScrollView(
+            padding: EdgeInsets.all(8.0),
             child: Wrap(
+              runSpacing: 8.0,
+              spacing: 8.0,
               children: [
                 for (FormatusColor col in FormatusColor.values)
                   InkWell(
@@ -172,14 +175,16 @@ class _FormatusBarState extends State<FormatusBarImpl> {
                     child: Tooltip(
                       message: col.name,
                       child: Container(
-                        color: (col.key == null)
-                            ? null
-                            : Color(int.parse(col.key!)),
+                        decoration: BoxDecoration(
+                          color: (col.key.isEmpty)
+                              ? null
+                              : Color(int.parse(col.key)),
+                          shape: BoxShape.circle,
+                        ),
                         height: kMinInteractiveDimension,
-                        width: 2 * kMinInteractiveDimension,
-                        child: (col.key == null)
-                            ? Center(child: Text('X'))
-                            : SizedBox.shrink(),
+                        width: kMinInteractiveDimension,
+                        child:
+                            (col.key.isEmpty) ? Center(child: Text('X')) : null,
                       ),
                     ),
                   )
@@ -206,21 +211,19 @@ class _FormatusButton extends StatelessWidget {
   final FormatusAction action;
   final bool isSelected;
   final VoidCallback? onPressed;
-  final String? textColor;
+  final String textColor;
 
   const _FormatusButton({
     required this.action,
     this.isSelected = false,
     this.onPressed,
-    this.textColor,
+    this.textColor = '',
   });
 
   @override
   Widget build(BuildContext context) {
-    Color? color = ((action.formatus == Formatus.color) &&
-            (textColor != null) &&
-            textColor!.isNotEmpty)
-        ? Color(int.parse(textColor!))
+    Color? color = ((action.formatus == Formatus.color) && textColor.isNotEmpty)
+        ? Color(int.parse(textColor))
         : null;
     return (action.formatus == Formatus.gap)
         ? SizedBox(height: 8, width: 8)
@@ -246,8 +249,8 @@ final List<FormatusAction> _defaultActions = [
   FormatusAction(formatus: Formatus.bold),
   FormatusAction(formatus: Formatus.underline),
   FormatusAction(formatus: Formatus.strikeThrough),
-  FormatusAction(formatus: Formatus.subscript),
-  FormatusAction(formatus: Formatus.superscript),
+  // FormatusAction(formatus: Formatus.subscript),
+  // FormatusAction(formatus: Formatus.superscript),
   FormatusAction(formatus: Formatus.color),
   anchorAction,
 ];

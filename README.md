@@ -16,11 +16,11 @@ Add the latest version of *Formatus* to the `pubspec.yaml` file:
 
 ```yaml
 flutter:
-  formatus: ^1.2.0
+  formatus: ^1.3.0
 ```
 
 Create a `FormatusController` and a `FormatusBar`.
-Supply a `FocusNode` to both the `FormatusBar` and the `TextField` (or `TextFormField`).
+Supply a `FocusNode` to both the `FormatusBar` and the `TextField` or `TextFormField`.
 
 
 ## Usage
@@ -30,10 +30,11 @@ Use `Formatus` like this:
 ```dart
   FocusNode focusNode = FocusNode(debugLabel: 'formatus');
   late FormatusController controller;
-  String savedText = '<p>some text</p>';
+  String savedText = '';
 
 void initState() {
-  controller = FormatusController( formattedText: savedText, onChanged: (v) => savedText = v );
+  controller = FormatusController( formattedText: savedText,
+      onChanged: (v) => setState(() => savedText = v ),);
 }
 
 Widget build(BuildContext context) => Column( children: [
@@ -100,11 +101,10 @@ open a ticket at https://github.com/hlemcke/formatus
 1. Add format for superscript
 2. Add format for subscript
 3. Add format to change text color
-4. Add format to change text color
-5. Add format for unordered list
-6. Add format for ordered list (auto-counting)
-7. Add action to insert an emoji. This should become an optional add-on action
+4. Add format for unordered list
+5. Add format for ordered list (auto-counting)
+6. Add action to insert an emoji. This should become an optional add-on action
    similar to `FormatusAnchor`. Could also include converting an emoji name
    into emoji inline (insert into current text node).
-8. Parse markdown as formatted input
-9. Export formatted text in markdown format
+7. Parse markdown as formatted input
+8. Export formatted text in markdown format

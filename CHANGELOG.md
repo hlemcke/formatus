@@ -1,5 +1,6 @@
 ## 1.3.0
-* Refactored internal structure to ease changes due to text editing
+* Added color action
+* Refactored internal structure to ease changes from text editing
 * Fixed multiple bugs deleting and inserting a range of text
 
 ## 1.2.1
