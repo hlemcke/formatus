@@ -29,14 +29,14 @@ class FormatusResults {
           ? TextStyle(
               color: Color(int.tryParse(path.last.attribute!) ?? 0xFFFFFFFF))
           : path.last.formatus.style;
-      TextSpan span = TextSpan(children: path.last.spans, style: style);
+      TextSpan span = TextSpan(children: path.last.textSpans, style: style);
       InlineSpan viewerSpan =
           TextSpan(children: path.last.viewerSpans, style: style);
       if (path.length < 2) {
         sections.add(span);
         viewerSections.add(viewerSpan);
       } else {
-        path[path.length - 2].spans.add(span);
+        path[path.length - 2].textSpans.add(span);
         path[path.length - 2].viewerSpans.add(viewerSpan);
       }
       if (path.last.formatus != Formatus.lineBreak) {
@@ -75,7 +75,7 @@ class FormatusResults {
 
       //--- Append [InlineSpan] according to texts typography
       if (node.isSubscript) {
-        path.last.spans.add(TextSpan(
+        path.last.textSpans.add(TextSpan(
             text: node.text,
             style: TextStyle(fontFeatures: [FontFeature.subscripts()])));
         path.last.viewerSpans.add(
@@ -86,7 +86,7 @@ class FormatusResults {
           ),
         );
       } else if (node.isSuperscript) {
-        path.last.spans.add(TextSpan(
+        path.last.textSpans.add(TextSpan(
             text: node.text,
             style: TextStyle(fontFeatures: [FontFeature.superscripts()])));
         path.last.viewerSpans.add(WidgetSpan(
@@ -95,7 +95,7 @@ class FormatusResults {
               child: Text(node.text, textScaler: TextScaler.linear(0.7))),
         ));
       } else {
-        path.last.spans.add(TextSpan(text: node.text));
+        path.last.textSpans.add(TextSpan(text: node.text));
         path.last.viewerSpans.add(TextSpan(text: node.text));
       }
       results.formattedText += node.isLineBreak ? '' : node.text;
@@ -136,9 +136,9 @@ class FormatusResults {
 class _ResultNode {
   String? attribute;
   Formatus formatus = Formatus.placeHolder;
-  List<TextSpan> spans = [];
+  List<TextSpan> textSpans = [];
   List<InlineSpan> viewerSpans = [];
 
   @override
-  String toString() => '<${formatus.key}> ${spans.length}';
+  String toString() => '<${formatus.key}> ${textSpans.length}';
 }

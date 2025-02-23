@@ -144,7 +144,7 @@ class _FormatusBarState extends State<FormatusBarImpl> {
       _selectedFormats.add(formatus);
       _ctrl.updateInlineFormat(formatus);
     }
-    widget.textFieldFocus?.requestFocus();
+    setState(() => widget.textFieldFocus?.requestFocus());
   }
 
   void _selectAndRememberColor() async {

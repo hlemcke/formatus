@@ -101,7 +101,7 @@ class _MyHomePageState extends State<MyHomePage> {
             focusNode: _formatusFocus,
             minLines: 3,
             maxLines: 7,
-            onChanged: (_) => setState(() => ()),
+            // onChanged: (_) => setState(() => ()),
             showCursor: true,
           ),
           const Divider(color: Colors.deepPurpleAccent),
