@@ -129,6 +129,13 @@ class FormatusDocument {
   /// Returns meta information about node found at `charIndex`
   ///
   NodeMeta computeMeta(int charIndex) {
+    if (charIndex < 0) {
+      return NodeMeta()
+        ..node = textNodes[0]
+        ..nodeIndex = 0
+        ..textBegin = 0
+        ..textOffset = 0;
+    }
     if (charIndex >= results.plainText.length) {
       FormatusNode last = textNodes.last;
       return NodeMeta()
@@ -147,11 +154,21 @@ class FormatusDocument {
       nodeIndex++;
     }
 
+    //--- Back to previous node if this node is a line-break
+    if (results.plainText[charIndex] == '\n') {
+      nodeIndex--;
+      return NodeMeta()
+        ..node = textNodes[nodeIndex]
+        ..nodeIndex = nodeIndex
+        ..textBegin = charIndex - charCount
+        ..textOffset = textNodes[nodeIndex].length;
+    }
+
     //--- Back to previous node if:
     // a) there is a previous node
     // b) at start of this one (charCount == charIndex)
     // c) and previous is no LF or ends with space
-    if ((nodeIndex > 0) &&
+    else if ((nodeIndex > 0) &&
         (charCount == charIndex) &&
         textNodes[nodeIndex - 1].isNotLineBreak &&
         !textNodes[nodeIndex - 1].text.endsWith(' ')) {
