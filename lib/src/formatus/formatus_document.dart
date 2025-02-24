@@ -43,8 +43,10 @@ class FormatusDocument {
   ///
   factory FormatusDocument({
     required String formatted,
+    bool forViewer = false,
   }) {
     FormatusDocument doc = FormatusDocument._();
+    doc.forViewer = forViewer;
     if (formatted.isNotEmpty) {
       doc.textNodes = FormatusParser().parse(formatted);
     }
@@ -53,6 +55,9 @@ class FormatusDocument {
   }
 
   // TODO factory FormatusDocument.fromMarkdown({ required String markdownBody, })
+
+  /// `true` will use [WidgetSpan] for subscript and superscript
+  bool forViewer = false;
 
   /// Updated by [computeResults]
   FormatusResults results = FormatusResults();
@@ -164,7 +169,8 @@ class FormatusDocument {
   ///
   /// Computes `formattedText` and results for [TextField]
   ///
-  void computeResults() => results = FormatusResults.fromNodes(textNodes);
+  void computeResults() =>
+      results = FormatusResults.fromNodes(textNodes, forViewer);
 
   ///
   /// Apply `formats` to selected text-range.

@@ -198,8 +198,8 @@ class FormatusControllerImpl extends TextEditingController
       nextSelection: selection,
       nextText: text,
     );
-    debugPrint(
-        '=== _onListen [${selection.start},${selection.end}] => $deltaText');
+    debugPrint('=== _onListen [${selection.start},${selection.end}] =>'
+        ' $deltaText');
 
     document.updateText(deltaText, selectedFormats, selectedColor);
     _rememberNodeResults();

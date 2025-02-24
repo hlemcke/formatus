@@ -8,9 +8,9 @@ class FormatusViewer extends StatelessWidget {
     super.key,
     required String formattedText,
   }) {
-    doc = FormatusDocument(formatted: formattedText);
+    doc = FormatusDocument(formatted: formattedText, forViewer: true);
   }
 
   @override
-  Widget build(BuildContext context) => RichText(text: doc.results.viewerSpan);
+  Widget build(BuildContext context) => RichText(text: doc.results.textSpan);
 }
