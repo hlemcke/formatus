@@ -75,13 +75,3 @@ IF cursor index is on first character of a text-node
 AND (this character is a comma or space OR if the previous character is a line-break)
 THEN the previous text-node will be used.
 ```
-
-# Delta-Format Analysis
-
-Formats can be changed at single cursor position or on a selected range of text.
-
-A format change at single cursor position will be reset by any deletion or by
-repositioning the cursor. It only has an effect on newly entered text
-either from keyboard or by pasting the text.
-
-A format change on a range selection will reformat the selected range of text.

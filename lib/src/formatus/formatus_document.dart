@@ -129,6 +129,7 @@ class FormatusDocument {
   /// Returns meta information about node found at `charIndex`
   ///
   NodeMeta computeMeta(int charIndex) {
+    //--- in front of all text
     if (charIndex < 0) {
       return NodeMeta()
         ..node = textNodes[0]
@@ -136,6 +137,7 @@ class FormatusDocument {
         ..textBegin = 0
         ..textOffset = 0;
     }
+    //--- behind all text
     if (charIndex >= results.plainText.length) {
       FormatusNode last = textNodes.last;
       return NodeMeta()
@@ -147,40 +149,35 @@ class FormatusDocument {
     int charCount = 0;
     int nodeIndex = 0;
     while (nodeIndex < textNodes.length - 1) {
-      if (charIndex < (charCount + textNodes[nodeIndex].length)) {
+      if (charIndex <= (charCount + textNodes[nodeIndex].length)) {
         break;
       }
       charCount += textNodes[nodeIndex].length;
       nodeIndex++;
     }
 
-    //--- Back to previous node if this node is a line-break
-    if (results.plainText[charIndex] == '\n') {
-      nodeIndex--;
-      return NodeMeta()
-        ..node = textNodes[nodeIndex]
-        ..nodeIndex = nodeIndex
-        ..textBegin = charIndex - charCount
-        ..textOffset = textNodes[nodeIndex].length;
-    }
-
-    //--- Back to previous node if:
-    // a) there is a previous node
-    // b) at start of this one (charCount == charIndex)
-    // c) and previous is no LF or ends with space
-    else if ((nodeIndex > 0) &&
-        (charCount == charIndex) &&
-        textNodes[nodeIndex - 1].isNotLineBreak &&
-        !textNodes[nodeIndex - 1].text.endsWith(' ')) {
-      nodeIndex--;
-      charCount -= textNodes[nodeIndex].length;
+    //--- Advance to next node if:
+    // a) there is a next node
+    // b) next node has same format
+    // c) cursor is at end of this node
+    // d) last char of this node is a space
+    int textOffset = charIndex - charCount;
+    FormatusNode node = textNodes[nodeIndex];
+    if (node.isLineBreak ||
+        ((nodeIndex < textNodes.length - 1) &&
+            node.section == textNodes[nodeIndex + 1].section &&
+            (node.length == textOffset) &&
+            (node.text[textOffset - 1] == ' '))) {
+      charCount = charIndex + textOffset;
+      nodeIndex++;
+      textOffset = 0;
     }
 
     return NodeMeta()
       ..node = textNodes[nodeIndex]
       ..nodeIndex = nodeIndex
       ..textBegin = charCount
-      ..textOffset = charIndex - charCount;
+      ..textOffset = textOffset;
   }
 
   ///

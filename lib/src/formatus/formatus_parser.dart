@@ -60,25 +60,30 @@ class FormatusParser {
   int _parseSection(String body, int offset, List<FormatusNode> nodes) {
     List<Formatus> formats = [];
     while (offset < body.length) {
-      _ParsedTag? section = _parseTag(body, offset);
-      if (section == null) {
+      _ParsedTag? tag = _parseTag(body, offset);
+      if (tag == null) {
         return body.length;
       }
-      if (section.isClosing) {
+      if (tag.isClosing) {
+        //--- Create empty section tag
+        if ((formats.length == 1) &&
+            (nodes.isEmpty || (nodes.last.section != formats[0]))) {
+          nodes.add(FormatusNode(formats: formats.toList(), text: ''));
+        }
         formats.removeLast();
-        if (formats.isEmpty) return section.offset;
+        if (formats.isEmpty) return tag.offset;
       } else {
-        formats.add(section.formatus);
+        formats.add(tag.formatus);
       }
-      offset = section.offset;
+      offset = tag.offset;
 
-      //--- If followed by text then create new node
+      //--- create new node if it contains text
       if (offset < body.length) {
         int end = body.indexOf('<', offset);
         if (end > offset) {
           FormatusNode node = FormatusNode(
               formats: formats.toList(), text: body.substring(offset, end));
-          node.attribute = section.attribute;
+          node.attribute = tag.attribute;
           nodes.add(node);
           offset = end;
         }

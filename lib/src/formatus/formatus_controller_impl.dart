@@ -326,10 +326,10 @@ class DeltaText {
 
   @override
   String toString() => isAll
-      ? '${type.name} at all => plus="$textAdded"'
+      ? '${type.name} at all => plus="${textAdded.replaceAll('\n', '\\n')}"'
       : '${type.name} [$_headLength..${_prevLength - _tailLength}]'
-          ' => ${textAdded.isEmpty ? '' : 'plus="$textAdded"'}'
-          '${textRemoved.isEmpty ? '' : ' removed="$textRemoved"'}';
+          ' => ${textAdded.isEmpty ? '' : 'plus="${textAdded.replaceAll('\n', '\\n')}"'}'
+          '${textRemoved.isEmpty ? '' : ' removed="${textRemoved.replaceAll('\n', '\\n')}"'}';
 }
 
 enum DeltaTextType { delete, insert, none, update }

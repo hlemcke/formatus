@@ -143,6 +143,61 @@ void main() {
     });
 
     //---
+    test('parse subscript', () {
+      //--- given
+      String formatted = '<p>abc <sub>def</sub> ghi</p>';
+      FormatusParser parser = FormatusParser();
+
+      //--- when
+      List<FormatusNode> nodes = parser.parse(formatted);
+
+      //--- then
+      expect(nodes.length, 3);
+      expect(nodes[0].formats, [Formatus.paragraph]);
+      expect(nodes[0].text, 'abc ');
+      expect(nodes[1].formats, [Formatus.paragraph, Formatus.subscript]);
+      expect(nodes[1].text, 'def');
+      expect(nodes[2].formats, [Formatus.paragraph]);
+      expect(nodes[2].text, ' ghi');
+    });
+
+    //---
+    test('parse superscript at start', () {
+      //--- given
+      String formatted = '<p><super>abc</super> def</p>';
+      FormatusParser parser = FormatusParser();
+
+      //--- when
+      List<FormatusNode> nodes = parser.parse(formatted);
+
+      //--- then
+      expect(nodes.length, 2);
+      expect(nodes[0].formats, [Formatus.paragraph, Formatus.superscript]);
+      expect(nodes[0].text, 'abc');
+      expect(nodes[1].formats, [Formatus.paragraph]);
+      expect(nodes[1].text, ' def');
+    });
+
+    //---
+    test('parse superscript in second inline', () {
+      //--- given
+      String formatted = '<p>abc <super>def</super> ghi</p>';
+      FormatusParser parser = FormatusParser();
+
+      //--- when
+      List<FormatusNode> nodes = parser.parse(formatted);
+
+      //--- then
+      expect(nodes.length, 3);
+      expect(nodes[0].formats, [Formatus.paragraph]);
+      expect(nodes[0].text, 'abc ');
+      expect(nodes[1].formats, [Formatus.paragraph, Formatus.superscript]);
+      expect(nodes[1].text, 'def');
+      expect(nodes[2].formats, [Formatus.paragraph]);
+      expect(nodes[2].text, ' ghi');
+    });
+
+    //---
     test('parse long example', () {
       //--- given
       String formatted = '''

@@ -3,7 +3,7 @@ import 'package:formatus/src/formatus/formatus_document.dart';
 
 void main() {
   //---
-  group('Node-list test', () {
+  group('Node identification test', () {
     //---
     test('Find first three nodes', () {
       //--- given
@@ -41,25 +41,51 @@ void main() {
         expect(doc.computeMeta(i).nodeIndex, 2, reason: '$i must return 2');
       }
     });
-  });
 
-  //---
-  group('Tree Tests == results computations', () {
     //---
-    test('Compute results for single section', () {
+    test('Two empty paragraphs must return correct node', () {
       //--- given
-      String formatted = '''<h1>abc<b> def<u> ghi</u></b><i> jkl</i> mno</h1>
-      <p><b>pqr </b>stu</p>''';
+      Map<int, int> nodeByIndex = {
+        0: 0,
+        1: 0,
+        2: 0,
+        3: 0,
+        4: 2,
+        5: 4,
+        6: 6,
+        7: 6,
+        8: 6,
+        9: 6
+      };
+      String formatted = '<h1>abc</h1><p></p><p></p><h2>def</h2>';
 
       //--- when
       FormatusDocument doc = FormatusDocument(formatted: formatted);
 
       //--- then
+      expect(doc.textNodes.length, 7);
+      for (int i = 0; i < nodeByIndex.length; i++) {
+        expect(doc.computeMeta(i).nodeIndex, nodeByIndex[i],
+            reason: '$i must return ${nodeByIndex[i]}');
+      }
+    });
+  });
+
+  //---
+  group('Tree Tests == results computations', () {
+    //---
+    test('Compute results for two sections', () {
+      //--- given
+      String formatted = '<h1>abc<b> def<u> ghi</u></b><i> jkl</i> mno</h1>'
+          '<p><b>pqr </b>stu</p>';
+
+      //--- when
+      FormatusDocument doc = FormatusDocument(formatted: formatted);
+
+      //--- then
+      expect(doc.textNodes.length, 8);
+      expect(doc.results.formattedText, formatted);
       expect(doc.results.plainText, 'abc def ghi jkl mno\npqr stu');
-      expect(
-          doc.results.formattedText,
-          '<h1>abc<b> def<u> ghi</u></b><i> jkl</i>'
-          ' mno</h1><p><b>pqr </b>stu</p>');
       expect(doc.results.textSpan.children?.length, 3);
     });
 

@@ -88,6 +88,9 @@ class FormatusNode {
   /// Length of text
   int get length => text.length;
 
+  /// Returns section format
+  Formatus get section => formats[0];
+
   ///
   @override
   String toString() {
