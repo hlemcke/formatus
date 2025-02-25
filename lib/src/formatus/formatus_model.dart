@@ -49,15 +49,15 @@ enum Formatus {
 
   /// Section element header 1 (largest)
   header1('h1', FormatusType.section, FormatusActionText(text: 'H1'),
-      TextStyle(fontSize: kDefaultFontSize * 2.0, height: 2.0), false),
+      TextStyle(fontSize: kDefaultFontSize * 1.9), false),
 
   /// Section element header 2 (larger)
   header2('h2', FormatusType.section, FormatusActionText(text: 'H2'),
-      TextStyle(fontSize: kDefaultFontSize * 1.7), false),
+      TextStyle(fontSize: kDefaultFontSize * 1.6), false),
 
   /// Section element header 3 (large)
   header3('h3', FormatusType.section, FormatusActionText(text: 'H3'),
-      TextStyle(fontSize: kDefaultFontSize * 1.4), false),
+      TextStyle(fontSize: kDefaultFontSize * 1.3), false),
 
   /// Section element. Splits text at current cursor position
   /// and inserts a horizontal ruler
@@ -193,11 +193,11 @@ enum Formatus {
     false,
   );
 
-  final bool withAttribute;
   final String key;
   final FormatusType type;
   final Widget? icon;
   final TextStyle? style;
+  final bool withAttribute;
 
   const Formatus(
     this.key,
@@ -210,6 +210,15 @@ enum Formatus {
   bool get isInline => type == FormatusType.inline;
 
   bool get isSection => type == FormatusType.section;
+
+  /// Scale factor used for sections
+  double get scaleFactor => (this == Formatus.header1)
+      ? 1.9
+      : (this == Formatus.header2)
+          ? 1.6
+          : (this == Formatus.header1)
+              ? 1.3
+              : 1.0; // <p>
 
   @override
   String toString() => '<$key>';
