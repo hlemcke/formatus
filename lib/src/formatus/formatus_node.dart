@@ -1,23 +1,20 @@
-import 'package:flutter/material.dart';
-
 import 'formatus_model.dart';
 
 ///
-/// Node in document resembles an html-element with optional attributes.
-///
-/// Text is always a leaf node without style. Style is taken from its parent.
-///
-/// Cannot extend [TextSpan] here because its immutable and we need `parent`.
+/// Node resembles part of all text with a list of formats and one optional
+/// attribute.
 ///
 class FormatusNode {
+  ///
   /// Optional attribute
   ///
-  /// * color -> hex string
   /// * anchor -> href
+  /// * color -> hex string
   /// * image -> src
+  ///
   String attribute = '';
 
-  /// Formats of this node
+  /// Formats of this node. First format is section format and always exist.
   List<Formatus> formats;
 
   /// Text part of this node
@@ -44,15 +41,15 @@ class FormatusNode {
   /// and by appending additional ones.
   ///
   void applyFormats(Set<Formatus> selectedFormats, String selectedColor) {
-    Set<Formatus> toRemove = formats.toSet().difference(selectedFormats);
-    for (Formatus formatus in toRemove) {
-      formats.remove(formatus);
-    }
     Set<Formatus> toAdd = selectedFormats.difference(formats.toSet());
     formats.addAll(toAdd);
     //--- Apply color
     if (formats.contains(Formatus.color)) {
       attribute = selectedColor;
+    }
+    Set<Formatus> toRemove = formats.toSet().difference(selectedFormats);
+    for (Formatus formatus in toRemove) {
+      formats.remove(formatus);
     }
   }
 
@@ -61,14 +58,20 @@ class FormatusNode {
     ..attribute = attribute;
 
   /// Returns `true` if last format requires an attribute
-  bool get hasAttribute => formats.last.withAttribute;
+  bool get hasAttribute => attribute.isNotEmpty;
 
   /// Returns `true` if `others` are the same formats
-  bool hasSameFormats(Set<Formatus> others) =>
+  bool hasSameFormatsAndAttribute(Set<Formatus> others, String attribute) =>
       (formats.length == others.length) &&
-      formats.toSet().difference(others).isEmpty;
+      formats.toSet().difference(others).isEmpty &&
+      this.attribute == attribute;
 
-  /// Returns `true` if last format is color
+  /// Returns `true` if `other` has same formats and attribute
+  bool isSimilar(dynamic other) =>
+      other is FormatusNode &&
+      hasSameFormatsAndAttribute(other.formats.toSet(), other.attribute);
+
+  /// Returns `true` if this node has a color
   bool get hasColor => formats.contains(Formatus.color);
 
   /// Returns `true` if last format is anchor
@@ -77,6 +80,7 @@ class FormatusNode {
   /// Returns `true` if this is a line-break between two sections
   bool get isLineBreak => formats[0] == Formatus.lineBreak;
 
+  /// Returns `true` for all nodes except line-break
   bool get isNotLineBreak => !isLineBreak;
 
   /// Returns `true` if this nodes text is formatted as subscript
@@ -96,7 +100,7 @@ class FormatusNode {
   String toString() {
     String str = '';
     for (Formatus formatus in formats) {
-      str += '<${formatus.key}>';
+      str += '<${formatus.key}${formatus.withAttribute ? " $attribute" : ""}>';
     }
     return '$str -> "$text"';
   }

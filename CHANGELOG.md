@@ -1,3 +1,8 @@
+## 1.4.0
+* Fixed changing color of an already colored text
+* Added subscript and superscript (please see `Known Deficiencies`)
+* Fixed bugs when having multiple empty lines
+
 ## 1.3.0
 * Added color action
 * Refactored internal structure to ease changes from text editing

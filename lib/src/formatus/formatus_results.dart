@@ -23,18 +23,20 @@ class FormatusResults {
     List<TextSpan> sections = [];
 
     //--- Condense similar nodes
-    results._joinNodesWithSameFormat(textNodes);
+    results._joinSimilarNodes(textNodes);
 
     //--- Loop text nodes
     for (FormatusNode node in textNodes) {
-      //--- Loop formats of text node
+      //--- Loop formats of text node to remove or append _ResultNode
       for (int i = 0; i < node.formats.length; i++) {
         Formatus nodeFormat = node.formats[i];
-        if ((path.length > i) && (path[i].formatus != nodeFormat)) {
+        //--- Remove trailing path entries if this format is different
+        if (results._isAlike(path, node, i) == false) {
           while (path.length > i) {
             results._reducePath(path, sections);
           }
         }
+        //--- Append path-entry if this is an additional format
         if (path.length < i + 1) {
           path.add(_ResultNode()
             ..formatus = nodeFormat
@@ -63,7 +65,10 @@ class FormatusResults {
   }
 
   ///
+  /// Appends [WidgetSpan] for _subscript_ and _superscript_
+  /// if `forViewer == true`. Else appends [TextSpan].
   ///
+  /// TODO change this when Flutter supports subscript and superscript in [TextSpan]
   ///
   void _appendSpanToPath(FormatusNode node, bool forViewer,
       List<_ResultNode> path, List<TextSpan> sections) {
@@ -99,16 +104,22 @@ class FormatusResults {
   }
 
   ///
+  /// Returns `true` if `path` and `node` have same formats and attribute
+  ///
+  bool _isAlike(List<_ResultNode> path, FormatusNode node, int i) =>
+      (path.length > i) &&
+      (path[i].formatus == node.formats[i]) &&
+      ((path[i].formatus.withAttribute == false) ||
+          (path[i].attribute == node.attribute));
+
+  ///
   /// Joins nodes having same format and same attribute
   /// by appending text of next node to current one then deleting next one.
   ///
-  void _joinNodesWithSameFormat(List<FormatusNode> textNodes) {
+  void _joinSimilarNodes(List<FormatusNode> textNodes) {
     int nodeIndex = 0;
     while (nodeIndex < textNodes.length - 1) {
-      if (textNodes[nodeIndex]
-              .hasSameFormats(textNodes[nodeIndex + 1].formats.toSet()) &&
-          (textNodes[nodeIndex].attribute ==
-              textNodes[nodeIndex + 1].attribute)) {
+      if (textNodes[nodeIndex].isSimilar(textNodes[nodeIndex + 1])) {
         textNodes[nodeIndex].text += textNodes[nodeIndex + 1].text;
         textNodes.removeAt(nodeIndex + 1);
         continue;

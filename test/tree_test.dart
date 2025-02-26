@@ -89,6 +89,29 @@ void main() {
       expect(doc.results.textSpan.children?.length, 3);
     });
 
+    //---
+    test('Compute results for long text', () {
+      //--- given
+      String formatted = '''<h1>Formatus</h1>
+      <h2>Features <u>underline</u></h2>
+      <p>Line 3 with <b>bold and <i>nested</i></b> words</p>''';
+
+      //--- when
+      FormatusDocument doc = FormatusDocument(formatted: formatted);
+
+      //--- then
+      expect(doc.textNodes.length, 9);
+      expect(
+          doc.results.formattedText,
+          '<h1>Formatus</h1>'
+          '<h2>Features <u>underline</u></h2><p>Line 3 with '
+          '<b>bold and <i>nested</i></b> words</p>');
+      expect(
+          doc.results.plainText,
+          'Formatus\nFeatures underline\n'
+          'Line 3 with bold and nested words');
+    });
+
     ///
     test('Compute results for first inline with color blue', () {
       //--- given

@@ -257,6 +257,8 @@ class FormatusDocument {
     if (deltaText.isAll) {
       _setupEmptyDocument();
       textNodes[0].text = deltaText.textAdded;
+      applyFormatsToTextNode(
+          0, formats, 0, deltaText.textAdded.length, selectedColor);
       return computeResults();
     }
 
@@ -268,7 +270,8 @@ class FormatusDocument {
     if (metaStart.nodeIndex == metaEnd.nodeIndex) {
       FormatusNode node = metaStart.node;
       //--- Insert with different format
-      if (deltaText.isInsert && !node.hasSameFormats(formats)) {
+      if (deltaText.isInsert &&
+          !node.hasSameFormatsAndAttribute(formats, selectedColor)) {
         FormatusNode newNode =
             FormatusNode(formats: formats.toList(), text: deltaText.textAdded);
         if (newNode.hasColor) {

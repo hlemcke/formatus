@@ -27,7 +27,7 @@ void main() {
       expect(deltaText.isAll, true);
       expect(deltaText.type, DeltaTextType.update);
       expect(doc.textNodes.length, 1);
-      expect(doc.textNodes[0].formats, [Formatus.paragraph]);
+      expect(doc.textNodes[0].formats, [Formatus.header1]);
       expect(doc.textNodes[0].text, newText);
     });
 

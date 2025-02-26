@@ -7,7 +7,7 @@ import 'package:formatus/src/formatus/formatus_document.dart';
 void main() {
   group('Apply color to text range', () {
     //---
-    test('Append character with color to all text', () {
+    test('Append character to all text with color', () {
       //--- given
       String formatted = '<h1>First Line</h1>';
       FormatusDocument doc = FormatusDocument(formatted: formatted);
@@ -83,6 +83,62 @@ void main() {
       expect(doc.textNodes[1].formats, [Formatus.header1, Formatus.color]);
       expect(doc.textNodes[1].text, 'Line');
       expect(doc.textNodes[1].attribute, orange);
+    });
+
+    //---
+    test('Change color in already colored part', () {
+      //--- given
+      String lime = FormatusColor.lime.key;
+      String orange = FormatusColor.orange.key;
+      String formatted = '<p>Color <color $orange>Orange</color></p>';
+      FormatusDocument doc = FormatusDocument(formatted: formatted);
+      TextSelection selection =
+          const TextSelection(baseOffset: 9, extentOffset: 12);
+
+      //--- when
+      doc.updateInlineFormat(
+          selection, {Formatus.paragraph, Formatus.color}, lime);
+
+      //--- then
+      expect(doc.textNodes.length, 3);
+      expect(doc.results.plainText, 'Color Orange');
+      expect(doc.textNodes[0].formats, [Formatus.paragraph]);
+      expect(doc.textNodes[0].text, 'Color ');
+      expect(doc.textNodes[1].formats, [Formatus.paragraph, Formatus.color]);
+      expect(doc.textNodes[1].text, 'Ora');
+      expect(doc.textNodes[1].attribute, orange);
+      expect(doc.textNodes[2].formats, [Formatus.paragraph, Formatus.color]);
+      expect(doc.textNodes[2].text, 'nge');
+      expect(doc.textNodes[2].attribute, lime);
+      expect(doc.results.formattedText,
+          '<p>Color <color $orange>Ora</color><color $lime>nge</color></p>');
+    });
+
+    //---
+    test('Clear colored part', () {
+      //--- given
+      String orange = FormatusColor.orange.key;
+      String formatted = '<p>Color <color $orange>Orange</color></p>';
+      FormatusDocument doc = FormatusDocument(formatted: formatted);
+      TextSelection selection =
+          const TextSelection(baseOffset: 9, extentOffset: 12);
+
+      //--- when
+      doc.updateInlineFormat(selection, {Formatus.paragraph}, '');
+
+      //--- then
+      expect(doc.textNodes.length, 3);
+      expect(doc.results.plainText, 'Color Orange');
+      expect(doc.textNodes[0].formats, [Formatus.paragraph]);
+      expect(doc.textNodes[0].text, 'Color ');
+      expect(doc.textNodes[1].formats, [Formatus.paragraph, Formatus.color]);
+      expect(doc.textNodes[1].text, 'Ora');
+      expect(doc.textNodes[1].attribute, orange);
+      expect(doc.textNodes[2].formats, [Formatus.paragraph]);
+      expect(doc.textNodes[2].text, 'nge');
+      expect(doc.textNodes[2].attribute.isEmpty, true);
+      expect(doc.results.formattedText,
+          '<p>Color <color $orange>Ora</color>nge</p>');
     });
   });
 }

@@ -16,7 +16,7 @@ Add the latest version of *Formatus* to the `pubspec.yaml` file:
 
 ```yaml
 flutter:
-  formatus: ^1.3.0
+  formatus: ^1.4.0
 ```
 
 Create a `FormatusController` and a `FormatusBar`.
@@ -55,6 +55,25 @@ void dispose() {
 }
 ```
 
+## Supported Formats
+
+* __H1__ -> Header 1 with largest font size
+* __H2__ -> Header 2 with larger font size
+* __H3__ -> Header 3 with large font size
+* __P__ -> Paragraph with standard font size
+* __B__ -> bold text
+* __I__ -> italicized text
+* __U__ -> underlined text
+* __S__ -> strike-through text
+* __sub__ -> subscript text
+* __sup__ -> superscript text
+
+## Known Deficiencies
+
+1. Subscript and superscript are displayed correctly only in [FormatusViewer] because Flutter
+   [TextField] and [TextFormField] do not support them
+2. Coloring is restricted to the 19 included colors
+
 ## User Manual
 
 ### Definition of Terms
@@ -87,6 +106,21 @@ This section describes the use cases for `Formatus`.
   into the top-level node at deletion start
 * Display the formatted text with `FormatusViewer`
 
+
+## Future Enhancements
+
+1. Add format for unordered list
+2. Add format for ordered list (auto-counting)
+3. Add anchor with editable reference and displayed text
+4. Add action to insert an emoji. This should become an optional add-on action
+   similar to `FormatusAnchor`. Could also include converting an emoji name
+   into emoji inline (insert into current text node).
+5. Parse markdown as formatted input
+6. Export formatted text in markdown format
+
+For an additional enhancement request please open an issue.
+
+
 ## Additional information
 
 Please find additional information like architecture considerations at
@@ -94,17 +128,3 @@ https://www.djarjo.com/formatus
 
 If you encounter any issues or have ideas for some enhancements please
 open a ticket at https://github.com/hlemcke/formatus
-
-
-## Future Enhancements
-
-1. Add format for superscript
-2. Add format for subscript
-3. Add format to change text color
-4. Add format for unordered list
-5. Add format for ordered list (auto-counting)
-6. Add action to insert an emoji. This should become an optional add-on action
-   similar to `FormatusAnchor`. Could also include converting an emoji name
-   into emoji inline (insert into current text node).
-7. Parse markdown as formatted input
-8. Export formatted text in markdown format

@@ -92,19 +92,21 @@ class _FormatusBarState extends State<FormatusBarImpl> {
   }
 
   @override
-  Widget build(BuildContext context) => Wrap(
-        alignment: widget.alignment,
-        direction: widget.direction,
-        children: [
-          for (FormatusAction action in widget.actions)
-            _FormatusButton(
-              action: action,
-              isSelected: _selectedFormats.contains(action.formatus),
-              onPressed: () => _onToggleAction(action.formatus),
-              textColor: _selectedColor,
-            ),
-        ],
-      );
+  Widget build(BuildContext context) => widget.textFieldFocus?.hasFocus ?? true
+      ? Wrap(
+          alignment: widget.alignment,
+          direction: widget.direction,
+          children: [
+            for (FormatusAction action in widget.actions)
+              _FormatusButton(
+                action: action,
+                isSelected: _selectedFormats.contains(action.formatus),
+                onPressed: () => _onToggleAction(action.formatus),
+                textColor: _selectedColor,
+              ),
+          ],
+        )
+      : SizedBox.shrink();
 
   void _deactivateActions() => _selectedFormats.clear();
 
@@ -150,8 +152,7 @@ class _FormatusBarState extends State<FormatusBarImpl> {
   void _selectAndRememberColor() async {
     String? argb = await _showColorDialog();
     _ctrl.selectedColor = argb ?? '';
-    debugPrint('argb=$argb selCol=${_ctrl.selectedColor}');
-    if (argb == null) {
+    if (_ctrl.selectedColor.isEmpty) {
       _selectedFormats.remove(Formatus.color);
     } else {
       _selectedFormats.add(Formatus.color);

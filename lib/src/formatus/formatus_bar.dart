@@ -6,7 +6,7 @@ import 'formatus_controller_impl.dart';
 import 'formatus_model.dart';
 
 ///
-/// Extendable action to format text.
+/// Extendable action to format text. Must be supplied to [FormatusBar]
 ///
 class FormatusAction {
   /// section or inline format
