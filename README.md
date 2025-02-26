@@ -73,6 +73,7 @@ void dispose() {
 1. Subscript and superscript are displayed correctly only in [FormatusViewer] because Flutter
    [TextField] and [TextFormField] do not support them
 2. Coloring is restricted to the 19 included colors
+3. Line-breaks in pasted text are replaced by spaces. Should better create separate sections.
 
 ## User Manual
 

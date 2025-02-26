@@ -174,7 +174,7 @@ class FormatusControllerImpl extends TextEditingController
 
   ///
   /// This closure will be called by the underlying system whenever the
-  /// content of the text field changes.
+  /// content of the text field changes or cursor is repositioned.
   ///
   void _onListen() {
     //--- Immediate handling of full deletion
@@ -208,7 +208,11 @@ class FormatusControllerImpl extends TextEditingController
       debugPrint('=== _onListen => $deltaText');
     }
     document.updateText(deltaText, selectedFormats, selectedColor);
+    int cursorPosition = selection.baseOffset;
     _rememberNodeResults();
+    _text = document.results.plainText;
+    selection =
+        TextSelection.fromPosition(TextPosition(offset: cursorPosition));
   }
 
   @visibleForTesting
