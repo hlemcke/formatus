@@ -21,6 +21,7 @@ class FormatusResults {
     FormatusResults results = FormatusResults();
     List<_ResultNode> path = [];
     List<TextSpan> sections = [];
+    int orderedListNumber = 0;
 
     //--- Condense similar nodes
     results._joinSimilarNodes(textNodes);
@@ -53,7 +54,8 @@ class FormatusResults {
       }
 
       //--- Append [InlineSpan] according to texts typography
-      results._appendSpanToPath(node, forViewer, path, sections);
+      orderedListNumber = results._appendSpanToPath(
+          node, forViewer, path, sections, orderedListNumber);
       results.formattedText += node.isLineBreak ? '' : node.text;
       results.plainText += node.text;
     }
@@ -70,8 +72,18 @@ class FormatusResults {
   ///
   /// TODO change this when Flutter supports subscript and superscript in [TextSpan]
   ///
-  void _appendSpanToPath(FormatusNode node, bool forViewer,
-      List<_ResultNode> path, List<TextSpan> sections) {
+  int _appendSpanToPath(FormatusNode node, bool forViewer,
+      List<_ResultNode> path, List<TextSpan> sections, int orderedListNumber) {
+    if (node.section == Formatus.orderedList) {
+      orderedListNumber++;
+      path.last.spans.add(WidgetSpan(
+          child: Transform.translate(
+        offset: Offset(0, 2),
+        child: Text('$orderedListNumber. '),
+      )));
+    } else {
+      orderedListNumber = 0;
+    }
     if (node.isSubscript) {
       double scaleFactor = path[0].formatus.scaleFactor * 0.7;
       path.last.spans.add(forViewer
@@ -101,6 +113,7 @@ class FormatusResults {
     } else {
       path.last.spans.add(TextSpan(text: node.text));
     }
+    return orderedListNumber;
   }
 
   ///

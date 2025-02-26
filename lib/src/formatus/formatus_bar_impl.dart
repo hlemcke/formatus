@@ -245,6 +245,8 @@ final List<FormatusAction> _defaultActions = [
   FormatusAction(formatus: Formatus.header2),
   FormatusAction(formatus: Formatus.header3),
   FormatusAction(formatus: Formatus.paragraph),
+  // FormatusAction(formatus: Formatus.unorderedList),
+  // FormatusAction(formatus: Formatus.orderedList),
   FormatusAction(formatus: Formatus.gap),
   FormatusAction(formatus: Formatus.italic),
   FormatusAction(formatus: Formatus.bold),

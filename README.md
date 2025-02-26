@@ -115,10 +115,11 @@ This section describes the use cases for `Formatus`.
 4. Add action to insert an emoji. This should become an optional add-on action
    similar to `FormatusAnchor`. Could also include converting an emoji name
    into emoji inline (insert into current text node).
-5. Parse markdown as formatted input
-6. Export formatted text in markdown format
+5. Implement a `FormatusHistoryController` which supports formats and color
+6. Parse markdown as formatted input
+7. Export formatted text in markdown format
 
-For an additional enhancement request please open an issue.
+For an additional enhancement-request please open an issue.
 
 
 ## Additional information
