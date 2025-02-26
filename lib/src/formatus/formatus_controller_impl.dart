@@ -201,6 +201,12 @@ class FormatusControllerImpl extends TextEditingController
     debugPrint('=== _onListen [${selection.start},${selection.end}] =>'
         ' $deltaText');
 
+    //--- Replace all line-break in pasted text by single space
+    // TODO transform pasted line-breaks to separate sections
+    if (deltaText.textAdded.length > 1) {
+      deltaText._textAdded = deltaText._textAdded.replaceAll('\n', ' ');
+      debugPrint('=== _onListen => $deltaText');
+    }
     document.updateText(deltaText, selectedFormats, selectedColor);
     _rememberNodeResults();
   }

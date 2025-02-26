@@ -81,7 +81,7 @@ class FormatusResults {
         offset: Offset(0, 2),
         child: Text('$orderedListNumber. '),
       )));
-    } else {
+    } else if (node.isNotLineBreak) {
       orderedListNumber = 0;
     }
     if (node.isSubscript) {
