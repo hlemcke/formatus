@@ -13,13 +13,14 @@ class FormatusBarImpl extends StatefulWidget implements FormatusBar {
 
   final WrapAlignment alignment;
 
-  /// `true` will provide the inline formats in a [DropdownMenu].
-  /// Default is `false`.
-  final bool compactInlineFormats;
-
-  /// `true` will provide the section formats in a [DropdownMenu].
-  /// Default is `false`.
-  final bool compactSectionFormats;
+  /// `true` changes formats into two [DropdownMenu].
+  /// First one displays current section format.
+  /// Second one displays:
+  /// `0` -> no inline format applied
+  /// `?` -> the icon of the inline format from actions if a single format is applied
+  /// `n` -> the number of applied inline formats
+  ///
+  final bool compactFormats;
 
   /// Required controller
   final FormatusControllerImpl controller;
@@ -56,8 +57,7 @@ class FormatusBarImpl extends StatefulWidget implements FormatusBar {
     required this.controller,
     List<FormatusAction>? actions,
     this.alignment = WrapAlignment.start,
-    this.compactInlineFormats = false,
-    this.compactSectionFormats = false,
+    this.compactFormats = false,
     this.direction = Axis.horizontal,
     this.onEditAnchor,
     this.onTapAnchor,

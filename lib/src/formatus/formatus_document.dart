@@ -244,11 +244,11 @@ class FormatusDocument {
   ///
   void updateText(
       DeltaText deltaText, Set<Formatus> formats, String selectedColor) {
-    //--- Handle line break insert
     if (deltaText.textAdded == '\n') {
       _handleLineBreakInsert(deltaText);
       return computeResults();
     }
+
     if (deltaText.textRemoved == '\n') {
       _handleLineBreakDelete(deltaText);
       return computeResults();
@@ -256,9 +256,10 @@ class FormatusDocument {
 
     if (deltaText.isAll) {
       _setupEmptyDocument();
-      textNodes[0].text = deltaText.textAdded;
-      applyFormatsToTextNode(
-          0, formats, 0, deltaText.textAdded.length, selectedColor);
+      List<Formatus> formatList =
+          _applySelectionToFormats(formats, [Formatus.paragraph]);
+      textNodes = _buildNodesFromAddedText(
+          deltaText.textAdded, formatList, selectedColor);
       return computeResults();
     }
 
@@ -327,6 +328,41 @@ class FormatusDocument {
       _updateFollowingSections(firstIndexToDelete - 1);
     }
     computeResults();
+  }
+
+  ///
+  List<Formatus> _applySelectionToFormats(
+      Set<Formatus> selectedFormats, List<Formatus> nodeFormats) {
+    List<Formatus> applied = nodeFormats.toList();
+    //--- Removal
+    Set<Formatus> toRemove = nodeFormats.toSet().difference(selectedFormats);
+    for (Formatus formatus in toRemove) {
+      applied.remove(formatus);
+    }
+    Set<Formatus> toAdd = selectedFormats.difference(nodeFormats.toSet());
+    applied.addAll(toAdd);
+    return applied;
+  }
+
+  ///
+  /// Builds a list of nodes from `addedText` which may contain one or multiple
+  /// line-breaks.
+  ///
+  List<FormatusNode> _buildNodesFromAddedText(
+      String addedText, List<Formatus> formats, String color) {
+    if (addedText.isEmpty) {
+      return [FormatusNode(formats: formats, text: '')..attribute = color];
+    }
+    List<FormatusNode> nodes = [];
+    List<String> parts = addedText.split('\n');
+    for (String part in parts) {
+      FormatusNode node = FormatusNode(formats: formats, text: part)
+        ..attribute = color;
+      nodes.add(node);
+      nodes.add(FormatusNode.lineBreak);
+    }
+    nodes.removeLast();
+    return nodes;
   }
 
   void _handleLineBreakDelete(DeltaText deltaText) {
