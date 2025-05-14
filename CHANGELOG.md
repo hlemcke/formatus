@@ -1,5 +1,5 @@
-## 1.5.0
-* Replace line-breaks in pasted text by spaces
+## 1.4.0+1
+* Fixed bug when starting with an empty formatted string
 
 ## 1.4.0
 * Fixed changing color of an already colored text
