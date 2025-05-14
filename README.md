@@ -16,7 +16,7 @@ Add the latest version of *Formatus* to the `pubspec.yaml` file:
 
 ```yaml
 flutter:
-  formatus: ^1.4.0+1
+  formatus: ^1.4.0+2
 ```
 
 Create a `FormatusController` and a `FormatusBar`.

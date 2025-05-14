@@ -47,9 +47,7 @@ class FormatusDocument {
   }) {
     FormatusDocument doc = FormatusDocument._();
     doc.forViewer = forViewer;
-    if (formatted.isNotEmpty) {
-      doc.textNodes = FormatusParser().parse(formatted);
-    }
+    doc.textNodes = FormatusParser().parse(formatted);
     doc.computeResults();
     return doc;
   }

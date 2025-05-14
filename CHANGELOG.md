@@ -1,4 +1,4 @@
-## 1.4.0+1
+## 1.4.0+2
 * Fixed bug when starting with an empty formatted string
 
 ## 1.4.0
