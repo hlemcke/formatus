@@ -8,19 +8,22 @@ import 'formatus_model.dart';
 /// Actions to format text.
 ///
 class FormatusBarImpl extends StatefulWidget implements FormatusBar {
-  /// Actions to be included in the toolbar (see [_defaultActions])
+  /// Actions to be included in the toolbar (see [formatusDefaultActions])
   late final List<FormatusAction> actions;
 
   final WrapAlignment alignment;
 
-  /// `true` changes formats into two [DropdownMenu].
-  /// First one displays current section format.
-  /// Second one displays:
+  ///
+  /// `true` groups format-actions into [DropdownMenu].
+  ///
+  /// Group _section-format_ displays current section format.
+  ///
+  /// Group _inline-format_ displays:
   /// `0` -> no inline format applied
-  /// `?` -> the icon of the inline format from actions if a single format is applied
+  /// `?` -> the icon of the inline format if a single format is applied
   /// `n` -> the number of applied inline formats
   ///
-  final bool compactFormats;
+  final bool compactActions;
 
   /// Required controller
   final FormatusControllerImpl controller;
@@ -57,13 +60,13 @@ class FormatusBarImpl extends StatefulWidget implements FormatusBar {
     required this.controller,
     List<FormatusAction>? actions,
     this.alignment = WrapAlignment.start,
-    this.compactFormats = false,
+    this.compactActions = false,
     this.direction = Axis.horizontal,
     this.onEditAnchor,
     this.onTapAnchor,
     this.textFieldFocus,
   }) {
-    this.actions = actions ?? _defaultActions;
+    this.actions = actions ?? formatusDefaultActions;
     if (onEditAnchor == null) {
       this.actions.remove(anchorAction);
     }
@@ -79,9 +82,21 @@ class FormatusBarImpl extends StatefulWidget implements FormatusBar {
 class _FormatusBarState extends State<FormatusBarImpl> {
   late final FormatusControllerImpl _ctrl;
 
-  String get _selectedColor => _ctrl.selectedColor;
+  Color get _selectedColor => _ctrl.selectedColor;
 
   Set<Formatus> get _selectedFormats => _ctrl.selectedFormats;
+
+  /// Get current inline formats
+  List<Formatus> get _currentInlineFormats =>
+      _selectedFormats.where((f) => f.isInline).toList();
+
+  /// Get current list. Returns _placeHolder_ if not in a list element
+  Formatus get _currentListFormat => _selectedFormats
+      .firstWhere((f) => f.isList, orElse: () => Formatus.placeHolder);
+
+  /// Get current section format
+  Formatus get _currentSectionFormat =>
+      _selectedFormats.firstWhere((f) => f.isSection);
 
   @override
   void initState() {
@@ -96,17 +111,69 @@ class _FormatusBarState extends State<FormatusBarImpl> {
       ? Wrap(
           alignment: widget.alignment,
           direction: widget.direction,
-          children: [
-            for (FormatusAction action in widget.actions)
-              _FormatusButton(
-                action: action,
-                isSelected: _selectedFormats.contains(action.formatus),
-                onPressed: () => _onToggleAction(action.formatus),
-                textColor: _selectedColor,
-              ),
-          ],
+          children: widget.compactActions
+              ? [
+                  _buildSectionGroup(),
+                  // _buildListGroup(),
+                  _buildInlineGroup(),
+                ]
+              : [
+                  for (FormatusAction action in widget.actions)
+                    _FormatusButton(
+                      action: action,
+                      isSelected: _selectedFormats.contains(action.formatus),
+                      onPressed: () => _onToggleAction(action.formatus),
+                      textColor: _selectedColor,
+                    ),
+                ],
         )
       : SizedBox.shrink();
+
+  Widget _buildGroup(List<Formatus> currents, List<FormatusAction> actions) =>
+      DropdownMenu(
+        dropdownMenuEntries: [
+          for (FormatusAction action in actions)
+            DropdownMenuEntry(
+                value: action.formatus,
+                label: '',
+                labelWidget: _FormatusButton(
+                    action: action,
+                    isSelected: _selectedFormats.contains(action.formatus),
+                    onPressed: () => _onToggleAction(action.formatus)))
+        ],
+        label: (currents.length > 1)
+            ? Text('${currents.length}')
+            : currents.first.icon,
+      );
+
+  final List<FormatusAction> _groupSection = [
+    FormatusAction(formatus: Formatus.header1),
+    FormatusAction(formatus: Formatus.header2),
+    FormatusAction(formatus: Formatus.header3),
+    FormatusAction(formatus: Formatus.paragraph),
+  ];
+
+  Widget _buildSectionGroup() =>
+      _buildGroup([_currentSectionFormat], _groupSection);
+
+  final List<FormatusAction> _groupList = [
+    FormatusAction(formatus: Formatus.orderedList),
+    FormatusAction(formatus: Formatus.unorderedList),
+  ];
+
+  Widget _buildListGroup() => _buildGroup([_currentListFormat], _groupList);
+
+  final List<FormatusAction> _groupInline = [
+    FormatusAction(formatus: Formatus.bold),
+    FormatusAction(formatus: Formatus.italic),
+    FormatusAction(formatus: Formatus.strikeThrough),
+    FormatusAction(formatus: Formatus.underline),
+    FormatusAction(formatus: Formatus.subscript),
+    FormatusAction(formatus: Formatus.superscript),
+  ];
+
+  Widget _buildInlineGroup() =>
+      _buildGroup(_currentInlineFormats, _groupInline);
 
   void _deactivateActions() => _selectedFormats.clear();
 
@@ -150,9 +217,9 @@ class _FormatusBarState extends State<FormatusBarImpl> {
   }
 
   void _selectAndRememberColor() async {
-    String? argb = await _showColorDialog();
-    _ctrl.selectedColor = argb ?? '';
-    if (_ctrl.selectedColor.isEmpty) {
+    Color? color = await _showColorDialog();
+    _ctrl.selectedColor = color ?? Colors.transparent;
+    if (color == Colors.transparent) {
       _selectedFormats.remove(Formatus.color);
     } else {
       _selectedFormats.add(Formatus.color);
@@ -161,7 +228,7 @@ class _FormatusBarState extends State<FormatusBarImpl> {
     setState(() => widget.textFieldFocus?.requestFocus());
   }
 
-  Future<String?> _showColorDialog() => showAdaptiveDialog<String>(
+  Future<Color?> _showColorDialog() => showAdaptiveDialog<Color>(
         context: context,
         builder: (BuildContext context) => Dialog(
           child: SingleChildScrollView(
@@ -170,23 +237,19 @@ class _FormatusBarState extends State<FormatusBarImpl> {
               runSpacing: 8.0,
               spacing: 8.0,
               children: [
-                for (FormatusColor col in FormatusColor.values)
+                for (Color color in formatusColors)
                   InkWell(
-                    onTap: () => Navigator.pop(context, col.key),
-                    child: Tooltip(
-                      message: col.name,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: (col.key.isEmpty)
-                              ? null
-                              : Color(int.parse(col.key)),
-                          shape: BoxShape.circle,
-                        ),
-                        height: kMinInteractiveDimension,
-                        width: kMinInteractiveDimension,
-                        child:
-                            (col.key.isEmpty) ? Center(child: Text('X')) : null,
+                    onTap: () => Navigator.pop(context, color),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
                       ),
+                      height: kMinInteractiveDimension,
+                      width: kMinInteractiveDimension,
+                      child: (color == Colors.transparent)
+                          ? Center(child: Text('X'))
+                          : null,
                     ),
                   )
               ],
@@ -212,24 +275,21 @@ class _FormatusButton extends StatelessWidget {
   final FormatusAction action;
   final bool isSelected;
   final VoidCallback? onPressed;
-  final String textColor;
+  final Color textColor;
 
   const _FormatusButton({
     required this.action,
     this.isSelected = false,
     this.onPressed,
-    this.textColor = '',
+    this.textColor = Colors.transparent,
   });
 
   @override
   Widget build(BuildContext context) {
-    Color? color = ((action.formatus == Formatus.color) && textColor.isNotEmpty)
-        ? Color(int.parse(textColor))
-        : null;
     return (action.formatus == Formatus.gap)
         ? SizedBox(height: 8, width: 8)
         : IconButton(
-            color: color,
+            color: (textColor == Colors.transparent) ? null : textColor,
             icon: action.icon,
             isSelected: isSelected,
             key: ValueKey<String>(action.formatus.name),
@@ -240,7 +300,7 @@ class _FormatusButton extends StatelessWidget {
   }
 }
 
-final List<FormatusAction> _defaultActions = [
+final List<FormatusAction> formatusDefaultActions = [
   FormatusAction(formatus: Formatus.header1),
   FormatusAction(formatus: Formatus.header2),
   FormatusAction(formatus: Formatus.header3),
@@ -252,8 +312,6 @@ final List<FormatusAction> _defaultActions = [
   FormatusAction(formatus: Formatus.bold),
   FormatusAction(formatus: Formatus.underline),
   FormatusAction(formatus: Formatus.strikeThrough),
-  FormatusAction(formatus: Formatus.subscript),
-  FormatusAction(formatus: Formatus.superscript),
   FormatusAction(formatus: Formatus.color),
   anchorAction,
 ];

@@ -57,7 +57,9 @@ abstract class FormatusBar extends StatefulWidget {
   /// same [FocusNode] must be supplied both to the [TextField]
   /// and to this [FormatusBar].
   ///
-  /// TODO `compactFormats` will replace format actions by [DropdownMenu]
+  /// Supplying `null` for `actions` will use [formatusDefaultActions].
+  ///
+  /// TODO `compactFormats` will bundle format actions by [DropdownMenu]s
   ///
   /// TODO `onEditAnchor` to call a dialog to edit [FormatusAnchor]
   ///
@@ -68,7 +70,7 @@ abstract class FormatusBar extends StatefulWidget {
     required FormatusController controller,
     List<FormatusAction>? actions,
     WrapAlignment alignment = WrapAlignment.start,
-    bool compactFormats = false,
+    bool compactActions = false,
     Axis direction = Axis.horizontal,
     AnchorEditor? onEditAnchor,
     AnchorActivity? onTapAnchor,
@@ -79,7 +81,7 @@ abstract class FormatusBar extends StatefulWidget {
         controller: controller as FormatusControllerImpl,
         actions: actions,
         alignment: alignment,
-        compactFormats: compactFormats,
+        compactActions: compactActions,
         direction: direction,
         onEditAnchor: onEditAnchor,
         onTapAnchor: onTapAnchor,

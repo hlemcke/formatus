@@ -55,7 +55,7 @@ void main() {
         6: 6,
         7: 6,
         8: 6,
-        9: 6
+        9: 6,
       };
       String formatted = '<h1>abc</h1><p></p><p></p><h2>def</h2>';
 
@@ -65,8 +65,11 @@ void main() {
       //--- then
       expect(doc.textNodes.length, 7);
       for (int i = 0; i < nodeByIndex.length; i++) {
-        expect(doc.computeMeta(i).nodeIndex, nodeByIndex[i],
-            reason: '$i must return ${nodeByIndex[i]}');
+        expect(
+          doc.computeMeta(i).nodeIndex,
+          nodeByIndex[i],
+          reason: '$i must return ${nodeByIndex[i]}',
+        );
       }
     });
   });
@@ -76,7 +79,8 @@ void main() {
     //---
     test('Compute results for two sections', () {
       //--- given
-      String formatted = '<h1>abc<b> def<u> ghi</u></b><i> jkl</i> mno</h1>'
+      String formatted =
+          '<h1>abc<b> def<u> ghi</u></b><i> jkl</i> mno</h1>'
           '<p><b>pqr </b>stu</p>';
 
       //--- when
@@ -102,19 +106,22 @@ void main() {
       //--- then
       expect(doc.textNodes.length, 9);
       expect(
-          doc.results.formattedText,
-          '<h1>Formatus</h1>'
-          '<h2>Features <u>underline</u></h2><p>Line 3 with '
-          '<b>bold and <i>nested</i></b> words</p>');
+        doc.results.formattedText,
+        '<h1>Formatus</h1>'
+        '<h2>Features <u>underline</u></h2><p>Line 3 with '
+        '<b>bold and <i>nested</i></b> words</p>',
+      );
       expect(
-          doc.results.plainText,
-          'Formatus\nFeatures underline\n'
-          'Line 3 with bold and nested words');
+        doc.results.plainText,
+        'Formatus\nFeatures underline\n'
+        'Line 3 with bold and nested words',
+      );
     });
 
     ///
-    test('Compute results for first inline with color blue', () {
+    test('Compute results for first inline with deprecated color blue', () {
       //--- given
+      String divBlue = '<div style="color: #ff0000ff;">';
       String formatted = '<p><color 0xFF0000ff>abc</color> def</p>';
 
       //--- when
@@ -123,13 +130,13 @@ void main() {
       //--- then
       expect(doc.textNodes.length, 2);
       expect(doc.results.plainText, 'abc def');
-      expect(doc.results.formattedText,
-          '<p><color 0xFF0000ff>abc</color> def</p>');
+      expect(doc.results.formattedText, '<p>${divBlue}abc</div> def</p>');
     });
 
     ///
-    test('Compute results for second inline with color blue', () {
+    test('Compute results for second inline with deprecated color blue', () {
       //--- given
+      String divBlue = '<div style="color: #ff0000ff;">';
       String formatted = '<p>abc <color 0xFF0000ff>def</color> ghi</p>';
 
       //--- when
@@ -138,8 +145,7 @@ void main() {
       //--- then
       expect(doc.textNodes.length, 3);
       expect(doc.results.plainText, 'abc def ghi');
-      expect(doc.results.formattedText,
-          '<p>abc <color 0xFF0000ff>def</color> ghi</p>');
+      expect(doc.results.formattedText, '<p>abc ${divBlue}def</div> ghi</p>');
     });
   });
 }

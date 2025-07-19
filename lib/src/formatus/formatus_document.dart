@@ -22,6 +22,7 @@ import 'formatus_results.dart';
 /// * inline elements can be nested
 ///
 /// ### Structure of an html element
+///
 /// * opening element starts with `<` followed by name, optional attributes
 ///   and the closing `>`
 /// * multiple attributes are separated by a single space
@@ -80,15 +81,20 @@ class FormatusDocument {
   /// * 1 = format applied to head or tail
   /// * 2 = format applied to range within text
   ///
-  int applyFormatsToTextNode(int nodeIndex, Set<Formatus> formats, int start,
-      int end, String selectedColor) {
+  int applyFormatsToTextNode(
+    int nodeIndex,
+    Set<Formatus> formats,
+    int start,
+    int end,
+    Color color,
+  ) {
     if (start == end) return 0;
     FormatusNode node = textNodes[nodeIndex];
 
     if (start <= 0) {
       //--- apply format to full node
       if (end >= node.length) {
-        node.applyFormats(formats, selectedColor);
+        node.applyFormats(formats, color);
         return 0;
       }
 
@@ -97,7 +103,7 @@ class FormatusDocument {
       tail.text = tail.text.substring(end);
       textNodes.insert(nodeIndex + 1, tail);
       node.text = node.text.substring(0, end);
-      node.applyFormats(formats, selectedColor);
+      node.applyFormats(formats, color);
       return 1;
     }
 
@@ -107,7 +113,7 @@ class FormatusDocument {
       head.text = head.text.substring(0, start);
       textNodes.insert(nodeIndex, head);
       node.text = node.text.substring(start);
-      node.applyFormats(formats, selectedColor);
+      node.applyFormats(formats, color);
       return 1;
     }
 
@@ -119,7 +125,7 @@ class FormatusDocument {
     tail.text = tail.text.substring(end);
     textNodes.insert(nodeIndex + 2, tail);
     node.text = node.text.substring(start, end);
-    node.applyFormats(formats, selectedColor);
+    node.applyFormats(formats, color);
     return 2;
   }
 
@@ -188,7 +194,11 @@ class FormatusDocument {
   /// Apply `formats` to selected text-range.
   ///
   void updateInlineFormat(
-      TextSelection selection, Set<Formatus> formats, String selectedColor) {
+    TextSelection selection,
+    Set<Formatus> formats, {
+    String attribute = '',
+    Color color = Colors.transparent,
+  }) {
     if (selection.isCollapsed) return;
 
     //--- Determine first and last text-node from selection
@@ -197,26 +207,42 @@ class FormatusDocument {
 
     //--- Apply format to single node
     if (headMeta.nodeIndex == tailMeta.nodeIndex) {
-      applyFormatsToTextNode(headMeta.nodeIndex, formats, headMeta.textOffset,
-          tailMeta.textOffset, selectedColor);
+      applyFormatsToTextNode(
+        headMeta.nodeIndex,
+        formats,
+        headMeta.textOffset,
+        tailMeta.textOffset,
+        color,
+      );
       computeResults();
       return;
     }
 
     //--- Apply format to first text-node in selection
-    int firstNode = headMeta.nodeIndex +
+    int firstNode =
+        headMeta.nodeIndex +
         1 +
-        applyFormatsToTextNode(headMeta.nodeIndex, formats, headMeta.textOffset,
-            headMeta.node.length, selectedColor);
+        applyFormatsToTextNode(
+          headMeta.nodeIndex,
+          formats,
+          headMeta.textOffset,
+          headMeta.node.length,
+          color,
+        );
 
     //--- Apply format to last text-node in selection
     int lastNode = tailMeta.nodeIndex - 1;
     applyFormatsToTextNode(
-        tailMeta.nodeIndex, formats, 0, tailMeta.textOffset, selectedColor);
+      tailMeta.nodeIndex,
+      formats,
+      0,
+      tailMeta.textOffset,
+      color,
+    );
 
     //--- Apply formats to all nodes in between
     for (int i = firstNode; i <= lastNode && i < textNodes.length; i++) {
-      applyFormatsToTextNode(i, formats, 0, 9999, selectedColor);
+      applyFormatsToTextNode(i, formats, 0, 9999, color);
     }
     computeResults();
   }
@@ -228,12 +254,14 @@ class FormatusDocument {
     NodeMeta meta = computeMeta(cursorIndex);
     meta.node.formats[0] = newSectionFormat;
     Formatus oldSectionFormat = meta.node.formats[0];
-    for (int i = meta.nodeIndex;
-        (i > 0) && (textNodes[i].formats[0] == oldSectionFormat);
-        i--) {
+    for (
+      int i = meta.nodeIndex;
+      (i > 0) && (textNodes[i].formats[0] == oldSectionFormat);
+      i--
+    ) {
       textNodes[i].formats[0] = newSectionFormat;
     }
-    _updateFollowingSections(meta.nodeIndex);
+    _updateSectionOfNodesUntilLineBreak(meta.nodeIndex);
     computeResults();
   }
 
@@ -241,7 +269,11 @@ class FormatusDocument {
   /// Handle cases for modified text
   ///
   void updateText(
-      DeltaText deltaText, Set<Formatus> formats, String selectedColor) {
+    DeltaText deltaText,
+    Set<Formatus> formats, {
+    String attribute = '',
+    Color color = Colors.transparent,
+  }) {
     if (deltaText.textAdded == '\n') {
       _handleLineBreakInsert(deltaText);
       return computeResults();
@@ -254,10 +286,14 @@ class FormatusDocument {
 
     if (deltaText.isAll) {
       _setupEmptyDocument();
-      List<Formatus> formatList =
-          _applySelectionToFormats(formats, [Formatus.paragraph]);
+      List<Formatus> formatList = _applySelectionToFormats(formats, [
+        Formatus.paragraph,
+      ]);
       textNodes = _buildNodesFromAddedText(
-          deltaText.textAdded, formatList, selectedColor);
+        deltaText.textAdded,
+        formatList,
+        color,
+      );
       return computeResults();
     }
 
@@ -270,11 +306,15 @@ class FormatusDocument {
       FormatusNode node = metaStart.node;
       //--- Insert with different format
       if (deltaText.isInsert &&
-          !node.hasSameFormatsAndAttribute(formats, selectedColor)) {
-        FormatusNode newNode =
-            FormatusNode(formats: formats.toList(), text: deltaText.textAdded);
+          !node.hasSameFormats(formats, attribute, color)) {
+        FormatusNode newNode = FormatusNode(
+          attribute: attribute,
+          color: color,
+          formats: formats.toList(),
+          text: deltaText.textAdded,
+        );
         if (newNode.hasColor) {
-          newNode.attribute = selectedColor;
+          newNode.color = color;
         }
         if (metaStart.textOffset == 0) {
           textNodes.insert(metaStart.nodeIndex, newNode);
@@ -288,12 +328,12 @@ class FormatusDocument {
           node.text = node.text.substring(metaStart.textOffset);
         }
       } else {
-        node.text = node.text.substring(0, metaStart.textOffset) +
+        node.text =
+            node.text.substring(0, metaStart.textOffset) +
             deltaText.textAdded +
             node.text.substring(metaEnd.textOffset);
       }
     }
-
     //--- change covers multiple nodes
     else {
       int firstIndexToDelete = metaStart.nodeIndex + 1;
@@ -301,13 +341,19 @@ class FormatusDocument {
 
       //--- cut text in start node or remove it completely
       FormatusNode startNode = metaStart.node;
-      startNode.text = startNode.text.substring(0, metaStart.textOffset) +
+      startNode.text =
+          startNode.text.substring(0, metaStart.textOffset) +
           deltaText.textAdded;
       if (startNode.text.isEmpty) {
         firstIndexToDelete--;
       } else if (deltaText.isInsert) {
-        applyFormatsToTextNode(metaStart.nodeIndex, formats,
-            metaStart.textOffset, metaStart.node.length, selectedColor);
+        applyFormatsToTextNode(
+          metaStart.nodeIndex,
+          formats,
+          metaStart.textOffset,
+          metaStart.node.length,
+          color,
+        );
       }
 
       //--- cut text in last node or remove it completely
@@ -323,14 +369,16 @@ class FormatusDocument {
         textNodes.removeAt(firstIndexToDelete);
         count--;
       }
-      _updateFollowingSections(firstIndexToDelete - 1);
+      _updateSectionOfNodesUntilLineBreak(firstIndexToDelete - 1);
     }
     computeResults();
   }
 
   ///
   List<Formatus> _applySelectionToFormats(
-      Set<Formatus> selectedFormats, List<Formatus> nodeFormats) {
+    Set<Formatus> selectedFormats,
+    List<Formatus> nodeFormats,
+  ) {
     List<Formatus> applied = nodeFormats.toList();
     //--- Removal
     Set<Formatus> toRemove = nodeFormats.toSet().difference(selectedFormats);
@@ -347,15 +395,18 @@ class FormatusDocument {
   /// line-breaks.
   ///
   List<FormatusNode> _buildNodesFromAddedText(
-      String addedText, List<Formatus> formats, String color) {
+    String addedText,
+    List<Formatus> formats,
+    Color color,
+  ) {
     if (addedText.isEmpty) {
-      return [FormatusNode(formats: formats, text: '')..attribute = color];
+      return [FormatusNode(formats: formats, text: '')..color = color];
     }
     List<FormatusNode> nodes = [];
     List<String> parts = addedText.split('\n');
     for (String part in parts) {
       FormatusNode node = FormatusNode(formats: formats, text: part)
-        ..attribute = color;
+        ..color = color;
       nodes.add(node);
       nodes.add(FormatusNode.lineBreak);
     }
@@ -363,10 +414,11 @@ class FormatusDocument {
     return nodes;
   }
 
+  /// Linebreak deleted => merge sections
   void _handleLineBreakDelete(DeltaText deltaText) {
     NodeMeta meta = computeMeta(deltaText.headLength);
     textNodes.removeAt(meta.nodeIndex + 1); // remove line-break node
-    _updateFollowingSections(meta.nodeIndex);
+    _updateSectionOfNodesUntilLineBreak(meta.nodeIndex);
   }
 
   ///
@@ -380,21 +432,23 @@ class FormatusDocument {
   void _handleLineBreakInsert(DeltaText deltaText) {
     int cursorIndex = deltaText.prevSelection.start;
     NodeMeta meta = computeMeta(cursorIndex);
-    FormatusNode newNode =
-        FormatusNode(formats: [Formatus.paragraph], text: '');
+    FormatusNode newNode = FormatusNode(
+      formats: [Formatus.paragraph],
+      text: '',
+    );
 
     if (deltaText.isAtStart) {
       // debugPrint('insert line break at start or end of section -> $meta');
-      textNodes.insert(0, FormatusNode.lineBreak);
       textNodes.insert(0, newNode);
+      textNodes.insert(1, FormatusNode.lineBreak);
     } else if (deltaText.isAtEnd) {
       // debugPrint('insert line break at end');
       textNodes.add(FormatusNode.lineBreak);
       textNodes.add(newNode);
     } else if (results.plainText[cursorIndex] == '\n') {
       // debugPrint('insert line break at end of section -> $meta');
-      textNodes.insert(meta.nodeIndex + 1, newNode);
       textNodes.insert(meta.nodeIndex + 1, FormatusNode.lineBreak);
+      textNodes.insert(meta.nodeIndex + 2, newNode);
     } else if (results.plainText[cursorIndex - 1] == '\n') {
       // debugPrint('insert line break in front of section -> $meta');
       textNodes.insert(meta.nodeIndex, FormatusNode.lineBreak);
@@ -425,15 +479,21 @@ class FormatusDocument {
   ///
   /// Sets section format of following nodes to current one until line-break.
   ///
-  /// If first following section has same format path as current one
-  /// then it will be joined into current one.
+  /// If next node is similar then append its text to previous one and delete it.
   ///
-  void _updateFollowingSections(int nodeIndex) {
+  void _updateSectionOfNodesUntilLineBreak(int nodeIndex) {
     Formatus currentSection = textNodes[nodeIndex].formats[0];
-    for (int i = nodeIndex + 1;
-        i < textNodes.length && textNodes[i].isNotLineBreak;
-        i++) {
+    for (
+      int i = nodeIndex + 1;
+      i < textNodes.length && textNodes[i].isNotLineBreak;
+      i++
+    ) {
       textNodes[i].formats[0] = currentSection;
+      if (textNodes[i].isSimilar(textNodes[i - 1])) {
+        textNodes[i - 1].text += textNodes[i].text;
+        textNodes.removeAt(i);
+        i--;
+      }
     }
   }
 }

@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 import 'formatus_model.dart';
 
 ///
@@ -9,10 +11,11 @@ class FormatusNode {
   /// Optional attribute
   ///
   /// * anchor -> href
-  /// * color -> hex string
   /// * image -> src
-  ///
-  String attribute = '';
+  String attribute;
+
+  /// Color of this node. Transparent means no color.
+  Color color;
 
   /// Formats of this node. First format is section format and always exist.
   List<Formatus> formats;
@@ -26,26 +29,32 @@ class FormatusNode {
   FormatusNode({
     required this.formats,
     required this.text,
+    this.attribute = '',
+    this.color = Colors.transparent,
   });
 
   /// Automatically inserted between sections
-  static final FormatusNode lineBreak =
-      FormatusNode(formats: [Formatus.lineBreak], text: '\n');
+  static final FormatusNode lineBreak = FormatusNode(
+    formats: [Formatus.lineBreak],
+    text: '\n',
+  );
 
   /// Single final empty node to be used as placeholder to ensure null safety
-  static final FormatusNode placeHolder =
-      FormatusNode(formats: [Formatus.placeHolder], text: '');
+  static final FormatusNode placeHolder = FormatusNode(
+    formats: [Formatus.placeHolder],
+    text: '',
+  );
 
   ///
   /// Applies `selectedFormats` to `formats` by removing missing formats
   /// and by appending additional ones.
   ///
-  void applyFormats(Set<Formatus> selectedFormats, String selectedColor) {
+  void applyFormats(Set<Formatus> selectedFormats, Color color) {
     Set<Formatus> toAdd = selectedFormats.difference(formats.toSet());
     formats.addAll(toAdd);
     //--- Apply color
     if (formats.contains(Formatus.color)) {
-      attribute = selectedColor;
+      this.color = color;
     }
     Set<Formatus> toRemove = formats.toSet().difference(selectedFormats);
     for (Formatus formatus in toRemove) {
@@ -54,22 +63,28 @@ class FormatusNode {
   }
 
   /// Returns a deep clone of this one
-  FormatusNode clone() => FormatusNode(formats: formats.toList(), text: text)
-    ..attribute = attribute;
+  FormatusNode clone() =>
+      FormatusNode(formats: formats.toList(), text: text)
+        ..attribute = attribute;
 
   /// Returns `true` if last format requires an attribute
   bool get hasAttribute => attribute.isNotEmpty;
 
-  /// Returns `true` if `others` are the same formats
-  bool hasSameFormatsAndAttribute(Set<Formatus> others, String attribute) =>
-      (formats.length == others.length) &&
-      formats.toSet().difference(others).isEmpty &&
-      this.attribute == attribute;
+  /// Returns `true` if `otherFormats` are the same formats
+  /// and both `otherAttribute` and `otherColor` are equal to this one
+  bool hasSameFormats(
+    Set<Formatus> otherFormats,
+    String otherAttribute,
+    Color otherColor,
+  ) =>
+      (formats.length == otherFormats.length) &&
+      formats.toSet().difference(otherFormats).isEmpty &&
+      attribute == otherAttribute &&
+      color == otherColor;
 
   /// Returns `true` if `other` has same formats and attribute
-  bool isSimilar(dynamic other) =>
-      other is FormatusNode &&
-      hasSameFormatsAndAttribute(other.formats.toSet(), other.attribute);
+  bool isSimilar(FormatusNode other) =>
+      hasSameFormats(other.formats.toSet(), other.attribute, other.color);
 
   /// Returns `true` if this node has a color
   bool get hasColor => formats.contains(Formatus.color);
@@ -98,10 +113,10 @@ class FormatusNode {
   ///
   @override
   String toString() {
-    String str = '';
-    for (Formatus formatus in formats) {
-      str += '<${formatus.key}${formatus.withAttribute ? " $attribute" : ""}>';
-    }
+    List<String> tags = formats.map((e) => '<${e.key}').toList();
+    String str = tags.join('>');
+    str += hasColor ? ' "style="color: #${hexFromColor(color)}">' : '';
+    str += hasAttribute ? ' $attribute' : '';
     return '$str -> "$text"';
   }
 }

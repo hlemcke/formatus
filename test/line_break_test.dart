@@ -14,14 +14,15 @@ void main() {
       FormatusDocument doc = FormatusDocument(formatted: formatted);
       String nextText = '\nabc';
       DeltaText deltaText = DeltaText(
-          prevText: doc.results.plainText,
-          prevSelection: const TextSelection(baseOffset: 0, extentOffset: 0),
-          nextText: nextText,
-          nextSelection: const TextSelection(baseOffset: 1, extentOffset: 1));
+        prevText: doc.results.plainText,
+        prevSelection: const TextSelection(baseOffset: 0, extentOffset: 0),
+        nextText: nextText,
+        nextSelection: const TextSelection(baseOffset: 1, extentOffset: 1),
+      );
       expect(deltaText.type, DeltaTextType.insert);
 
       //--- when
-      doc.updateText(deltaText, {Formatus.header1}, '');
+      doc.updateText(deltaText, {Formatus.header1});
 
       //--- then
       expect(doc.textNodes.length, 3);
@@ -35,14 +36,15 @@ void main() {
       FormatusDocument doc = FormatusDocument(formatted: formatted);
       String nextText = 'abc\n';
       DeltaText deltaText = DeltaText(
-          prevText: doc.results.plainText,
-          prevSelection: const TextSelection(baseOffset: 3, extentOffset: 3),
-          nextText: nextText,
-          nextSelection: const TextSelection(baseOffset: 4, extentOffset: 4));
+        prevText: doc.results.plainText,
+        prevSelection: const TextSelection(baseOffset: 3, extentOffset: 3),
+        nextText: nextText,
+        nextSelection: const TextSelection(baseOffset: 4, extentOffset: 4),
+      );
       expect(deltaText.type, DeltaTextType.insert);
 
       //--- when
-      doc.updateText(deltaText, {Formatus.header1}, '');
+      doc.updateText(deltaText, {Formatus.header1});
 
       //--- then
       expect(doc.textNodes.length, 3);
@@ -56,14 +58,15 @@ void main() {
       FormatusDocument doc = FormatusDocument(formatted: formatted);
       String nextText = 'abc\n\ndef';
       DeltaText deltaText = DeltaText(
-          prevText: doc.results.plainText,
-          prevSelection: const TextSelection(baseOffset: 3, extentOffset: 3),
-          nextText: nextText,
-          nextSelection: const TextSelection(baseOffset: 4, extentOffset: 4));
+        prevText: doc.results.plainText,
+        prevSelection: const TextSelection(baseOffset: 3, extentOffset: 3),
+        nextText: nextText,
+        nextSelection: const TextSelection(baseOffset: 4, extentOffset: 4),
+      );
       expect(deltaText.type, DeltaTextType.insert);
 
       //--- when
-      doc.updateText(deltaText, {Formatus.header1}, '');
+      doc.updateText(deltaText, {Formatus.header1});
 
       //--- then
       expect(doc.textNodes.length, 5);
@@ -78,14 +81,15 @@ void main() {
       FormatusDocument doc = FormatusDocument(formatted: formatted);
       String nextText = 'abc\n\ndef';
       DeltaText deltaText = DeltaText(
-          prevText: doc.results.plainText,
-          prevSelection: const TextSelection(baseOffset: 4, extentOffset: 4),
-          nextText: nextText,
-          nextSelection: const TextSelection(baseOffset: 5, extentOffset: 5));
+        prevText: doc.results.plainText,
+        prevSelection: const TextSelection(baseOffset: 4, extentOffset: 4),
+        nextText: nextText,
+        nextSelection: const TextSelection(baseOffset: 5, extentOffset: 5),
+      );
       expect(deltaText.type, DeltaTextType.insert);
 
       //--- when
-      doc.updateText(deltaText, {Formatus.header1}, '');
+      doc.updateText(deltaText, {Formatus.header1});
 
       //--- then
       expect(doc.textNodes.length, 5);
@@ -101,14 +105,15 @@ void main() {
       FormatusDocument doc = FormatusDocument(formatted: formatted);
       String nextText = 'ab\nc\ndef';
       DeltaText deltaText = DeltaText(
-          prevText: doc.results.plainText,
-          prevSelection: const TextSelection(baseOffset: 2, extentOffset: 2),
-          nextText: nextText,
-          nextSelection: const TextSelection(baseOffset: 3, extentOffset: 3));
+        prevText: doc.results.plainText,
+        prevSelection: const TextSelection(baseOffset: 2, extentOffset: 2),
+        nextText: nextText,
+        nextSelection: const TextSelection(baseOffset: 3, extentOffset: 3),
+      );
       expect(deltaText.type, DeltaTextType.insert);
 
       //--- when
-      doc.updateText(deltaText, {Formatus.header1}, '');
+      doc.updateText(deltaText, {Formatus.header1});
 
       //--- then
       expect(doc.textNodes.length, 5);
@@ -127,14 +132,15 @@ void main() {
       FormatusDocument doc = FormatusDocument(formatted: formatted);
       String nextText = '\nabc def';
       DeltaText deltaText = DeltaText(
-          prevText: doc.results.plainText,
-          prevSelection: const TextSelection(baseOffset: 0, extentOffset: 0),
-          nextText: nextText,
-          nextSelection: const TextSelection(baseOffset: 1, extentOffset: 1));
+        prevText: doc.results.plainText,
+        prevSelection: const TextSelection(baseOffset: 0, extentOffset: 0),
+        nextText: nextText,
+        nextSelection: const TextSelection(baseOffset: 1, extentOffset: 1),
+      );
       expect(deltaText.type, DeltaTextType.insert);
 
       //--- when
-      doc.updateText(deltaText, {Formatus.header1}, '');
+      doc.updateText(deltaText, {Formatus.header1});
 
       //--- then
       expect(doc.textNodes.length, 4);
@@ -149,14 +155,15 @@ void main() {
       FormatusDocument doc = FormatusDocument(formatted: formatted);
       String nextText = 'abc\n def';
       DeltaText deltaText = DeltaText(
-          prevText: doc.results.plainText,
-          prevSelection: const TextSelection(baseOffset: 3, extentOffset: 3),
-          nextText: nextText,
-          nextSelection: const TextSelection(baseOffset: 4, extentOffset: 4));
+        prevText: doc.results.plainText,
+        prevSelection: const TextSelection(baseOffset: 3, extentOffset: 3),
+        nextText: nextText,
+        nextSelection: const TextSelection(baseOffset: 4, extentOffset: 4),
+      );
       expect(deltaText.type, DeltaTextType.insert);
 
       //--- when
-      doc.updateText(deltaText, {Formatus.header1}, '');
+      doc.updateText(deltaText, {Formatus.header1});
 
       //--- then
       expect(doc.textNodes.length, 3);
@@ -169,20 +176,23 @@ void main() {
       FormatusDocument doc = FormatusDocument(formatted: formatted);
       String nextText = 'ab\nc def';
       DeltaText deltaText = DeltaText(
-          prevText: doc.results.plainText,
-          prevSelection: const TextSelection(baseOffset: 2, extentOffset: 2),
-          nextText: nextText,
-          nextSelection: const TextSelection(baseOffset: 3, extentOffset: 3));
+        prevText: doc.results.plainText,
+        prevSelection: const TextSelection(baseOffset: 2, extentOffset: 2),
+        nextText: nextText,
+        nextSelection: const TextSelection(baseOffset: 3, extentOffset: 3),
+      );
       expect(deltaText.type, DeltaTextType.insert);
 
       //--- when
-      doc.updateText(deltaText, {Formatus.header1}, '');
+      doc.updateText(deltaText, {Formatus.header1});
 
       //--- then
       expect(doc.textNodes.length, 4);
       expect(doc.results.plainText, nextText);
       expect(
-          doc.results.formattedText, '<h1><b>ab</b></h1><h1><b>c</b> def</h1>');
+        doc.results.formattedText,
+        '<h1><b>ab</b></h1><h1><b>c</b> def</h1>',
+      );
     });
   });
 
@@ -194,19 +204,21 @@ void main() {
       FormatusDocument doc = FormatusDocument(formatted: formatted);
       String nextText = 'abcdef';
       DeltaText deltaText = DeltaText(
-          prevText: doc.results.plainText,
-          prevSelection: const TextSelection(baseOffset: 3, extentOffset: 3),
-          nextText: nextText,
-          nextSelection: const TextSelection(baseOffset: 3, extentOffset: 3));
+        prevText: doc.results.plainText,
+        prevSelection: const TextSelection(baseOffset: 3, extentOffset: 3),
+        nextText: nextText,
+        nextSelection: const TextSelection(baseOffset: 3, extentOffset: 3),
+      );
       expect(deltaText.type, DeltaTextType.delete);
 
       //--- when
-      doc.updateText(deltaText, {Formatus.header1}, '');
+      doc.updateText(deltaText, {Formatus.header1});
 
       //--- then
-      expect(doc.textNodes.length, 1);
       expect(doc.results.plainText, nextText);
       expect(doc.results.formattedText, '<h1>abcdef</h1>');
+      expect(doc.textNodes.length, 1);
+      expect(doc.results.plainText, nextText);
     });
 
     //---
@@ -216,14 +228,15 @@ void main() {
       FormatusDocument doc = FormatusDocument(formatted: formatted);
       String nextText = 'abcdef';
       DeltaText deltaText = DeltaText(
-          prevText: doc.results.plainText,
-          prevSelection: const TextSelection(baseOffset: 4, extentOffset: 4),
-          nextText: nextText,
-          nextSelection: const TextSelection(baseOffset: 3, extentOffset: 3));
+        prevText: doc.results.plainText,
+        prevSelection: const TextSelection(baseOffset: 4, extentOffset: 4),
+        nextText: nextText,
+        nextSelection: const TextSelection(baseOffset: 3, extentOffset: 3),
+      );
       expect(deltaText.type, DeltaTextType.delete);
 
       //--- when
-      doc.updateText(deltaText, {Formatus.header1}, '');
+      doc.updateText(deltaText, {Formatus.header1});
 
       //--- then
       expect(doc.textNodes.length, 1);
@@ -238,14 +251,15 @@ void main() {
       FormatusDocument doc = FormatusDocument(formatted: formatted);
       String nextText = 'abef';
       DeltaText deltaText = DeltaText(
-          prevText: doc.results.plainText,
-          prevSelection: const TextSelection(baseOffset: 2, extentOffset: 5),
-          nextText: nextText,
-          nextSelection: const TextSelection(baseOffset: 2, extentOffset: 2));
+        prevText: doc.results.plainText,
+        prevSelection: const TextSelection(baseOffset: 2, extentOffset: 5),
+        nextText: nextText,
+        nextSelection: const TextSelection(baseOffset: 2, extentOffset: 2),
+      );
       expect(deltaText.type, DeltaTextType.delete);
 
       //--- when
-      doc.updateText(deltaText, {Formatus.header1}, '');
+      doc.updateText(deltaText, {Formatus.header1});
 
       //--- then
       expect(doc.textNodes.length, 1);

@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:formatus/formatus.dart';
 import 'package:formatus/src/formatus/formatus_node.dart';
@@ -127,7 +129,8 @@ void main() {
     //---
     test('parse color blue', () {
       //--- given
-      String formatted = '<p>abc <color 0xFF0000ff>def</color></p>';
+      String blueDiv = '<div style="color: #FF0000ff">';
+      String formatted = '<p>abc ${blueDiv}def</div></p>';
       FormatusParser parser = FormatusParser();
 
       //--- when
@@ -139,7 +142,26 @@ void main() {
       expect(nodes[0].text, 'abc ');
       expect(nodes[1].formats, [Formatus.paragraph, Formatus.color]);
       expect(nodes[1].text, 'def');
-      expect(nodes[1].attribute, '0xFF0000ff');
+      expect(nodes[1].color, Color(0xFF0000ff));
+    });
+
+    //---
+    test('parse color blue from deprecated format', () {
+      //--- given
+      String blueDiv = '<color 0xFF0000ff>';
+      String formatted = '<p>abc ${blueDiv}def</color></p>';
+      FormatusParser parser = FormatusParser();
+
+      //--- when
+      List<FormatusNode> nodes = parser.parse(formatted);
+
+      //--- then
+      expect(nodes.length, 2);
+      expect(nodes[0].formats, [Formatus.paragraph]);
+      expect(nodes[0].text, 'abc ');
+      expect(nodes[1].formats, [Formatus.paragraph, Formatus.color]);
+      expect(nodes[1].text, 'def');
+      expect(nodes[1].color, Color(0xFF0000ff));
     });
 
     //---

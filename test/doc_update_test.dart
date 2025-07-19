@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:formatus/formatus.dart';
 import 'package:formatus/src/formatus/formatus_controller_impl.dart';
@@ -21,7 +21,7 @@ void main() {
               TextSelection(baseOffset: 0, extentOffset: newText.length));
 
       //--- when
-      doc.updateText(deltaText, {Formatus.header1}, '');
+      doc.updateText(deltaText, {Formatus.header1});
 
       //--- then
       expect(deltaText.isAll, true);
@@ -47,7 +47,7 @@ void main() {
               TextSelection(baseOffset: 0, extentOffset: newText.length));
 
       //--- when
-      doc.updateText(deltaText, {Formatus.paragraph}, '');
+      doc.updateText(deltaText, {Formatus.paragraph});
 
       //--- then
       expect(deltaText.isAll, true);

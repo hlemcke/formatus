@@ -23,8 +23,8 @@ class FormatusControllerImpl extends TextEditingController
   /// Tree-like structure with nodes for formatting and text leaf nodes
   late FormatusDocument document;
 
-  /// If current node contains [Formatus.color] then this is colors hex code
-  String selectedColor = '';
+  /// Color of current node. _transparent_ is not used
+  Color selectedColor = Colors.transparent;
 
   /// Formats set by cursor positioning and modified by user selection.
   Set<Formatus> selectedFormats = {};
@@ -36,10 +36,7 @@ class FormatusControllerImpl extends TextEditingController
   ///
   /// Creates a controller for [TextField] or [TextFormField].
   ///
-  FormatusControllerImpl({
-    String? formattedText,
-    this.onChanged,
-  }) {
+  FormatusControllerImpl({String? formattedText, this.onChanged}) {
     document = FormatusDocument(formatted: formattedText ?? '');
     _rememberNodeResults();
     _text = document.results.plainText;
@@ -72,11 +69,12 @@ class FormatusControllerImpl extends TextEditingController
     } else if (anchor == null) {
       return;
     }
-
     //--- Anchor to be inserted at cursor position
     else {
-      FormatusNode anchorNode =
-          FormatusNode(formats: node.formats, text: anchor.name);
+      FormatusNode anchorNode = FormatusNode(
+        formats: node.formats,
+        text: anchor.name,
+      );
       anchorNode.attribute = anchor.href;
       anchorNode.formats.add(Formatus.anchor);
       // TODO insert anchor node at cursor position
@@ -92,15 +90,14 @@ class FormatusControllerImpl extends TextEditingController
     required BuildContext context,
     TextStyle? style,
     required bool withComposing,
-  }) =>
-      document.results.textSpan;
+  }) => document.results.textSpan;
 
   /// Sets empty text with Paragraph and one empty _textNode_
   @override
   void clear() {
     super.clear();
     document.clear();
-    selectedColor = '';
+    selectedColor = Colors.transparent;
     selectedFormats.clear();
     selectedFormats.add(Formatus.paragraph);
     _prevSelection = _emptySelection;
@@ -137,7 +134,8 @@ class FormatusControllerImpl extends TextEditingController
   @override
   set text(String _) {
     throw Exception(
-        'Not supported. Use formattedText=... to replace current text');
+      'Not supported. Use formattedText=... to replace current text',
+    );
   }
 
   /// Internally used to update string in `TextField` or `TextFormField`
@@ -147,7 +145,11 @@ class FormatusControllerImpl extends TextEditingController
   /// [FormatusBar] has already updated `selectedFormats` and `selectedColor`
   void updateInlineFormat(Formatus formatus) {
     if (selection.isCollapsed) return;
-    document.updateInlineFormat(selection, selectedFormats, selectedColor);
+    document.updateInlineFormat(
+      selection,
+      selectedFormats,
+      color: selectedColor,
+    );
     _rememberNodeResults();
   }
 
@@ -169,8 +171,10 @@ class FormatusControllerImpl extends TextEditingController
   @visibleForTesting
   TextSelection get prevSelection => _prevSelection;
 
-  static const TextSelection _emptySelection =
-      TextSelection(baseOffset: 0, extentOffset: 0);
+  static const TextSelection _emptySelection = TextSelection(
+    baseOffset: 0,
+    extentOffset: 0,
+  );
 
   ///
   /// This closure will be called by the underlying system whenever the
@@ -198,21 +202,22 @@ class FormatusControllerImpl extends TextEditingController
       nextSelection: selection,
       nextText: text,
     );
-    debugPrint('=== _onListen [${selection.start},${selection.end}] =>'
-        ' $deltaText');
+    debugPrint(
+      '=== _onListen [${selection.start},${selection.end}] => $deltaText',
+    );
 
     //--- Replace all line-break in pasted text by single space
     // TODO transform pasted line-breaks to separate sections
-    if (deltaText.textAdded.length > 1) {
+    if (deltaText._textAdded.length > 1) {
       deltaText._textAdded = deltaText._textAdded.replaceAll('\n', ' ');
-      debugPrint('=== _onListen => $deltaText');
     }
-    document.updateText(deltaText, selectedFormats, selectedColor);
+    document.updateText(deltaText, selectedFormats, color: selectedColor);
     int cursorPosition = selection.baseOffset;
     _rememberNodeResults();
     _text = document.results.plainText;
-    selection =
-        TextSelection.fromPosition(TextPosition(offset: cursorPosition));
+    selection = TextSelection.fromPosition(
+      TextPosition(offset: cursorPosition),
+    );
   }
 
   @visibleForTesting
@@ -233,9 +238,11 @@ class FormatusControllerImpl extends TextEditingController
 
   void _updateSelection() {
     _prevSelection = TextSelection(
-        baseOffset: selection.baseOffset, extentOffset: selection.extentOffset);
+      baseOffset: selection.baseOffset,
+      extentOffset: selection.extentOffset,
+    );
     NodeMeta meta = document.computeMeta(selection.baseOffset);
-    selectedColor = meta.node.attribute;
+    selectedColor = meta.node.color;
   }
 }
 
@@ -338,8 +345,8 @@ class DeltaText {
   String toString() => isAll
       ? '${type.name} at all => plus="${textAdded.replaceAll('\n', '\\n')}"'
       : '${type.name} [$_headLength..${_prevLength - _tailLength}]'
-          ' => ${textAdded.isEmpty ? '' : 'plus="${textAdded.replaceAll('\n', '\\n')}"'}'
-          '${textRemoved.isEmpty ? '' : ' removed="${textRemoved.replaceAll('\n', '\\n')}"'}';
+            ' => ${textAdded.isEmpty ? '' : 'plus="${textAdded.replaceAll('\n', '\\n')}"'}'
+            '${textRemoved.isEmpty ? '' : ' removed="${textRemoved.replaceAll('\n', '\\n')}"'}';
 }
 
 enum DeltaTextType { delete, insert, none, update }

@@ -1,5 +1,7 @@
-## 1.4.0+2
+## 1.5.0
 * Fixed bug when starting with an empty formatted string
+* Removed _subscript_ and _superscript_ from default formatting actions 
+* Encoding a colored text now conforms to html syntax
 
 ## 1.4.0
 * Fixed changing color of an already colored text

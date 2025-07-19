@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 import 'formatus_model.dart';
 import 'formatus_node.dart';
 
@@ -82,8 +84,11 @@ class FormatusParser {
         int end = body.indexOf('<', offset);
         if (end > offset) {
           FormatusNode node = FormatusNode(
-              formats: formats.toList(), text: body.substring(offset, end));
+            formats: formats.toList(),
+            text: body.substring(offset, end),
+          );
           node.attribute = tag.attribute;
+          node.color = tag.color;
           nodes.add(node);
           offset = end;
         }
@@ -113,9 +118,27 @@ class FormatusParser {
     if (content.startsWith('/')) {
       tag.isClosing = true;
     } else {
-      List<String> parts = content.split(' ');
-      tag.formatus = Formatus.find(parts[0]);
-      tag.attribute = (parts.length > 1) ? parts[1] : '';
+      int k = content.indexOf(' ');
+      String tagName = (k < 0) ? content : content.substring(0, k);
+      tag.formatus = Formatus.find(tagName);
+
+      //--- tag has attribute, color or deprecated color
+      if (k > 0) {
+        if (tag.formatus == Formatus.color) {
+          k = content.indexOf('#');
+          String hexColor = content.substring(k + 1, content.length - 1);
+          tag.color = colorFromHex(hexColor);
+        }
+        // TODO remove this else block after 2025-12-31
+        else if (tag.formatus == Formatus.colorDeprecated) {
+          tag.formatus = Formatus.color;
+          k = content.indexOf('0x');
+          String hexColor = content.substring(k + 2, content.length);
+          tag.color = colorFromHex(hexColor);
+        } else {
+          tag.attribute = content.substring(k + 1);
+        }
+      }
     }
     return tag;
   }
@@ -126,6 +149,7 @@ class FormatusParser {
 ///
 class _ParsedTag {
   String attribute = '';
+  Color color = Colors.transparent;
   Formatus formatus = Formatus.placeHolder;
   bool isClosing = false;
   int offset = -1;
@@ -133,6 +157,7 @@ class _ParsedTag {
   _ParsedTag();
 
   @override
-  String toString() => '<${isClosing ? "/" : ""}${formatus.key}'
+  String toString() =>
+      '<${isClosing ? "/" : ""}${formatus.key}'
       '${attribute.isEmpty ? "" : " $attribute"}> offset=$offset';
 }

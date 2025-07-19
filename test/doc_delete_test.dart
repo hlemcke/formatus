@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:formatus/formatus.dart';
 import 'package:formatus/src/formatus/formatus_controller_impl.dart';
@@ -21,7 +21,7 @@ void main() {
           nextSelection: TextSelection(baseOffset: 0, extentOffset: 0));
 
       //--- when
-      doc.updateText(deltaText, {Formatus.header1}, '');
+      doc.updateText(deltaText, {Formatus.header1});
 
       //--- then
       expect(doc.textNodes.length, 3);

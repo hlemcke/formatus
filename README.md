@@ -68,6 +68,15 @@ void dispose() {
 * __sub__ -> subscript text
 * __sup__ -> superscript text
 
+
+## 🔗 Project Links
+
+- 🌐 [Homepage](https://www.djarjo.com/formatus)
+- 🐛 [Issue Tracker](https://github.com/hlemcke/formatus/issues)
+- 📚 [Documentation](https://www.djarjo.com/formatus/docs)
+- 🗂️ [Repository](https://github.com/hlemcke/formatus)
+
+
 ## Known Deficiencies
 
 1. Subscript and superscript are displayed correctly only in [FormatusViewer] because Flutter

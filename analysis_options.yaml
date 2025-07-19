@@ -1,4 +1,16 @@
+#
+# This file configures the analyzer, which statically analyzes Dart code to check for errors,
+# warnings, and lints.
+#
+# The analyzer can also be invoked from the command line by running `flutter analyze`.
+#
+# Additional information about this file can be found at
+# https://dart.dev/tools/analysis
+#
+# The following line activates a set of recommended lints for Flutter apps,
+# packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
-# Additional information about this file can be found at
-# https://dart.dev/guides/language/analysis-options
+# Page width must be exactly 80 because otherwise code generators may reformat our code
+formatter:
+  page_width: 80

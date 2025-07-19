@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:formatus/formatus.dart';
 import 'package:formatus/src/formatus/formatus_controller_impl.dart';
@@ -20,7 +20,7 @@ void main() {
           nextSelection: TextSelection(baseOffset: 1, extentOffset: 1));
 
       //--- when
-      doc.updateText(deltaText, {Formatus.paragraph}, '');
+      doc.updateText(deltaText, {Formatus.paragraph});
 
       //--- then
       expect(doc.textNodes.length, 1);
@@ -43,7 +43,7 @@ void main() {
           nextSelection: TextSelection(baseOffset: 1, extentOffset: 1));
 
       //--- when
-      doc.updateText(deltaText, {Formatus.paragraph}, '');
+      doc.updateText(deltaText, {Formatus.paragraph});
 
       //--- then
       expect(doc.textNodes.length, 10);
@@ -66,7 +66,7 @@ void main() {
           nextSelection: TextSelection(baseOffset: 4, extentOffset: 4));
 
       //--- when
-      doc.updateText(deltaText, {Formatus.header1}, '');
+      doc.updateText(deltaText, {Formatus.header1});
 
       //--- then
       expect(doc.textNodes.length, 3);
@@ -89,7 +89,7 @@ void main() {
           nextSelection: TextSelection(baseOffset: 8, extentOffset: 8));
 
       //--- when
-      doc.updateText(deltaText, {Formatus.paragraph}, '');
+      doc.updateText(deltaText, {Formatus.paragraph});
 
       //--- then
       expect(doc.textNodes.length, 3);
@@ -112,7 +112,7 @@ void main() {
           nextSelection: TextSelection(baseOffset: 3, extentOffset: 3));
 
       //--- when
-      doc.updateText(deltaText, {Formatus.header1}, '');
+      doc.updateText(deltaText, {Formatus.header1});
 
       //--- then
       expect(doc.textNodes.length, 3);
@@ -135,7 +135,7 @@ void main() {
           nextSelection: TextSelection(baseOffset: 7, extentOffset: 7));
 
       //--- when
-      doc.updateText(deltaText, {Formatus.header1, Formatus.bold}, '');
+      doc.updateText(deltaText, {Formatus.header1, Formatus.bold});
 
       //--- then
       expect(doc.textNodes.length, 4);
@@ -161,7 +161,7 @@ void main() {
           nextSelection: TextSelection(baseOffset: 7, extentOffset: 7));
 
       //--- when
-      doc.updateText(deltaText, {Formatus.header1, Formatus.underline}, '');
+      doc.updateText(deltaText, {Formatus.header1, Formatus.underline});
 
       //--- then
       expect(doc.textNodes.length, 6);
