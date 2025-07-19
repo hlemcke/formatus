@@ -5,8 +5,8 @@ import 'package:formatus/src/formatus/formatus_controller_impl.dart';
 import 'package:formatus/src/formatus/formatus_document.dart';
 
 void main() {
-  final Color orange = Colors.orange;
-  final String orangeDiv = '<div style="color: #FFFF9800">';
+  final Color orange = Color(0xffff9800);
+  final String orangeDiv = '<div style="color: #ffff9800;">';
 
   group('Apply color to text range', () {
     //---
@@ -33,11 +33,12 @@ void main() {
         '<h1>First Line${orangeDiv}X</div></h1>',
       );
       expect(doc.results.plainText, 'First LineX');
+      expect(doc.textNodes.length, 2);
       expect(doc.textNodes[0].formats, [Formatus.header1]);
       expect(doc.textNodes[0].text, 'First Line');
       expect(doc.textNodes[1].formats, [Formatus.header1, Formatus.color]);
       expect(doc.textNodes[1].text, 'X');
-      expect(doc.textNodes[1].attribute, orange);
+      expect(doc.textNodes[1].color, orange);
     });
 
     //---
@@ -58,7 +59,10 @@ void main() {
 
       //--- then
       expect(doc.textNodes.length, 2);
-      expect(doc.results.formattedText, '<h1>$orangeDiv>First</div> Line</h1>');
+      expect(
+        doc.results.formattedText,
+        '<h1>${orangeDiv}First</div> Line</h1>',
+      );
       expect(doc.results.plainText, 'First Line');
       expect(doc.textNodes[0].formats, [Formatus.header1, Formatus.color]);
       expect(doc.textNodes[0].text, 'First');
@@ -87,21 +91,21 @@ void main() {
       expect(doc.textNodes.length, 2);
       expect(
         doc.results.formattedText,
-        '<h1>First <color $orange>Line</color></h1>',
+        '<h1>First ${orangeDiv}Line</div></h1>',
       );
       expect(doc.results.plainText, 'First Line');
       expect(doc.textNodes[0].formats, [Formatus.header1]);
       expect(doc.textNodes[0].text, 'First ');
       expect(doc.textNodes[1].formats, [Formatus.header1, Formatus.color]);
       expect(doc.textNodes[1].text, 'Line');
-      expect(doc.textNodes[1].attribute, orange);
+      expect(doc.textNodes[1].color, orange);
     });
 
     //---
-    test('Change color in already colored part', () {
+    test('Change color of already colored part', () {
       //--- given
       String formatted = '<p>Color ${orangeDiv}Orange</div></p>';
-      String limeDiv = '<div style="color: 0xFFcddc39">';
+      String limeDiv = '<div style="color: #ffcddc39;">';
       FormatusDocument doc = FormatusDocument(formatted: formatted);
       TextSelection selection = const TextSelection(
         baseOffset: 9,
@@ -117,24 +121,23 @@ void main() {
       //--- then
       expect(doc.textNodes.length, 3);
       expect(doc.results.plainText, 'Color Orange');
-      expect(doc.textNodes[0].formats, [Formatus.paragraph]);
-      expect(doc.textNodes[0].text, 'Color ');
-      expect(doc.textNodes[1].formats, [Formatus.paragraph, Formatus.color]);
-      expect(doc.textNodes[1].text, 'Ora');
-      expect(doc.textNodes[1].attribute, orange);
-      expect(doc.textNodes[2].formats, [Formatus.paragraph, Formatus.color]);
-      expect(doc.textNodes[2].text, 'nge');
-      expect(doc.textNodes[2].color, Colors.lime);
       expect(
         doc.results.formattedText,
         '<p>Color ${orangeDiv}Ora</div>${limeDiv}nge</div></p>',
       );
+      expect(doc.textNodes[0].formats, [Formatus.paragraph]);
+      expect(doc.textNodes[0].text, 'Color ');
+      expect(doc.textNodes[1].formats, [Formatus.paragraph, Formatus.color]);
+      expect(doc.textNodes[1].text, 'Ora');
+      expect(doc.textNodes[1].color, orange);
+      expect(doc.textNodes[2].formats, [Formatus.paragraph, Formatus.color]);
+      expect(doc.textNodes[2].text, 'nge');
+      expect(doc.textNodes[2].color, Colors.lime);
     });
 
     //---
-    test('Clear colored part', () {
+    test('Clear trailing part of colored text', () {
       //--- given
-      Color orange = Colors.orange;
       String formatted = '<p>Color ${orangeDiv}Orange</div></p>';
       FormatusDocument doc = FormatusDocument(formatted: formatted);
       TextSelection selection = const TextSelection(
@@ -143,7 +146,7 @@ void main() {
       );
 
       //--- when
-      doc.updateInlineFormat(selection, {Formatus.paragraph}, color: orange);
+      doc.updateInlineFormat(selection, {Formatus.paragraph});
 
       //--- then
       expect(doc.textNodes.length, 3);
@@ -152,10 +155,10 @@ void main() {
       expect(doc.textNodes[0].text, 'Color ');
       expect(doc.textNodes[1].formats, [Formatus.paragraph, Formatus.color]);
       expect(doc.textNodes[1].text, 'Ora');
-      expect(doc.textNodes[1].attribute, orange);
+      expect(doc.textNodes[1].color, orange);
       expect(doc.textNodes[2].formats, [Formatus.paragraph]);
       expect(doc.textNodes[2].text, 'nge');
-      expect(doc.textNodes[2].attribute.isEmpty, true);
+      expect(doc.textNodes[2].color, Colors.transparent);
       expect(
         doc.results.formattedText,
         '<p>Color ${orangeDiv}Ora</div>nge</p>',

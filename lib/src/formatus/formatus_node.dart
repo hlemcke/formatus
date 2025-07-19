@@ -55,6 +55,9 @@ class FormatusNode {
     //--- Apply color
     if (formats.contains(Formatus.color)) {
       this.color = color;
+      if (color == Colors.transparent) {
+        formats.remove(Formatus.color);
+      }
     }
     Set<Formatus> toRemove = formats.toSet().difference(selectedFormats);
     for (Formatus formatus in toRemove) {
@@ -63,9 +66,9 @@ class FormatusNode {
   }
 
   /// Returns a deep clone of this one
-  FormatusNode clone() =>
-      FormatusNode(formats: formats.toList(), text: text)
-        ..attribute = attribute;
+  FormatusNode clone() => FormatusNode(formats: formats.toList(), text: text)
+    ..attribute = attribute
+    ..color = color;
 
   /// Returns `true` if last format requires an attribute
   bool get hasAttribute => attribute.isNotEmpty;
@@ -115,7 +118,7 @@ class FormatusNode {
   String toString() {
     List<String> tags = formats.map((e) => '<${e.key}').toList();
     String str = tags.join('>');
-    str += hasColor ? ' "style="color: #${hexFromColor(color)}">' : '';
+    str += hasColor ? ' "style="color: #${hexFromColor(color)};">' : '';
     str += hasAttribute ? ' $attribute' : '';
     return '$str -> "$text"';
   }

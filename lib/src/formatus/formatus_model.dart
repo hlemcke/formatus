@@ -285,6 +285,9 @@ List<Color> formatusColors = [
 Color colorFromHex(String hex) {
   hex = hex.startsWith('#') ? hex.substring(1) : hex;
   hex = hex.startsWith('0x') ? hex.substring(2) : hex;
+  if (hex.length > 8) {
+    hex = hex.substring(0, 8);
+  }
   return Color(int.parse(hex, radix: 16));
 }
 

@@ -170,8 +170,10 @@ class FormatusResults {
     while (true) {
       if (i >= path.length || i >= node.formats.length) break;
       if (path[i].formatus != node.formats[i]) break;
-      if (path[i].attribute != node.attribute) break;
-      if (path[i].color != node.color) break;
+      if ((i == path.length - 1) && (i == node.formats.length - 1)) {
+        if (path[i].attribute != node.attribute) break;
+        if (path[i].color != node.color) break;
+      }
       i++;
     }
     return i - 1;

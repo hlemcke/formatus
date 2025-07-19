@@ -1,7 +1,7 @@
-## 1.5.0
+## 1.4.1
 * Fixed bug when starting with an empty formatted string
 * Removed _subscript_ and _superscript_ from default formatting actions 
-* Encoding a colored text now conforms to html syntax
+* Colored text now encodes according to html syntax allowing saved format to be used for email
 
 ## 1.4.0
 * Fixed changing color of an already colored text
