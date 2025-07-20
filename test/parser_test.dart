@@ -89,8 +89,11 @@ void main() {
       expect(nodes[5].text, 'Line 3 with ');
       expect(nodes[6].formats, [Formatus.paragraph, Formatus.bold]);
       expect(nodes[6].text, 'bold and ');
-      expect(nodes[7].formats,
-          [Formatus.paragraph, Formatus.bold, Formatus.italic]);
+      expect(nodes[7].formats, [
+        Formatus.paragraph,
+        Formatus.bold,
+        Formatus.italic,
+      ]);
       expect(nodes[7].text, 'nested');
       expect(nodes[8].formats, [Formatus.paragraph]);
       expect(nodes[8].text, ' words');
@@ -112,8 +115,11 @@ void main() {
       expect(nodes[0].text, 'abc');
       expect(nodes[1].formats, [Formatus.header1, Formatus.bold]);
       expect(nodes[1].text, ' def');
-      expect(nodes[2].formats,
-          [Formatus.header1, Formatus.bold, Formatus.underline]);
+      expect(nodes[2].formats, [
+        Formatus.header1,
+        Formatus.bold,
+        Formatus.underline,
+      ]);
       expect(nodes[2].text, ' ghi');
       expect(nodes[3].formats, [Formatus.header1, Formatus.italic]);
       expect(nodes[3].text, ' jkl');
@@ -246,5 +252,50 @@ void main() {
       expect(nodes[i++].text, ', ');
       // TODO append expects for remaining nodes
     });
+  });
+
+  //---
+  test('parse unordered list with 2 elements', () {
+    //--- given
+    String formatted = '''
+<p>Text with unordered list</p>
+<ul><li>First element</li><li>Second element</li></ul>
+''';
+    FormatusParser parser = FormatusParser();
+
+    //--- when
+    List<FormatusNode> nodes = parser.parse(formatted);
+
+    //--- then
+    expect(nodes.length, 5);
+    expect(nodes[0].formats, [Formatus.paragraph]);
+    expect(nodes[0].text, 'Text with unordered list');
+    expect(nodes[2].formats, [Formatus.unorderedList]);
+    expect(nodes[2].text, 'First element');
+    expect(nodes[4].formats, [Formatus.unorderedList]);
+    expect(nodes[4].text, 'Second element');
+  });
+
+  //---
+  test('parse ordered list with one element', () {
+    //--- given
+    String formatted = '''
+<p>Text with ordered list</p>
+<ol><li>Single element</li></ol>
+<p>... more text</p>
+''';
+    FormatusParser parser = FormatusParser();
+
+    //--- when
+    List<FormatusNode> nodes = parser.parse(formatted);
+
+    //--- then
+    expect(nodes.length, 5);
+    expect(nodes[0].formats, [Formatus.paragraph]);
+    expect(nodes[0].text, 'Text with ordered list');
+    expect(nodes[2].formats, [Formatus.orderedList]);
+    expect(nodes[2].text, 'Single element');
+    expect(nodes[4].formats, [Formatus.paragraph]);
+    expect(nodes[4].text, '... more text');
   });
 }

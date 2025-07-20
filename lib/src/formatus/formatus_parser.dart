@@ -4,6 +4,8 @@ import 'formatus_model.dart';
 import 'formatus_node.dart';
 
 class FormatusParser {
+  Formatus _listType = Formatus.noList;
+
   ///
   /// Cleanup given text by:
   ///
@@ -19,7 +21,7 @@ class FormatusParser {
       .replaceAll('  ', ' ');
 
   ///
-  /// Parses `formatted` and returns list of text-nodes
+  /// Parses `formatted` text and returns list of text-nodes
   ///
   List<FormatusNode> parse(String formatted) {
     formatted = cleanUpFormatted(formatted);
@@ -70,12 +72,28 @@ class FormatusParser {
         //--- Create empty section tag
         if ((formats.length == 1) &&
             (nodes.isEmpty || (nodes.last.section != formats[0]))) {
+          //--- toList() creates a new instance. Else removeLast destroys it
           nodes.add(FormatusNode(formats: formats.toList(), text: ''));
         }
-        formats.removeLast();
-        if (formats.isEmpty) return tag.offset;
+        if (formats.isNotEmpty) formats.removeLast();
+        if (formats.isEmpty) {
+          if (tag.formatus == _listType) {
+            _listType = Formatus.noList;
+            if (nodes.last.isLineBreak) {
+              nodes.removeLast();
+            }
+          }
+          return tag.offset;
+        }
       } else {
-        formats.add(tag.formatus);
+        if (tag.formatus == Formatus.orderedList) {
+          _listType = Formatus.orderedList;
+        } else if (tag.formatus == Formatus.unorderedList) {
+          _listType = Formatus.unorderedList;
+        } else {
+          if (tag.formatus == Formatus.listItem) tag.formatus = _listType;
+          formats.add(tag.formatus);
+        }
       }
       offset = tag.offset;
 
@@ -117,30 +135,35 @@ class FormatusParser {
     String content = htmlBody.substring(i + 1, j).trim();
     if (content.startsWith('/')) {
       tag.isClosing = true;
+      tag.formatus = Formatus.find(content.substring(1));
     } else {
-      int k = content.indexOf(' ');
-      String tagName = (k < 0) ? content : content.substring(0, k);
-      tag.formatus = Formatus.find(tagName);
-
-      //--- tag has attribute, color or deprecated color
-      if (k > 0) {
-        if (tag.formatus == Formatus.color) {
-          k = content.indexOf('#');
-          String hexColor = content.substring(k + 1, content.length - 1);
-          tag.color = colorFromHex(hexColor);
-        }
-        // TODO remove this else block after 2025-12-31
-        else if (tag.formatus == Formatus.colorDeprecated) {
-          tag.formatus = Formatus.color;
-          k = content.indexOf('0x');
-          String hexColor = content.substring(k + 2, content.length);
-          tag.color = colorFromHex(hexColor);
-        } else {
-          tag.attribute = content.substring(k + 1);
-        }
-      }
+      _parseTagBody(tag, content);
     }
     return tag;
+  }
+
+  void _parseTagBody(_ParsedTag tag, String content) {
+    int k = content.indexOf(' ');
+    String tagName = (k < 0) ? content : content.substring(0, k);
+    tag.formatus = Formatus.find(tagName);
+
+    //--- tag has attribute, color or deprecated color
+    if (k > 0) {
+      if (tag.formatus == Formatus.color) {
+        k = content.indexOf('#');
+        String hexColor = content.substring(k + 1, content.length - 1);
+        tag.color = colorFromHex(hexColor);
+      }
+      // TODO remove this else block after 2025-12-31
+      else if (tag.formatus == Formatus.colorDeprecated) {
+        tag.formatus = Formatus.color;
+        k = content.indexOf('0x');
+        String hexColor = content.substring(k + 2, content.length);
+        tag.color = colorFromHex(hexColor);
+      } else {
+        tag.attribute = content.substring(k + 1);
+      }
+    }
   }
 }
 

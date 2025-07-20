@@ -101,6 +101,12 @@ enum Formatus {
   /// Line-breaks are automatically inserted between sections
   lineBreak('', FormatusType.section, null, null),
 
+  /// Item of an ordered or unordered list
+  listItem('li', FormatusType.list, null, null),
+
+  /// Special value to denote that parser is not in any list
+  noList('', FormatusType.list, null, null),
+
   /// Section element of an ordered list entry.
   /// In html this would be an `li` element of the enclosing `ol`
   orderedList('ol', FormatusType.list, Icon(Icons.format_list_numbered), null),
