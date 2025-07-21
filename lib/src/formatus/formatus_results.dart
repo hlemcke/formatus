@@ -67,7 +67,11 @@ class FormatusResults {
       //--- Append [InlineSpan] according to texts typography
       _appendSpan(node, forViewer, path, sections);
       formattedText += node.isLineBreak ? '' : node.text;
-      plainText += node.text;
+      plainText += (listItemNumber == 0)
+          ? '\u2022 ${node.text}'
+          : (listItemNumber > 0)
+          ? '$listItemNumber. ${node.text}'
+          : node.text;
     }
     // --- remove and close trailing path entries
     while (path.isNotEmpty) {
@@ -111,43 +115,29 @@ class FormatusResults {
     List<_ResultNode> path,
     List<TextSpan> sections,
   ) {
-    if (node.section == Formatus.orderedList) {
-      return _appendSpanOrdered(path);
-    } else if (node.section == Formatus.unorderedList) {
-      return _appendSpanUnordered(path);
-    } else if (node.isNotLineBreak) {
-      listItemNumber = -1;
-    }
     if (node.isSubscript) {
       return _appendSpanSubscript(path, node, forViewer);
     } else if (node.isSuperscript) {
       return _appendSpanSuperscript(path, node, forViewer);
+    } else if (node.section == Formatus.orderedList) {
+      return _appendSpanOrdered(path, node);
+    } else if (node.section == Formatus.unorderedList) {
+      return _appendSpanUnordered(path, node);
+    } else if (node.isNotLineBreak) {
+      listItemNumber = -1;
     }
     path.last.spans.add(TextSpan(text: node.text));
   }
 
-  void _appendSpanOrdered(List<_ResultNode> path) {
+  /// Build [TextSpan] for number and [WidgetSpan] for viewer
+  void _appendSpanOrdered(List<_ResultNode> path, FormatusNode node) {
     listItemNumber = (listItemNumber <= 0) ? 1 : listItemNumber + 1;
-    path.last.spans.add(
-      WidgetSpan(
-        child: Transform.translate(
-          offset: Offset(0, 2),
-          child: Text('$listItemNumber. '),
-        ),
-      ),
-    );
+    path.last.spans.add(TextSpan(text: '$listItemNumber. ${node.text}'));
   }
 
-  void _appendSpanUnordered(List<_ResultNode> path) {
+  void _appendSpanUnordered(List<_ResultNode> path, FormatusNode node) {
     listItemNumber = 0;
-    path.last.spans.add(
-      WidgetSpan(
-        child: Transform.translate(
-          offset: Offset(0, 2),
-          child: Text('\u2022 '),
-        ),
-      ),
-    );
+    path.last.spans.add(TextSpan(text: '\u2022 ${node.text}'));
   }
 
   void _appendSpanSubscript(
