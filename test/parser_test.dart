@@ -270,9 +270,9 @@ void main() {
     expect(nodes.length, 5);
     expect(nodes[0].formats, [Formatus.paragraph]);
     expect(nodes[0].text, 'Text with unordered list');
-    expect(nodes[2].formats, [Formatus.unorderedList]);
+    expect(nodes[2].formats, [Formatus.unorderedList, Formatus.listItem]);
     expect(nodes[2].text, 'First element');
-    expect(nodes[4].formats, [Formatus.unorderedList]);
+    expect(nodes[4].formats, [Formatus.unorderedList, Formatus.listItem]);
     expect(nodes[4].text, 'Second element');
   });
 
@@ -293,7 +293,7 @@ void main() {
     expect(nodes.length, 5);
     expect(nodes[0].formats, [Formatus.paragraph]);
     expect(nodes[0].text, 'Text with ordered list');
-    expect(nodes[2].formats, [Formatus.orderedList]);
+    expect(nodes[2].formats, [Formatus.orderedList, Formatus.listItem]);
     expect(nodes[2].text, 'Single element');
     expect(nodes[4].formats, [Formatus.paragraph]);
     expect(nodes[4].text, '... more text');

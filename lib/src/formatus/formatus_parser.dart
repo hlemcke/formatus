@@ -76,24 +76,15 @@ class FormatusParser {
           nodes.add(FormatusNode(formats: formats.toList(), text: ''));
         }
         if (formats.isNotEmpty) formats.removeLast();
-        if (formats.isEmpty) {
-          if (tag.formatus == _listType) {
-            _listType = Formatus.noList;
-            if (nodes.last.isLineBreak) {
-              nodes.removeLast();
-            }
-          }
-          return tag.offset;
-        }
+        if (formats.isEmpty) return tag.offset;
       } else {
-        if (tag.formatus == Formatus.orderedList) {
-          _listType = Formatus.orderedList;
-        } else if (tag.formatus == Formatus.unorderedList) {
-          _listType = Formatus.unorderedList;
-        } else {
-          if (tag.formatus == Formatus.listItem) tag.formatus = _listType;
-          formats.add(tag.formatus);
+        //--- Insert line break if this is another <li>
+        if (nodes.isNotEmpty &&
+            tag.formatus == Formatus.listItem &&
+            nodes.last.section.isList) {
+          nodes.add(FormatusNode.lineBreak);
         }
+        formats.add(tag.formatus);
       }
       offset = tag.offset;
 

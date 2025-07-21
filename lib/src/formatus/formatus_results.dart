@@ -7,8 +7,11 @@ import 'formatus_node.dart';
 /// Results to update formatted text and [TextField]
 ///
 class FormatusResults {
-  String plainText = '';
   String formattedText = '';
+
+  /// -1 = no list, 0 = unordered, > 0 ordered
+  int listItemNumber = -1;
+  String plainText = '';
   TextSpan textSpan = TextSpan(text: '');
 
   FormatusResults();
@@ -28,15 +31,20 @@ class FormatusResults {
   void build(List<FormatusNode> textNodes, bool forViewer) {
     List<_ResultNode> path = [];
     List<TextSpan> sections = [];
-    int orderedListNumber = 0;
 
     //--- Loop text nodes
     for (int nodeIndex = 0; nodeIndex < textNodes.length; nodeIndex++) {
       FormatusNode node = textNodes[nodeIndex];
       int indexToLastEqualFormat = _indexToLastEqualFormat(path, node);
 
+      //--- If linebreak and next one is also <ol> or <ul> then only close <li>
+      if (node.isLineBreak &&
+          nodeIndex < textNodes.length - 1 &&
+          textNodes[nodeIndex + 1].section.isList) {
+        indexToLastEqualFormat = 0;
+      }
       // --- Same node => append text to previous one and remove this one
-      if (_appendTextToPreviousNodeIfEqual(
+      else if (_appendTextToPreviousNodeIfEqual(
         path,
         textNodes,
         nodeIndex,
@@ -46,7 +54,7 @@ class FormatusResults {
         continue;
       }
 
-      // --- remove and close trailing path entries
+      // --- close and remove trailing path entries
       while (path.length - 1 > indexToLastEqualFormat) {
         _removeLastPathEntry(path, sections);
       }
@@ -57,13 +65,7 @@ class FormatusResults {
       }
 
       //--- Append [InlineSpan] according to texts typography
-      orderedListNumber = _appendSpanToPath(
-        node,
-        forViewer,
-        path,
-        sections,
-        orderedListNumber,
-      );
+      _appendSpan(node, forViewer, path, sections);
       formattedText += node.isLineBreak ? '' : node.text;
       plainText += node.text;
     }
@@ -103,80 +105,97 @@ class FormatusResults {
   ///
   /// TODO change this when Flutter supports subscript and superscript in [TextSpan]
   ///
-  int _appendSpanToPath(
+  void _appendSpan(
     FormatusNode node,
     bool forViewer,
     List<_ResultNode> path,
     List<TextSpan> sections,
-    int orderedListNumber,
   ) {
     if (node.section == Formatus.orderedList) {
-      orderedListNumber++;
-      path.last.spans.add(
-        WidgetSpan(
-          child: Transform.translate(
-            offset: Offset(0, 2),
-            child: Text('$orderedListNumber. '),
-          ),
-        ),
-      );
+      return _appendSpanOrdered(path);
+    } else if (node.section == Formatus.unorderedList) {
+      return _appendSpanUnordered(path);
     } else if (node.isNotLineBreak) {
-      orderedListNumber = 0;
+      listItemNumber = -1;
     }
     if (node.isSubscript) {
-      double scaleFactor = path[0].formatus.scaleFactor * 0.7;
-      path.last.spans.add(
-        forViewer
-            ? WidgetSpan(
-                child: Transform.translate(
-                  offset: Offset(0, 4),
-                  child: Text(
-                    node.text,
-                    textScaler: TextScaler.linear(scaleFactor),
-                  ),
-                ),
-              )
-            : TextSpan(
-                text: node.text,
-                style: TextStyle(fontFeatures: [FontFeature.subscripts()]),
-              ),
-      );
+      return _appendSpanSubscript(path, node, forViewer);
     } else if (node.isSuperscript) {
-      double scaleFactor = path[0].formatus.scaleFactor * 0.7;
-      path.last.spans.add(
-        forViewer
-            ? WidgetSpan(
-                child: Transform.translate(
-                  offset: Offset(0, -4),
-                  child: Text(
-                    node.text,
-                    textScaler: TextScaler.linear(scaleFactor),
-                  ),
-                ),
-              )
-            : TextSpan(
-                text: node.text,
-                style: TextStyle(fontFeatures: [FontFeature.superscripts()]),
-              ),
-      );
-    } else {
-      path.last.spans.add(TextSpan(text: node.text));
+      return _appendSpanSuperscript(path, node, forViewer);
     }
-    return orderedListNumber;
+    path.last.spans.add(TextSpan(text: node.text));
   }
 
-  int _indexToLastEqualFormat(List<_ResultNode> path, FormatusNode node) {
-    int i = 0;
-    while (true) {
-      if (i >= path.length || i >= node.formats.length) break;
-      if (path[i].formatus != node.formats[i]) break;
-      if ((i == path.length - 1) && (i == node.formats.length - 1)) {
-        if (path[i].attribute != node.attribute) break;
-        if (path[i].color != node.color) break;
-      }
-      i++;
-    }
-    return i - 1;
+  void _appendSpanOrdered(List<_ResultNode> path) {
+    listItemNumber = (listItemNumber <= 0) ? 1 : listItemNumber + 1;
+    path.last.spans.add(
+      WidgetSpan(
+        child: Transform.translate(
+          offset: Offset(0, 2),
+          child: Text('$listItemNumber. '),
+        ),
+      ),
+    );
+  }
+
+  void _appendSpanUnordered(List<_ResultNode> path) {
+    listItemNumber = 0;
+    path.last.spans.add(
+      WidgetSpan(
+        child: Transform.translate(
+          offset: Offset(0, 2),
+          child: Text('\u2022 '),
+        ),
+      ),
+    );
+  }
+
+  void _appendSpanSubscript(
+    List<_ResultNode> path,
+    FormatusNode node,
+    bool forViewer,
+  ) {
+    double scaleFactor = path[0].formatus.scaleFactor * 0.7;
+    path.last.spans.add(
+      forViewer
+          ? WidgetSpan(
+              child: Transform.translate(
+                offset: Offset(0, 4),
+                child: Text(
+                  node.text,
+                  textScaler: TextScaler.linear(scaleFactor),
+                ),
+              ),
+            )
+          : TextSpan(
+              text: node.text,
+              style: TextStyle(fontFeatures: [FontFeature.subscripts()]),
+            ),
+    );
+  }
+
+  void _appendSpanSuperscript(
+    List<_ResultNode> path,
+    FormatusNode node,
+    bool forViewer,
+  ) {
+    double scaleFactor = path[0].formatus.scaleFactor * 0.7;
+    path.last.spans.add(
+      forViewer
+          ? WidgetSpan(
+              child: Transform.translate(
+                offset: Offset(0, -4),
+                child: Text(
+                  node.text,
+                  textScaler: TextScaler.linear(scaleFactor),
+                ),
+              ),
+            )
+          : TextSpan(
+              text: node.text,
+              style: TextStyle(fontFeatures: [FontFeature.superscripts()]),
+            ),
+    );
   }
 
   bool _appendTextToPreviousNodeIfEqual(
@@ -195,6 +214,21 @@ class FormatusResults {
     textNodes[nodeIndex - 1].text += node.text;
     textNodes.removeAt(nodeIndex);
     return true;
+  }
+
+  int _indexToLastEqualFormat(List<_ResultNode> path, FormatusNode node) {
+    if (node.isLineBreak) return -1;
+    int i = 0;
+    while (true) {
+      if (i >= path.length || i >= node.formats.length) break;
+      if (path[i].formatus != node.formats[i]) break;
+      if ((i == path.length - 1) && (i == node.formats.length - 1)) {
+        if (path[i].attribute != node.attribute) break;
+        if (path[i].color != node.color) break;
+      }
+      i++;
+    }
+    return i - 1;
   }
 
   void _removeLastPathEntry(List<_ResultNode> path, List<TextSpan> sections) {

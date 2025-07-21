@@ -102,10 +102,10 @@ enum Formatus {
   lineBreak('', FormatusType.section, null, null),
 
   /// Item of an ordered or unordered list
-  listItem('li', FormatusType.list, null, null),
+  listItem('li', FormatusType.none, null, null),
 
   /// Special value to denote that parser is not in any list
-  noList('', FormatusType.list, null, null),
+  noList('', FormatusType.none, null, null),
 
   /// Section element of an ordered list entry.
   /// In html this would be an `li` element of the enclosing `ol`
