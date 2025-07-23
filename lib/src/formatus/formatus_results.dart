@@ -132,12 +132,14 @@ class FormatusResults {
   /// Build [TextSpan] for number and [WidgetSpan] for viewer
   void _appendSpanOrdered(List<_ResultNode> path, FormatusNode node) {
     listItemNumber = (listItemNumber <= 0) ? 1 : listItemNumber + 1;
-    path.last.spans.add(TextSpan(text: '$listItemNumber. ${node.text}'));
+    path.last.spans.add(WidgetSpan(child: Text('$listItemNumber. ')));
+    path.last.spans.add(TextSpan(text: node.text));
   }
 
   void _appendSpanUnordered(List<_ResultNode> path, FormatusNode node) {
     listItemNumber = 0;
-    path.last.spans.add(TextSpan(text: '\u2022 ${node.text}'));
+    path.last.spans.add(WidgetSpan(child: Text('\u2022 ')));
+    path.last.spans.add(TextSpan(text: node.text));
   }
 
   void _appendSpanSubscript(

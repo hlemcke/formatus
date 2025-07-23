@@ -151,12 +151,15 @@ class FormatusDocument {
         ..textOffset = last.length;
     }
     int charCount = 0;
+    int listPrefixes = 0;
     int nodeIndex = 0;
     while (nodeIndex < textNodes.length - 1) {
-      if (charIndex <= (charCount + textNodes[nodeIndex].length)) {
+      listPrefixes += textNodes[nodeIndex].section.isList ? 1 : 0;
+      int nodeLength = textNodes[nodeIndex].length;
+      if (charIndex <= (charCount + listPrefixes + nodeLength)) {
         break;
       }
-      charCount += textNodes[nodeIndex].length;
+      charCount += nodeLength;
       nodeIndex++;
     }
 
@@ -165,7 +168,7 @@ class FormatusDocument {
     // b) next node has same format
     // c) cursor is at end of this node
     // d) last char of this node is a space
-    int textOffset = charIndex - charCount;
+    int textOffset = charIndex - (charCount + listPrefixes);
     FormatusNode node = textNodes[nodeIndex];
     if (node.isLineBreak ||
         ((nodeIndex < textNodes.length - 1) &&
