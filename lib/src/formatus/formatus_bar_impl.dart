@@ -114,11 +114,7 @@ class _FormatusBarState extends State<FormatusBarImpl> {
           alignment: widget.alignment,
           direction: widget.direction,
           children: widget.compactActions
-              ? [
-                  _buildSectionGroup(),
-                  // _buildListGroup(),
-                  _buildInlineGroup(),
-                ]
+              ? [_buildSectionGroup(), _buildListGroup(), _buildInlineGroup()]
               : [
                   for (FormatusAction action in widget.actions)
                     _FormatusButton(
@@ -295,7 +291,11 @@ class _FormatusButton extends StatelessWidget {
     return (action.formatus == Formatus.gap)
         ? SizedBox(height: 8, width: 8)
         : IconButton(
-            color: (textColor == Colors.transparent) ? null : textColor,
+            color:
+                ((action.formatus == Formatus.color) &&
+                    (textColor != Colors.transparent))
+                ? textColor
+                : null,
             icon: action.icon,
             isSelected: isSelected,
             key: ValueKey<String>(action.formatus.name),
@@ -306,22 +306,6 @@ class _FormatusButton extends StatelessWidget {
           );
   }
 }
-
-final List<FormatusAction> formatusDefaultActions = [
-  FormatusAction(formatus: Formatus.header1),
-  FormatusAction(formatus: Formatus.header2),
-  FormatusAction(formatus: Formatus.header3),
-  FormatusAction(formatus: Formatus.paragraph),
-  FormatusAction(formatus: Formatus.unorderedList),
-  FormatusAction(formatus: Formatus.orderedList),
-  FormatusAction(formatus: Formatus.gap),
-  FormatusAction(formatus: Formatus.italic),
-  FormatusAction(formatus: Formatus.bold),
-  FormatusAction(formatus: Formatus.underline),
-  FormatusAction(formatus: Formatus.strikeThrough),
-  FormatusAction(formatus: Formatus.color),
-  anchorAction,
-];
 
 final ButtonStyle _formatusButtonStyle = ButtonStyle(
   //  iconSize: WidgetStateProperty.all(kMinInteractiveDimension * 0.7),

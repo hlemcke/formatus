@@ -4,8 +4,6 @@ import 'formatus_model.dart';
 import 'formatus_node.dart';
 
 class FormatusParser {
-  Formatus _listType = Formatus.noList;
-
   ///
   /// Cleanup given text by:
   ///

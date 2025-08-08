@@ -89,7 +89,13 @@ class _MyHomePageState extends State<MyHomePage> {
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       const Divider(color: Colors.deepPurpleAccent),
-      FormatusBar(controller: controller, textFieldFocus: _formatusFocus),
+      FormatusBar(
+        actions: formatusDefaultActions,
+        controller: controller,
+        onEditAnchor: (context, anchor) => _onEditAnchor(context, anchor),
+        onTapAnchor: (context, anchor) => _onTapAnchor(context, anchor),
+        textFieldFocus: _formatusFocus,
+      ),
       TextFormField(
         buildCounter:
             (
@@ -142,6 +148,26 @@ class _MyHomePageState extends State<MyHomePage> {
       setState(() => controller.formattedText = textTemplates[key]!);
     },
   );
+
+  Future<FormatusAnchor?> _onEditAnchor(
+    BuildContext context,
+    FormatusAnchor anchor,
+  ) => showAdaptiveDialog<FormatusAnchor>(
+    context: context,
+    builder: (BuildContext context) => AlertDialog(
+      title: Text('Select Anchor'),
+      content: TextField(decoration: InputDecoration(label: Text('URL'))),
+    ),
+  );
+
+  Future<void> _onTapAnchor(BuildContext context, FormatusAnchor anchor) =>
+      showAdaptiveDialog(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: Text('Display Anchor'),
+          content: Text('display media'),
+        ),
+      );
 }
 
 ///

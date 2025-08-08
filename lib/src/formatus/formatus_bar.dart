@@ -24,11 +24,7 @@ class FormatusAction {
   /// If `icon` and `style` are not provided then their values
   /// will be taken from `formatus`.
   ///
-  FormatusAction({
-    required this.formatus,
-    Widget? icon,
-    TextStyle? style,
-  }) {
+  FormatusAction({required this.formatus, Widget? icon, TextStyle? style}) {
     this.icon = icon ?? formatus.icon ?? SizedBox(height: 8, width: 8);
     this.style = style ?? formatus.style;
   }
@@ -37,12 +33,15 @@ class FormatusAction {
 }
 
 /// Signature for action `onEditAnchor`
-typedef AnchorEditor = Future<FormatusAnchor?> Function(
-    BuildContext context, FormatusAnchor anchorElement);
+typedef AnchorEditor =
+    Future<FormatusAnchor?> Function(
+      BuildContext context,
+      FormatusAnchor anchorElement,
+    );
 
 /// Signature for action `onTapAnchor`
-typedef AnchorActivity = Future<void> Function(
-    BuildContext context, FormatusAnchor anchorElement);
+typedef AnchorActivity =
+    Future<void> Function(BuildContext context, FormatusAnchor anchorElement);
 
 ///
 /// Actions to format text.
@@ -59,11 +58,10 @@ abstract class FormatusBar extends StatefulWidget {
   ///
   /// Supplying `null` for `actions` will use [formatusDefaultActions].
   ///
-  /// TODO `compactFormats` will bundle format actions by [DropdownMenu]s
-  ///
+  /// TODO `compactActions` will bundle format actions by [DropdownMenu]s
   /// TODO `onEditAnchor` to call a dialog to edit [FormatusAnchor]
-  ///
   /// TODO `onTapAnchor` to call function if anchor text is tapped
+  /// TODO `onSelectEmoji`
   ///
   factory FormatusBar({
     Key? key,
@@ -75,19 +73,34 @@ abstract class FormatusBar extends StatefulWidget {
     AnchorEditor? onEditAnchor,
     AnchorActivity? onTapAnchor,
     FocusNode? textFieldFocus,
-  }) =>
-      FormatusBarImpl(
-        key: key,
-        controller: controller as FormatusControllerImpl,
-        actions: actions,
-        alignment: alignment,
-        compactActions: compactActions,
-        direction: direction,
-        onEditAnchor: onEditAnchor,
-        onTapAnchor: onTapAnchor,
-        textFieldFocus: textFieldFocus,
-      );
+  }) => FormatusBarImpl(
+    key: key,
+    controller: controller as FormatusControllerImpl,
+    actions: actions,
+    alignment: alignment,
+    compactActions: compactActions,
+    direction: direction,
+    onEditAnchor: onEditAnchor,
+    onTapAnchor: onTapAnchor,
+    textFieldFocus: textFieldFocus,
+  );
 }
 
 /// Separately specified to put into expected position
 final FormatusAction anchorAction = FormatusAction(formatus: Formatus.anchor);
+
+final List<FormatusAction> formatusDefaultActions = [
+  FormatusAction(formatus: Formatus.header1),
+  FormatusAction(formatus: Formatus.header2),
+  FormatusAction(formatus: Formatus.header3),
+  FormatusAction(formatus: Formatus.paragraph),
+  FormatusAction(formatus: Formatus.unorderedList),
+  FormatusAction(formatus: Formatus.orderedList),
+  FormatusAction(formatus: Formatus.gap),
+  FormatusAction(formatus: Formatus.italic),
+  FormatusAction(formatus: Formatus.bold),
+  FormatusAction(formatus: Formatus.underline),
+  FormatusAction(formatus: Formatus.strikeThrough),
+  FormatusAction(formatus: Formatus.color),
+  anchorAction,
+];
