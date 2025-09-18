@@ -21,6 +21,11 @@ const Map<String, String> textTemplates = {
   <h3>Ordered List</h3>
   <ol><li>First item</li><li>Second entry</li></ol>
   ''',
+  'Anchor': '''
+  <h1>Anchors</h1>
+  <p>Anchor to <a href="www.dadjokes.org">dad jokes</a> ... nice</p>
+  <p>Another one to <a href="www.duckduckgo.com">Duck Duck Go</a> bla</p>
+  ''',
 };
 
 class MyApp extends StatelessWidget {
@@ -130,7 +135,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget _buildFormatusViewer() => Frame(
     label: 'FormatusViewer',
-    child: FormatusViewer(formattedText: controller.formattedText),
+    child: SingleChildScrollView(
+      child: SizedBox(
+        height: 100,
+        child: FormatusViewer(formattedText: controller.formattedText),
+      ),
+    ),
   );
 
   Widget _buildSavedText() =>
@@ -155,8 +165,32 @@ class _MyHomePageState extends State<MyHomePage> {
   ) => showAdaptiveDialog<FormatusAnchor>(
     context: context,
     builder: (BuildContext context) => AlertDialog(
-      title: Text('Select Anchor'),
-      content: TextField(decoration: InputDecoration(label: Text('URL'))),
+      title: Row(
+        children: [
+          IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context, anchor),
+          ),
+          Text('Edit Anchor'),
+          IconButton(
+            icon: Icon(Icons.delete_outline),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            decoration: InputDecoration(label: Text('Name')),
+            onChanged: (v) => anchor.name = v,
+          ),
+          TextField(
+            decoration: InputDecoration(label: Text('URL')),
+            onChanged: (v) => anchor.href = v,
+          ),
+        ],
+      ),
     ),
   );
 

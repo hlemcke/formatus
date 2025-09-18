@@ -183,14 +183,12 @@ class FormatusControllerImpl extends TextEditingController
   void _onListen() {
     //--- Immediate handling of full deletion
     if (text.isEmpty) {
-      // debugPrint('=== _onListen -> clear()');
       clear();
       return;
     }
 
     //--- Immediate handling of unmodified text but possible range change
     if (_prevNodeResults.plainText == text) {
-      // debugPrint('=== _onListen -> update selection');
       _updateSelection();
       return;
     }
@@ -202,9 +200,7 @@ class FormatusControllerImpl extends TextEditingController
       nextSelection: selection,
       nextText: text,
     );
-    debugPrint(
-      '=== _onListen [${selection.start},${selection.end}] => $deltaText',
-    );
+    // debugPrint('=== _onListen => $deltaText');
 
     //--- Replace all line-break in pasted text by single space
     // TODO transform pasted line-breaks to separate sections
@@ -343,10 +339,10 @@ class DeltaText {
 
   @override
   String toString() => isAll
-      ? '${type.name} at all => plus="${textAdded.replaceAll('\n', '\\n')}"'
+      ? '${type.name} at all => added: "${textAdded.replaceAll('\n', '\\n')}"'
       : '${type.name} [$_headLength..${_prevLength - _tailLength}]'
-            ' => ${textAdded.isEmpty ? '' : 'plus="${textAdded.replaceAll('\n', '\\n')}"'}'
-            '${textRemoved.isEmpty ? '' : ' removed="${textRemoved.replaceAll('\n', '\\n')}"'}';
+            ' => ${textAdded.isEmpty ? '' : 'added: "${textAdded.replaceAll('\n', '\\n')}"'}'
+            '${textRemoved.isEmpty ? '' : 'removed: "${textRemoved.replaceAll('\n', '\\n')}"'}';
 }
 
 enum DeltaTextType { delete, insert, none, update }

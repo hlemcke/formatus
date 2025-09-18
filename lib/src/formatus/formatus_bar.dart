@@ -32,16 +32,16 @@ class FormatusAction {
   bool get isSection => formatus.isSection;
 }
 
-/// Signature for action `onEditAnchor`
+/// Signature for callback `onEditAnchor`
 typedef AnchorEditor =
     Future<FormatusAnchor?> Function(
       BuildContext context,
-      FormatusAnchor anchorElement,
+      FormatusAnchor anchor,
     );
 
-/// Signature for action `onTapAnchor`
+/// Signature for callback `onTapAnchor`
 typedef AnchorActivity =
-    Future<void> Function(BuildContext context, FormatusAnchor anchorElement);
+    Future<void> Function(BuildContext context, FormatusAnchor anchor);
 
 ///
 /// Actions to format text.
@@ -58,7 +58,7 @@ abstract class FormatusBar extends StatefulWidget {
   ///
   /// Supplying `null` for `actions` will use [formatusDefaultActions].
   ///
-  /// TODO `compactActions` will bundle format actions by [DropdownMenu]s
+  /// TODO `condenseActions` will bundle format actions by [DropdownMenu]s
   /// TODO `onEditAnchor` to call a dialog to edit [FormatusAnchor]
   /// TODO `onTapAnchor` to call function if anchor text is tapped
   /// TODO `onSelectEmoji`
@@ -68,7 +68,7 @@ abstract class FormatusBar extends StatefulWidget {
     required FormatusController controller,
     List<FormatusAction>? actions,
     WrapAlignment alignment = WrapAlignment.start,
-    bool compactActions = false,
+    bool condenseActions = false,
     Axis direction = Axis.horizontal,
     AnchorEditor? onEditAnchor,
     AnchorActivity? onTapAnchor,
@@ -78,7 +78,7 @@ abstract class FormatusBar extends StatefulWidget {
     controller: controller as FormatusControllerImpl,
     actions: actions,
     alignment: alignment,
-    compactActions: compactActions,
+    compactActions: condenseActions,
     direction: direction,
     onEditAnchor: onEditAnchor,
     onTapAnchor: onTapAnchor,

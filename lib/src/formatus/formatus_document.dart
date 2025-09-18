@@ -308,8 +308,7 @@ class FormatusDocument {
     if (metaStart.nodeIndex == metaEnd.nodeIndex) {
       FormatusNode node = metaStart.node;
       //--- Insert with different format
-      if (deltaText.isInsert &&
-          !node.hasSameFormats(formats, attribute, color)) {
+      if (deltaText.isInsert && node.isDifferent(formats, color)) {
         FormatusNode newNode = FormatusNode(
           attribute: attribute,
           color: color,

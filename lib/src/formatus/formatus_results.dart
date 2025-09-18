@@ -93,6 +93,9 @@ class FormatusResults {
     }
     if (node.isNotLineBreak) {
       formattedText += '<${resultNode.formatus.key}';
+      if (resultNode.formatus == Formatus.anchor) {
+        formattedText += ' '; // space between "<a"
+      }
       if (i + 1 == node.formats.length) {
         formattedText += node.attribute;
         formattedText += node.hasColor
@@ -115,7 +118,9 @@ class FormatusResults {
     List<_ResultNode> path,
     List<TextSpan> sections,
   ) {
-    if (node.isSubscript) {
+    if (node.isAnchor) {
+      return _appendSpanAnchor(path, node);
+    } else if (node.isSubscript) {
       return _appendSpanSubscript(path, node, forViewer);
     } else if (node.isSuperscript) {
       return _appendSpanSuperscript(path, node, forViewer);
@@ -126,6 +131,11 @@ class FormatusResults {
     } else if (node.isNotLineBreak) {
       listItemNumber = -1;
     }
+    path.last.spans.add(TextSpan(text: node.text));
+  }
+
+  void _appendSpanAnchor(List<_ResultNode> path, FormatusNode node) {
+    // path.last.spans.add(WidgetSpan(child: Text(node.text)));
     path.last.spans.add(TextSpan(text: node.text));
   }
 

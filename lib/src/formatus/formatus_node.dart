@@ -73,21 +73,16 @@ class FormatusNode {
   /// Returns `true` if last format requires an attribute
   bool get hasAttribute => attribute.isNotEmpty;
 
-  /// Returns `true` if `otherFormats` are the same formats
-  /// and both `otherAttribute` and `otherColor` are equal to this one
-  bool hasSameFormats(
-    Set<Formatus> otherFormats,
-    String otherAttribute,
-    Color otherColor,
-  ) =>
-      (formats.length == otherFormats.length) &&
-      formats.toSet().difference(otherFormats).isEmpty &&
-      attribute == otherAttribute &&
-      color == otherColor;
+  /// Returns `true` if `otherFormats` or `otherColor` is different
+  bool isDifferent(Set<Formatus> otherFormats, Color otherColor) =>
+      (formats.length != otherFormats.length) ||
+      formats.toSet().difference(otherFormats).isNotEmpty ||
+      color != otherColor;
 
-  /// Returns `true` if `other` has same formats and attribute
+  /// Returns `true` if `other` has same formats, attribute and color
   bool isSimilar(FormatusNode other) =>
-      hasSameFormats(other.formats.toSet(), other.attribute, other.color);
+      !isDifferent(other.formats.toSet(), other.color) &&
+      (attribute == other.attribute);
 
   /// Returns `true` if this node has a color
   bool get hasColor => formats.contains(Formatus.color);
