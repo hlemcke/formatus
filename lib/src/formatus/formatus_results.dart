@@ -7,10 +7,12 @@ import 'formatus_node.dart';
 /// Results to update formatted text and [TextField]
 ///
 class FormatusResults {
+  static const String lineFeed = '\n';
   String formattedText = '';
 
   /// -1 = no list, 0 = unordered, > 0 ordered
   int listItemNumber = -1;
+  bool isListItem = false;
   String plainText = '';
   TextSpan textSpan = TextSpan(text: '');
 
@@ -31,17 +33,22 @@ class FormatusResults {
   void build(List<FormatusNode> textNodes, bool forViewer) {
     List<_ResultNode> path = [];
     List<TextSpan> sections = [];
+    int indexToLastEqualFormat = -1;
 
     //--- Loop text nodes
     for (int nodeIndex = 0; nodeIndex < textNodes.length; nodeIndex++) {
       FormatusNode node = textNodes[nodeIndex];
-      int indexToLastEqualFormat = _indexToLastEqualFormat(path, node);
+      indexToLastEqualFormat = _indexToLastEqualFormat(path, node);
 
-      //--- If linebreak and next one is also <ol> or <ul> then only close <li>
-      if (node.isLineBreak &&
-          nodeIndex < textNodes.length - 1 &&
-          textNodes[nodeIndex + 1].section.isList) {
-        indexToLastEqualFormat = 0;
+      //--- start handling line break
+      if (node.isLineBreak) {
+        //--- If next one is also <ol> or <ul> then only close <li>
+        if ((textNodes[nodeIndex - 1].section ==
+                textNodes[nodeIndex + 1].section) &&
+            textNodes[nodeIndex + 1].isList) {
+          indexToLastEqualFormat = 0;
+          isListItem = false; // reached </ul>
+        }
       }
       // --- Same node => append text to previous one and remove this one
       else if (_appendTextToPreviousNodeIfEqual(
@@ -59,21 +66,22 @@ class FormatusResults {
         _removeLastPathEntry(path, sections);
       }
 
+      if (indexToLastEqualFormat < 0) {
+        listItemNumber = -1;
+        isListItem = false;
+      }
+
       // --- append additional node formats to path
       for (int i = indexToLastEqualFormat + 1; i < node.formats.length; i++) {
         _appendNodeFormatToPath(path, node, i);
       }
 
       //--- Append [InlineSpan] according to texts typography
-      _appendSpan(node, forViewer, path, sections);
+      _appendSpan(node, forViewer, path);
       formattedText += node.isLineBreak ? '' : node.text;
-      plainText += (listItemNumber >= 0) ? ' ${node.text}' : node.text;
-      // plainText += (listItemNumber == 0)
-      //     ? '\u2022 ${node.text}'
-      //     : (listItemNumber > 0)
-      //     ? '$listItemNumber. ${node.text}'
-      //     : node.text;
+      plainText += node.text;
     }
+
     // --- remove and close trailing path entries
     while (path.isNotEmpty) {
       _removeLastPathEntry(path, sections);
@@ -114,24 +122,19 @@ class FormatusResults {
   ///
   /// TODO change this when Flutter supports subscript and superscript in [TextSpan]
   ///
-  void _appendSpan(
-    FormatusNode node,
-    bool forViewer,
-    List<_ResultNode> path,
-    List<TextSpan> sections,
-  ) {
+  void _appendSpan(FormatusNode node, bool forViewer, List<_ResultNode> path) {
     if (node.isAnchor) {
       return _appendSpanAnchor(path, node);
     } else if (node.isSubscript) {
       return _appendSpanSubscript(path, node, forViewer);
     } else if (node.isSuperscript) {
       return _appendSpanSuperscript(path, node, forViewer);
-    } else if (node.section == Formatus.orderedList) {
-      return _appendSpanOrdered(path, node);
-    } else if (node.section == Formatus.unorderedList) {
-      return _appendSpanUnordered(path, node);
-    } else if (node.isNotLineBreak) {
-      listItemNumber = -1;
+    } else if (node.isList && !isListItem) {
+      isListItem = true;
+      plainText += ' ';
+      return (node.section == Formatus.orderedList)
+          ? _appendSpanOrdered(path, node)
+          : _appendSpanUnordered(path, node);
     }
     path.last.spans.add(TextSpan(text: node.text));
   }

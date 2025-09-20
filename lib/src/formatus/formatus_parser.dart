@@ -19,7 +19,7 @@ class FormatusParser {
       .replaceAll('  ', ' ');
 
   ///
-  /// Parses `formatted` text and returns list of text-nodes
+  /// Parses `formatted` text and returns list of [FormatusNode]
   ///
   List<FormatusNode> parse(String formatted) {
     formatted = cleanUpFormatted(formatted);

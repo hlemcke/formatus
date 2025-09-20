@@ -435,7 +435,9 @@ class FormatusDocument {
     int cursorIndex = deltaText.prevSelection.start;
     NodeMeta meta = computeMeta(cursorIndex);
     FormatusNode newNode = FormatusNode(
-      formats: [Formatus.paragraph],
+      formats: meta.node.isList
+          ? [meta.node.section, Formatus.listItem]
+          : [Formatus.paragraph],
       text: '',
     );
 
@@ -451,7 +453,8 @@ class FormatusDocument {
       // debugPrint('insert line break at end of section -> $meta');
       textNodes.insert(meta.nodeIndex + 1, FormatusNode.lineBreak);
       textNodes.insert(meta.nodeIndex + 2, newNode);
-    } else if (results.plainText[cursorIndex - 1] == '\n') {
+    } else if ((results.plainText[cursorIndex - 1] == '\n') ||
+        (meta.node.isList && results.plainText[cursorIndex - 2] == '\n')) {
       // debugPrint('insert line break in front of section -> $meta');
       textNodes.insert(meta.nodeIndex, FormatusNode.lineBreak);
       textNodes.insert(meta.nodeIndex, newNode);

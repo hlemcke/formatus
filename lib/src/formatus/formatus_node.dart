@@ -117,7 +117,7 @@ class FormatusNode {
     String str = formats.map((f) => f.key).toList().join(' - ');
     str += hasColor ? ' "style="color: #${hexFromColor(color)};">' : '';
     str += hasAttribute ? ' $attribute' : '';
-    return '$str : "$text"';
+    return '$str "$text"';
   }
 }
 
