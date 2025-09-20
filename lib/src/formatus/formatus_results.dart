@@ -54,7 +54,7 @@ class FormatusResults {
         continue;
       }
 
-      // --- close and remove trailing path entries
+      // --- remove and close trailing path entries
       while (path.length - 1 > indexToLastEqualFormat) {
         _removeLastPathEntry(path, sections);
       }
@@ -67,11 +67,12 @@ class FormatusResults {
       //--- Append [InlineSpan] according to texts typography
       _appendSpan(node, forViewer, path, sections);
       formattedText += node.isLineBreak ? '' : node.text;
-      plainText += (listItemNumber == 0)
-          ? '\u2022 ${node.text}'
-          : (listItemNumber > 0)
-          ? '$listItemNumber. ${node.text}'
-          : node.text;
+      plainText += (listItemNumber >= 0) ? ' ${node.text}' : node.text;
+      // plainText += (listItemNumber == 0)
+      //     ? '\u2022 ${node.text}'
+      //     : (listItemNumber > 0)
+      //     ? '$listItemNumber. ${node.text}'
+      //     : node.text;
     }
     // --- remove and close trailing path entries
     while (path.isNotEmpty) {
@@ -81,6 +82,7 @@ class FormatusResults {
     textSpan = TextSpan(children: sections, style: Formatus.root.style);
   }
 
+  /// Appends format of [node] to [path] and extends `formattedText`
   void _appendNodeFormatToPath(
     List<_ResultNode> path,
     FormatusNode node,
@@ -218,6 +220,8 @@ class FormatusResults {
     return true;
   }
 
+  /// Computes index into [path] of last equal format.
+  /// Returns -1 if even the section has changed
   int _indexToLastEqualFormat(List<_ResultNode> path, FormatusNode node) {
     if (node.isLineBreak) return -1;
     int i = 0;

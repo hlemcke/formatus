@@ -73,28 +73,31 @@ class FormatusNode {
   /// Returns `true` if last format requires an attribute
   bool get hasAttribute => attribute.isNotEmpty;
 
-  /// Returns `true` if `otherFormats` or `otherColor` is different
-  bool isDifferent(Set<Formatus> otherFormats, Color otherColor) =>
-      (formats.length != otherFormats.length) ||
-      formats.toSet().difference(otherFormats).isNotEmpty ||
-      color != otherColor;
-
-  /// Returns `true` if `other` has same formats, attribute and color
-  bool isSimilar(FormatusNode other) =>
-      !isDifferent(other.formats.toSet(), other.color) &&
-      (attribute == other.attribute);
-
   /// Returns `true` if this node has a color
   bool get hasColor => formats.contains(Formatus.color);
 
   /// Returns `true` if last format is anchor
   bool get isAnchor => formats.last == Formatus.anchor;
 
+  /// Returns `true` if `otherFormats` or `otherColor` is different
+  bool isDifferent(Set<Formatus> otherFormats, Color otherColor) =>
+      (formats.length != otherFormats.length) ||
+      formats.toSet().difference(otherFormats).isNotEmpty ||
+      color != otherColor;
+
   /// Returns `true` if this is a line-break between two sections
   bool get isLineBreak => formats[0] == Formatus.lineBreak;
 
   /// Returns `true` for all nodes except line-break
   bool get isNotLineBreak => !isLineBreak;
+
+  /// Returns `true` if this is a list node
+  bool get isList => formats[0].isList;
+
+  /// Returns `true` if `other` has same formats, attribute and color
+  bool isSimilar(FormatusNode other) =>
+      !isDifferent(other.formats.toSet(), other.color) &&
+      (attribute == other.attribute);
 
   /// Returns `true` if this nodes text is formatted as subscript
   bool get isSubscript => formats.contains(Formatus.subscript);
@@ -111,11 +114,10 @@ class FormatusNode {
   ///
   @override
   String toString() {
-    List<String> tags = formats.map((e) => '<${e.key}').toList();
-    String str = tags.join('>');
+    String str = formats.map((f) => f.key).toList().join(' - ');
     str += hasColor ? ' "style="color: #${hexFromColor(color)};">' : '';
     str += hasAttribute ? ' $attribute' : '';
-    return '$str -> "$text"';
+    return '$str : "$text"';
   }
 }
 
@@ -139,5 +141,5 @@ class NodeMeta {
   int textOffset = -1;
 
   @override
-  String toString() => '[$nodeIndex] $textBegin + $textOffset -> $node';
+  String toString() => 'NodeMeta[$nodeIndex] $textBegin + $textOffset -> $node';
 }

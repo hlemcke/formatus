@@ -53,7 +53,7 @@ class FormatusControllerImpl extends TextEditingController
         : null;
   }
 
-  /// Inserts or updates anchor at cursor position. Deletes it if `null`
+  /// Inserts or updates anchor at cursor position. Deletes it if empty
   set anchorAtCursor(FormatusAnchor? anchor) {
     NodeMeta meta = document.computeMeta(selection.baseOffset);
     FormatusNode node = meta.node;
@@ -200,7 +200,7 @@ class FormatusControllerImpl extends TextEditingController
       nextSelection: selection,
       nextText: text,
     );
-    // debugPrint('=== _onListen => $deltaText');
+    debugPrint('=== _onListen => $deltaText');
 
     //--- Replace all line-break in pasted text by single space
     // TODO transform pasted line-breaks to separate sections
@@ -232,13 +232,35 @@ class FormatusControllerImpl extends TextEditingController
     _updateSelection();
   }
 
+  /// Handle cursor position and selection
   void _updateSelection() {
+    NodeMeta meta = document.computeMeta(selection.baseOffset);
+    selectedColor = meta.node.color;
+
+    //--- Update previous selection (clone it)
+    int prevStart = _prevSelection.baseOffset;
     _prevSelection = TextSelection(
       baseOffset: selection.baseOffset,
       extentOffset: selection.extentOffset,
     );
-    NodeMeta meta = document.computeMeta(selection.baseOffset);
-    selectedColor = meta.node.color;
+
+    debugPrint(
+      '_updateSelection prev=$prevStart base=${selection.baseOffset} $meta',
+    );
+
+    //--- Cursor positioned in front of lists WidgetSpan
+    if (meta.node.isList && (selection.baseOffset < meta.textBegin)) {
+      int delta = (selection.baseOffset < 0)
+          ? 2
+          : (prevStart > selection.baseOffset)
+          ? 1
+          : -1;
+      int offset = selection.baseOffset + delta;
+      debugPrint(
+        '_updateSelection $meta cursor: ${selection.baseOffset} -> $offset',
+      );
+      super.selection = TextSelection(baseOffset: offset, extentOffset: offset);
+    }
   }
 }
 
@@ -342,7 +364,7 @@ class DeltaText {
       ? '${type.name} at all => added: "${textAdded.replaceAll('\n', '\\n')}"'
       : '${type.name} [$_headLength..${_prevLength - _tailLength}]'
             ' => ${textAdded.isEmpty ? '' : 'added: "${textAdded.replaceAll('\n', '\\n')}"'}'
-            '${textRemoved.isEmpty ? '' : 'removed: "${textRemoved.replaceAll('\n', '\\n')}"'}';
+            '${textRemoved.isEmpty ? '' : ' removed: "${textRemoved.replaceAll('\n', '\\n')}"'}';
 }
 
 enum DeltaTextType { delete, insert, none, update }

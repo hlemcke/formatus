@@ -251,7 +251,13 @@ class FormatusAnchor {
 
   FormatusAnchor({this.href = '', this.name = ''});
 
-  String toHtml() => '<href="$href">$name</a>';
+  FormatusAnchor clear() {
+    href = '';
+    name = '';
+    return this;
+  }
+
+  String toHtml() => '\u{003c}a href="$href">$name</a>';
 
   @override
   String toString() => toHtml();

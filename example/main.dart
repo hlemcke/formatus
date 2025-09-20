@@ -6,11 +6,11 @@ void main() {
   runApp(const MyApp());
 }
 
-const String initialTemplateKey = 'Long';
+const String initialTemplateKey = 'Lists';
 const Map<String, String> textTemplates = {
   'Empty': '',
   'Short': '<p><color 0xFF0000ff>Blue</> with <b>bold</> words</>',
-  initialTemplateKey: '''
+  'Long': '''
 <h1>Formatus Features</h1>
 <h2>Text with <b>bold</b>, <i>italic</i> and <u>underlined</u> words</h2>.
 <p>Third line <i>contains <s>nested</s> and</i> <u>under<b>line</b>d</u> text.</p>
@@ -23,8 +23,8 @@ const Map<String, String> textTemplates = {
   ''',
   'Anchor': '''
   <h1>Anchors</h1>
-  <p>Anchor to <a href="www.dadjokes.org">dad jokes</a> ... nice</p>
-  <p>Another one to <a href="www.duckduckgo.com">Duck Duck Go</a> bla</p>
+  <p>Anchor to <a href="https://icanhazdadjoke.com">dad jokes</a> is funny.</p>
+  <p>Another one to <a href="https://www.duckduckgo.com">Duck Duck Go</a> search</p>
   ''',
 };
 
@@ -137,7 +137,7 @@ class _MyHomePageState extends State<MyHomePage> {
     label: 'FormatusViewer',
     child: SingleChildScrollView(
       child: SizedBox(
-        height: 100,
+        height: 150,
         child: FormatusViewer(formattedText: controller.formattedText),
       ),
     ),
@@ -171,10 +171,10 @@ class _MyHomePageState extends State<MyHomePage> {
             icon: Icon(Icons.arrow_back),
             onPressed: () => Navigator.pop(context, anchor),
           ),
-          Text('Edit Anchor'),
+          Text(anchor.name.isEmpty ? 'Create Anchor' : 'Edit Anchor'),
           IconButton(
             icon: Icon(Icons.delete_outline),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(context, anchor.clear()),
           ),
         ],
       ),

@@ -191,7 +191,7 @@ class _FormatusBarState extends State<FormatusBarImpl> {
       context,
       anchorAtCursor ?? FormatusAnchor(),
     );
-    // debugPrint('Anchor = $result');
+    debugPrint('Anchor = $result');
     widget.controller.anchorAtCursor = result;
   }
 

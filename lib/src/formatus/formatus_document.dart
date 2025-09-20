@@ -183,7 +183,7 @@ class FormatusDocument {
     return NodeMeta()
       ..node = textNodes[nodeIndex]
       ..nodeIndex = nodeIndex
-      ..textBegin = charCount
+      ..textBegin = charCount + listPrefixes
       ..textOffset = textOffset;
   }
 
