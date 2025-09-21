@@ -48,7 +48,7 @@ class FormatusDocument {
   }) {
     FormatusDocument doc = FormatusDocument._();
     doc.forViewer = forViewer;
-    doc.textNodes = FormatusParser().parse(formatted);
+    doc.textNodes = FormatusParser(formatted: formatted).parse();
     doc.computeResults();
     return doc;
   }
@@ -170,7 +170,7 @@ class FormatusDocument {
     // d) last char of this node is a space
     int textOffset = charIndex - (charCount + listPrefixes);
     FormatusNode node = textNodes[nodeIndex];
-    if (node.isLineBreak ||
+    if (node.isLineFeed ||
         ((nodeIndex < textNodes.length - 1) &&
             node.section == textNodes[nodeIndex + 1].section &&
             (node.length == textOffset) &&
@@ -434,12 +434,12 @@ class FormatusDocument {
   void _handleLineBreakInsert(DeltaText deltaText) {
     int cursorIndex = deltaText.prevSelection.start;
     NodeMeta meta = computeMeta(cursorIndex);
-    FormatusNode newNode = FormatusNode(
-      formats: meta.node.isList
-          ? [meta.node.section, Formatus.listItem]
-          : [Formatus.paragraph],
-      text: '',
-    );
+    FormatusNode newNode = meta.node.isList
+        ? FormatusNode(
+            formats: [meta.node.section, Formatus.listItem],
+            text: ' ',
+          )
+        : FormatusNode(formats: [Formatus.paragraph], text: '');
 
     if (deltaText.isAtStart) {
       // debugPrint('insert line break at start or end of section -> $meta');
@@ -490,7 +490,7 @@ class FormatusDocument {
     Formatus currentSection = textNodes[nodeIndex].formats[0];
     for (
       int i = nodeIndex + 1;
-      i < textNodes.length && textNodes[i].isNotLineBreak;
+      i < textNodes.length && textNodes[i].isNotLineFeed;
       i++
     ) {
       textNodes[i].formats[0] = currentSection;

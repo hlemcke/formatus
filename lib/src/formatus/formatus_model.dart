@@ -98,8 +98,8 @@ enum Formatus {
     ),
   ),
 
-  /// Line-breaks are automatically inserted between sections
-  lineBreak('', FormatusType.section, null, null),
+  /// Linefeed are automatically inserted between sections
+  lineFeed('', FormatusType.section, null, null),
 
   /// Item of an ordered or unordered list
   listItem('li', FormatusType.none, null, null),

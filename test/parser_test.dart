@@ -6,15 +6,15 @@ import 'package:formatus/src/formatus/formatus_node.dart';
 import 'package:formatus/src/formatus/formatus_parser.dart';
 
 void main() {
-  group('ParserTests', () {
+  group('Parser: Single Section tests', () {
     //---
     test('parse single section', () {
       //--- given
       String formatted = '<h1>some text</h1>';
-      FormatusParser parser = FormatusParser();
+      FormatusParser parser = FormatusParser(formatted: formatted);
 
       //--- when
-      List<FormatusNode> nodes = parser.parse(formatted);
+      List<FormatusNode> nodes = parser.parse();
 
       //--- then
       expect(nodes.length, 1);
@@ -27,10 +27,10 @@ void main() {
       //--- given
       String formatted =
           '<h1>Formatus <b>Features</b> with <i>italic</i> words</h1>';
-      FormatusParser parser = FormatusParser();
+      FormatusParser parser = FormatusParser(formatted: formatted);
 
       //--- when
-      List<FormatusNode> nodes = parser.parse(formatted);
+      List<FormatusNode> nodes = parser.parse();
 
       //--- then
       expect(nodes.length, 5);
@@ -50,16 +50,16 @@ void main() {
     test('parse two sections without inlines', () {
       //--- given
       String formatted = '<h1>Formatus</h1><h2>Features</h2>';
-      FormatusParser parser = FormatusParser();
+      FormatusParser parser = FormatusParser(formatted: formatted);
 
       //--- when
-      List<FormatusNode> nodes = parser.parse(formatted);
+      List<FormatusNode> nodes = parser.parse();
 
       //--- then
       expect(nodes.length, 3);
       expect(nodes[0].formats, [Formatus.header1]);
       expect(nodes[0].text, 'Formatus');
-      expect(nodes[1].isLineBreak, true);
+      expect(nodes[1].isLineFeed, true);
       expect(nodes[2].formats, [Formatus.header2]);
       expect(nodes[2].text, 'Features');
     });
@@ -70,21 +70,21 @@ void main() {
       String formatted = '''<h1>Formatus</h1>
       <h2>Features <u>underline</u></h2>
       <p>Line 3 with <b>bold and <i>nested</i></b> words</p>''';
-      FormatusParser parser = FormatusParser();
+      FormatusParser parser = FormatusParser(formatted: formatted);
 
       //--- when
-      List<FormatusNode> nodes = parser.parse(formatted);
+      List<FormatusNode> nodes = parser.parse();
 
       //--- then
       expect(nodes.length, 9);
       expect(nodes[0].formats, [Formatus.header1]);
       expect(nodes[0].text, 'Formatus');
-      expect(nodes[1].isLineBreak, true);
+      expect(nodes[1].isLineFeed, true);
       expect(nodes[2].formats, [Formatus.header2]);
       expect(nodes[2].text, 'Features ');
       expect(nodes[3].formats, [Formatus.header2, Formatus.underline]);
       expect(nodes[3].text, 'underline');
-      expect(nodes[4].isLineBreak, true);
+      expect(nodes[4].isLineFeed, true);
       expect(nodes[5].formats, [Formatus.paragraph]);
       expect(nodes[5].text, 'Line 3 with ');
       expect(nodes[6].formats, [Formatus.paragraph, Formatus.bold]);
@@ -104,10 +104,10 @@ void main() {
       //--- given
       String formatted = '''<h1>abc<b> def<u> ghi</u></b><i> jkl</i> mno</h1>
       <p><b>pqr </b>stu</p>''';
-      FormatusParser parser = FormatusParser();
+      FormatusParser parser = FormatusParser(formatted: formatted);
 
       //--- when
-      List<FormatusNode> nodes = parser.parse(formatted);
+      List<FormatusNode> nodes = parser.parse();
 
       //--- then
       expect(nodes.length, 8);
@@ -125,7 +125,7 @@ void main() {
       expect(nodes[3].text, ' jkl');
       expect(nodes[4].formats, [Formatus.header1]);
       expect(nodes[4].text, ' mno');
-      expect(nodes[5].isLineBreak, true);
+      expect(nodes[5].isLineFeed, true);
       expect(nodes[6].formats, [Formatus.paragraph, Formatus.bold]);
       expect(nodes[6].text, 'pqr ');
       expect(nodes[7].formats, [Formatus.paragraph]);
@@ -137,10 +137,10 @@ void main() {
       //--- given
       String blueDiv = '<div style="color: #FF0000ff">';
       String formatted = '<p>abc ${blueDiv}def</div></p>';
-      FormatusParser parser = FormatusParser();
+      FormatusParser parser = FormatusParser(formatted: formatted);
 
       //--- when
-      List<FormatusNode> nodes = parser.parse(formatted);
+      List<FormatusNode> nodes = parser.parse();
 
       //--- then
       expect(nodes.length, 2);
@@ -156,10 +156,10 @@ void main() {
       //--- given
       String blueDiv = '<color 0xFF0000ff>';
       String formatted = '<p>abc ${blueDiv}def</color></p>';
-      FormatusParser parser = FormatusParser();
+      FormatusParser parser = FormatusParser(formatted: formatted);
 
       //--- when
-      List<FormatusNode> nodes = parser.parse(formatted);
+      List<FormatusNode> nodes = parser.parse();
 
       //--- then
       expect(nodes.length, 2);
@@ -174,10 +174,10 @@ void main() {
     test('parse subscript', () {
       //--- given
       String formatted = '<p>abc <sub>def</sub> ghi</p>';
-      FormatusParser parser = FormatusParser();
+      FormatusParser parser = FormatusParser(formatted: formatted);
 
       //--- when
-      List<FormatusNode> nodes = parser.parse(formatted);
+      List<FormatusNode> nodes = parser.parse();
 
       //--- then
       expect(nodes.length, 3);
@@ -193,10 +193,10 @@ void main() {
     test('parse superscript at start', () {
       //--- given
       String formatted = '<p><super>abc</super> def</p>';
-      FormatusParser parser = FormatusParser();
+      FormatusParser parser = FormatusParser(formatted: formatted);
 
       //--- when
-      List<FormatusNode> nodes = parser.parse(formatted);
+      List<FormatusNode> nodes = parser.parse();
 
       //--- then
       expect(nodes.length, 2);
@@ -210,10 +210,10 @@ void main() {
     test('parse superscript in second inline', () {
       //--- given
       String formatted = '<p>abc <super>def</super> ghi</p>';
-      FormatusParser parser = FormatusParser();
+      FormatusParser parser = FormatusParser(formatted: formatted);
 
       //--- when
-      List<FormatusNode> nodes = parser.parse(formatted);
+      List<FormatusNode> nodes = parser.parse();
 
       //--- then
       expect(nodes.length, 3);
@@ -233,17 +233,17 @@ void main() {
 <h2>Text with <b>bold</b>, <i>italic</i> and <u>underlined</u> words</h2>.
 <p>Third line <i>contains <s>nested</s> and</i> <u>under<b>line</b>d</u> text.</p>
 ''';
-      FormatusParser parser = FormatusParser();
+      FormatusParser parser = FormatusParser(formatted: formatted);
 
       //--- when
-      List<FormatusNode> nodes = parser.parse(formatted);
+      List<FormatusNode> nodes = parser.parse();
 
       //--- then
       int i = 0;
       expect(nodes.length, 19);
       expect(nodes[i].formats, [Formatus.header1]);
       expect(nodes[i++].text, 'Formatus Features');
-      expect(nodes[i++].isLineBreak, true);
+      expect(nodes[i++].isLineFeed, true);
       expect(nodes[i].formats, [Formatus.header2]);
       expect(nodes[i++].text, 'Text with ');
       expect(nodes[i].formats, [Formatus.header2, Formatus.bold]);
@@ -254,48 +254,105 @@ void main() {
     });
   });
 
-  //---
-  test('parse unordered list with 2 elements', () {
-    //--- given
-    String formatted = '''
-<p>Text with unordered list</p>
-<ul><li>First element</li><li>Second element</li></ul>
-''';
-    FormatusParser parser = FormatusParser();
+  group('Parser: List tests', () {
+    //---
+    test('Parse ol with one item', () {
+      //--- given
+      String formatted = '<ol><li>Single element</li></ol>';
+      FormatusParser parser = FormatusParser(formatted: formatted);
 
-    //--- when
-    List<FormatusNode> nodes = parser.parse(formatted);
+      //--- when
+      List<FormatusNode> nodes = parser.parse();
 
-    //--- then
-    expect(nodes.length, 5);
-    expect(nodes[0].formats, [Formatus.paragraph]);
-    expect(nodes[0].text, 'Text with unordered list');
-    expect(nodes[2].formats, [Formatus.unorderedList, Formatus.listItem]);
-    expect(nodes[2].text, 'First element');
-    expect(nodes[4].formats, [Formatus.unorderedList, Formatus.listItem]);
-    expect(nodes[4].text, 'Second element');
-  });
+      //--- then
+      expect(nodes.length, 1);
+      expect(nodes[0].formats, [Formatus.orderedList]);
+      expect(nodes[0].text, 'Single element');
+    });
 
-  //---
-  test('parse ordered list with one element', () {
-    //--- given
-    String formatted = '''
-<p>Text with ordered list</p>
-<ol><li>Single element</li></ol>
-<p>... more text</p>
-''';
-    FormatusParser parser = FormatusParser();
+    //---
+    test('Parse ul with 2 items', () {
+      //--- given
+      String formatted = '<ul><li>First</li><li>Second</li></ul>';
 
-    //--- when
-    List<FormatusNode> nodes = parser.parse(formatted);
+      //--- when
+      FormatusParser parser = FormatusParser(formatted: formatted);
+      List<FormatusNode> nodes = parser.parse();
 
-    //--- then
-    expect(nodes.length, 5);
-    expect(nodes[0].formats, [Formatus.paragraph]);
-    expect(nodes[0].text, 'Text with ordered list');
-    expect(nodes[2].formats, [Formatus.orderedList, Formatus.listItem]);
-    expect(nodes[2].text, 'Single element');
-    expect(nodes[4].formats, [Formatus.paragraph]);
-    expect(nodes[4].text, '... more text');
+      //--- then
+      expect(nodes.length, 3);
+      expect(nodes[0].formats, [Formatus.unorderedList]);
+      expect(nodes[0].text, 'First');
+      expect(nodes[1].formats, [Formatus.lineFeed]);
+      expect(nodes[2].formats, [Formatus.unorderedList]);
+      expect(nodes[2].text, 'Second');
+    });
+
+    //---
+    test('Parse ol with two items prefixed with H1', () {
+      //--- given
+      String formatted = '<h1>Title</h1><ol><li>First</li><li>Second</li></ol>';
+
+      //--- when
+      FormatusParser parser = FormatusParser(formatted: formatted);
+      List<FormatusNode> nodes = parser.parse();
+
+      //--- then
+      expect(nodes.length, 5);
+      expect(nodes[0].formats, [Formatus.header1]);
+      expect(nodes[0].text, 'Title');
+      expect(nodes[1].formats, [Formatus.lineFeed]);
+      expect(nodes[2].formats, [Formatus.orderedList]);
+      expect(nodes[2].text, 'First');
+      expect(nodes[3].formats, [Formatus.lineFeed]);
+      expect(nodes[4].formats, [Formatus.orderedList]);
+      expect(nodes[4].text, 'Second');
+    });
+
+    //---
+    test('Parse ul with two items suffixed with P', () {
+      //--- given
+      String formatted = '<ul><li>First</li><li>Second</li></ul><p>para</p>';
+
+      //--- when
+      FormatusParser parser = FormatusParser(formatted: formatted);
+      List<FormatusNode> nodes = parser.parse();
+
+      //--- then
+      expect(nodes.length, 5);
+      expect(nodes[0].formats, [Formatus.unorderedList]);
+      expect(nodes[0].text, 'First');
+      expect(nodes[1].formats, [Formatus.lineFeed]);
+      expect(nodes[2].formats, [Formatus.unorderedList]);
+      expect(nodes[2].text, 'Second');
+      expect(nodes[3].formats, [Formatus.lineFeed]);
+      expect(nodes[4].formats, [Formatus.paragraph]);
+      expect(nodes[4].text, 'para');
+    });
+
+    //---
+    test('Parse ul with two items prefixed with h1 and suffixed with P', () {
+      //--- given
+      String formatted = '''
+      <h1>Title</h1><ul><li>First</li><li>Second</li></ul><p>para</p>''';
+
+      //--- when
+      FormatusParser parser = FormatusParser(formatted: formatted);
+      List<FormatusNode> nodes = parser.parse();
+
+      //--- then
+      expect(nodes.length, 7);
+      expect(nodes[0].formats, [Formatus.header1]);
+      expect(nodes[0].text, 'Title');
+      expect(nodes[1].formats, [Formatus.lineFeed]);
+      expect(nodes[2].formats, [Formatus.unorderedList]);
+      expect(nodes[2].text, 'First');
+      expect(nodes[3].formats, [Formatus.lineFeed]);
+      expect(nodes[4].formats, [Formatus.unorderedList]);
+      expect(nodes[4].text, 'Second');
+      expect(nodes[5].formats, [Formatus.lineFeed]);
+      expect(nodes[6].formats, [Formatus.paragraph]);
+      expect(nodes[6].text, 'para');
+    });
   });
 }

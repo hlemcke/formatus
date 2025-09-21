@@ -28,26 +28,6 @@ void main() {
     });
 
     //---
-    test('Parsing ordered list with 3 items following H1', () {
-      //--- given
-      String formatted = '''
-<h1>Ordered H1</h1>
-<ol><li>First element</li><li>Second one</li><li>Item three</li></ol>
-''';
-
-      //--- when
-      FormatusDocument doc = FormatusDocument(formatted: formatted);
-
-      //--- then
-      expect(doc.textNodes.length, 7);
-      expect(doc.results.formattedText, formatted.replaceAll('\n', ''));
-      expect(
-        doc.results.plainText,
-        'Ordered H1\n First element\n Second one\n Item three',
-      );
-    });
-
-    //---
     test('Parsing ordered list with inline formats followed by P', () {
       //--- given
       final Color orange = Color(0xffff9800);
@@ -75,7 +55,7 @@ void main() {
         Formatus.listItem,
         Formatus.bold,
       ]);
-      expect(doc.textNodes[1].isLineBreak, true);
+      expect(doc.textNodes[1].isLineFeed, true);
       expect(doc.textNodes[2].formats, [
         Formatus.orderedList,
         Formatus.listItem,

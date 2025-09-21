@@ -4,7 +4,40 @@ import 'formatus_model.dart';
 import 'formatus_node.dart';
 
 class FormatusParser {
+  late String _formatted;
+  List<FormatusNode> _nodes = [];
+  Formatus _listType = Formatus.noList;
+
+  FormatusParser({required String formatted}) {
+    _formatted = _cleanUpFormatted(formatted);
+    if (formatted.isEmpty) {
+      FormatusNode node = FormatusNode(formats: [Formatus.paragraph], text: '');
+      _nodes.add(node);
+    }
+  }
+
   ///
+  /// Parses `formatted` text from constructor into list of [FormatusNode]
+  ///
+  List<FormatusNode> parse() {
+    if (_nodes.isNotEmpty) return _nodes;
+    int offset = 0;
+    while (offset < _formatted.length) {
+      //--- Insert line-break between sections
+      if (_nodes.isNotEmpty && _nodes.last.isNotLineFeed) {
+        _nodes.add(FormatusNode.lineBreak);
+      }
+      //--- skip any characters between sections
+      offset = _formatted.indexOf('<', offset);
+      if (offset < 0) break;
+      offset = _parseSection(offset);
+    }
+    if (_nodes.last.isLineFeed) {
+      _nodes.removeLast();
+    }
+    return _nodes;
+  }
+
   /// Cleanup given text by:
   ///
   /// * remove cr
@@ -12,96 +45,68 @@ class FormatusParser {
   /// * replace tab with space
   /// * replace multiple spaces with one space
   ///
-  String cleanUpFormatted(String formatted) => formatted
+  String _cleanUpFormatted(String formatted) => formatted
       .replaceAll('\r', '')
       .replaceAll('\n', '')
       .replaceAll('\t', ' ')
       .replaceAll('  ', ' ');
 
+  /// Parses an opening html section element, all children and its closing.
   ///
-  /// Parses `formatted` text and returns list of [FormatusNode]
-  ///
-  List<FormatusNode> parse(String formatted) {
-    formatted = cleanUpFormatted(formatted);
-    List<FormatusNode> nodes = [];
-    if (formatted.isEmpty) {
-      FormatusNode node = FormatusNode(formats: [Formatus.paragraph], text: '');
-      nodes.add(node);
-      return nodes;
-    }
-    int offset = 0;
-    while (offset < formatted.length) {
-      //--- Insert line-break between sections
-      if (offset > 0) {
-        nodes.add(FormatusNode.lineBreak);
-      }
-      //--- skip any characters between sections
-      offset = formatted.indexOf('<', offset);
-      if (offset < 0) break;
-      offset = _parseSection(formatted, offset, nodes);
-    }
-    return nodes;
-  }
-
-  String extractWord(String text, int offset) {
-    RegExp regExp = RegExp(r'[a-zA-Z0-9]');
-    int index = offset;
-    while (index < text.length) {
-      if (!text[index].contains(regExp)) break;
-      index++;
-    }
-    return text.substring(offset, index);
-  }
-
-  ///
-  /// Parses an opening html element, all its children and the closing element.
-  ///
-  /// Returns the offset into `htmlBody` of the first character following the
+  /// Returns offset into `htmlBody` of the first character following the
   /// closing element.
   ///
-  int _parseSection(String body, int offset, List<FormatusNode> nodes) {
+  int _parseSection(int offset) {
     List<Formatus> formats = [];
-    while (offset < body.length) {
-      _ParsedTag? tag = _parseTag(body, offset);
+    while (offset < _formatted.length) {
+      _ParsedTag? tag = _parseTag(_formatted, offset);
       if (tag == null) {
-        return body.length;
+        return _formatted.length;
       }
       if (tag.isClosing) {
         //--- Create empty section tag
         if ((formats.length == 1) &&
-            (nodes.isEmpty || (nodes.last.section != formats[0]))) {
-          //--- toList() creates a new instance. Else removeLast destroys it
-          nodes.add(FormatusNode(formats: formats.toList(), text: ''));
+            (_nodes.isEmpty || (_nodes.last.section != formats[0]))) {
+          //--- toList() creates a new instance. removeLast() destroys it
+          _nodes.add(FormatusNode(formats: formats.toList(), text: ''));
+        }
+        if (tag.formatus.isList) {
+          _listType = Formatus.noList;
+        } else if (tag.formatus == Formatus.listItem) {
+          return tag.offset;
         }
         if (formats.isNotEmpty) formats.removeLast();
         if (formats.isEmpty) return tag.offset;
       } else {
-        //--- Insert line break if this is another <li>
-        if (nodes.isNotEmpty &&
-            tag.formatus == Formatus.listItem &&
-            nodes.last.section.isList) {
-          nodes.add(FormatusNode.lineBreak);
+        //--- Opening tag ---
+        if (tag.formatus.isList) {
+          _listType = tag.formatus;
+        } else if (tag.formatus == Formatus.listItem) {
+          if (formats.isEmpty) {
+            formats.add(_listType);
+          }
+        } else {
+          formats.add(tag.formatus);
         }
-        formats.add(tag.formatus);
       }
       offset = tag.offset;
 
       //--- create new node if it contains text
-      if (offset < body.length) {
-        int end = body.indexOf('<', offset);
+      if (offset < _formatted.length) {
+        int end = _formatted.indexOf('<', offset);
         if (end > offset) {
           FormatusNode node = FormatusNode(
             formats: formats.toList(),
-            text: body.substring(offset, end),
+            text: _formatted.substring(offset, end),
           );
           node.attribute = tag.attribute;
           node.color = tag.color;
-          nodes.add(node);
+          _nodes.add(node);
           offset = end;
         }
       }
     }
-    return body.length;
+    return _formatted.length;
   }
 
   ///

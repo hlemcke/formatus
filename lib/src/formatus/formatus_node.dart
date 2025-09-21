@@ -35,7 +35,7 @@ class FormatusNode {
 
   /// Automatically inserted between sections
   static final FormatusNode lineBreak = FormatusNode(
-    formats: [Formatus.lineBreak],
+    formats: [Formatus.lineFeed],
     text: '\n',
   );
 
@@ -85,11 +85,11 @@ class FormatusNode {
       formats.toSet().difference(otherFormats).isNotEmpty ||
       color != otherColor;
 
-  /// Returns `true` if this is a line-break between two sections
-  bool get isLineBreak => formats[0] == Formatus.lineBreak;
+  /// Returns `true` if this is a linefeed between two sections
+  bool get isLineFeed => formats[0] == Formatus.lineFeed;
 
-  /// Returns `true` for all nodes except line-break
-  bool get isNotLineBreak => !isLineBreak;
+  /// Returns `true` for all nodes except linefeed
+  bool get isNotLineFeed => !isLineFeed;
 
   /// Returns `true` if this is a list node
   bool get isList => formats[0].isList;

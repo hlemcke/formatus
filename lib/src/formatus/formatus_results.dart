@@ -8,18 +8,26 @@ import 'formatus_node.dart';
 ///
 class FormatusResults {
   static const String lineFeed = '\n';
+
+  /// Formatted text for storage
   String formattedText = '';
 
-  /// -1 = no list, 0 = unordered, > 0 ordered
-  int listItemNumber = -1;
-  bool isListItem = false;
+  /// -1 = no list, 0 = unordered, > 0 ordered. Set at first `ol` or `ul`
+  int _listItemNumber = -1;
+
+  /// Type of list or none
+  Formatus _listType = Formatus.noList;
+
+  /// Plain text for [TextEditingController]
   String plainText = '';
+
+  /// _root_ [TextSpan] for [TextField]. Children are sections separated by `\n`
   TextSpan textSpan = TextSpan(text: '');
 
   FormatusResults();
 
   ///
-  /// Must be called after `textNodes` are updated
+  /// Must be called after `textNodes` are modified
   ///
   factory FormatusResults.fromNodes(
     List<FormatusNode> textNodes,
@@ -35,26 +43,22 @@ class FormatusResults {
     List<TextSpan> sections = [];
     int indexToLastEqualFormat = -1;
 
-    //--- Loop text nodes
+    //--- Loop text nodes ---
     for (int nodeIndex = 0; nodeIndex < textNodes.length; nodeIndex++) {
       FormatusNode node = textNodes[nodeIndex];
-      indexToLastEqualFormat = _indexToLastEqualFormat(path, node);
 
-      //--- start handling line break
-      if (node.isLineBreak) {
-        //--- If next one is also <ol> or <ul> then only close <li>
-        if ((textNodes[nodeIndex - 1].section ==
-                textNodes[nodeIndex + 1].section) &&
-            textNodes[nodeIndex + 1].isList) {
-          indexToLastEqualFormat = 0;
-          isListItem = false; // reached </ul>
-        }
-      }
-      // --- Same node => append text to previous one and remove this one
-      else if (_appendTextToPreviousNodeIfEqual(
-        path,
+      //--- compute index into [path] of last equal format
+      indexToLastEqualFormat = _indexToLastEqualFormat(
         textNodes,
         nodeIndex,
+        path,
+      );
+
+      // --- Same node => append text to previous one and remove this one
+      if (_appendTextToPreviousNodeIfEqual(
+        textNodes,
+        nodeIndex,
+        path,
         indexToLastEqualFormat,
       )) {
         nodeIndex--;
@@ -66,11 +70,6 @@ class FormatusResults {
         _removeLastPathEntry(path, sections);
       }
 
-      if (indexToLastEqualFormat < 0) {
-        listItemNumber = -1;
-        isListItem = false;
-      }
-
       // --- append additional node formats to path
       for (int i = indexToLastEqualFormat + 1; i < node.formats.length; i++) {
         _appendNodeFormatToPath(path, node, i);
@@ -78,7 +77,7 @@ class FormatusResults {
 
       //--- Append [InlineSpan] according to texts typography
       _appendSpan(node, forViewer, path);
-      formattedText += node.isLineBreak ? '' : node.text;
+      formattedText += node.isLineFeed ? '' : node.text;
       plainText += node.text;
     }
 
@@ -101,8 +100,20 @@ class FormatusResults {
     if (resultNode.formatus == Formatus.color) {
       resultNode.color = node.color;
     }
-    if (node.isNotLineBreak) {
-      formattedText += '<${resultNode.formatus.key}';
+    if (node.isNotLineFeed) {
+      if (_listType.isList && (node.section != _listType)) {
+        formattedText += '</${_listType.key}>';
+        _listType = Formatus.noList;
+      }
+      if (resultNode.isList) {
+        if (_listType == Formatus.noList) {
+          _listType = node.section;
+          formattedText += '<${_listType.key}>';
+        }
+        formattedText += '<li';
+      } else {
+        formattedText += '<${resultNode.formatus.key}';
+      }
       if (resultNode.formatus == Formatus.anchor) {
         formattedText += ' '; // space between "<a"
       }
@@ -129,8 +140,8 @@ class FormatusResults {
       return _appendSpanSubscript(path, node, forViewer);
     } else if (node.isSuperscript) {
       return _appendSpanSuperscript(path, node, forViewer);
-    } else if (node.isList && !isListItem) {
-      isListItem = true;
+    } else if (node.isList && (_listType == Formatus.noList)) {
+      _listType = node.section;
       plainText += ' ';
       return (node.section == Formatus.orderedList)
           ? _appendSpanOrdered(path, node)
@@ -146,13 +157,13 @@ class FormatusResults {
 
   /// Build [TextSpan] for number and [WidgetSpan] for viewer
   void _appendSpanOrdered(List<_ResultNode> path, FormatusNode node) {
-    listItemNumber = (listItemNumber <= 0) ? 1 : listItemNumber + 1;
-    path.last.spans.add(WidgetSpan(child: Text('$listItemNumber. ')));
+    _listItemNumber = (_listItemNumber <= 0) ? 1 : _listItemNumber + 1;
+    path.last.spans.add(WidgetSpan(child: Text('$_listItemNumber. ')));
     path.last.spans.add(TextSpan(text: node.text));
   }
 
   void _appendSpanUnordered(List<_ResultNode> path, FormatusNode node) {
-    listItemNumber = 0;
+    _listItemNumber = 0;
     path.last.spans.add(WidgetSpan(child: Text('\u2022 ')));
     path.last.spans.add(TextSpan(text: node.text));
   }
@@ -206,9 +217,9 @@ class FormatusResults {
   }
 
   bool _appendTextToPreviousNodeIfEqual(
-    List<_ResultNode> path,
     List<FormatusNode> textNodes,
     int nodeIndex,
+    List<_ResultNode> path,
     int indexToLastEqualFormat,
   ) {
     FormatusNode node = textNodes[nodeIndex];
@@ -224,9 +235,19 @@ class FormatusResults {
   }
 
   /// Computes index into [path] of last equal format.
-  /// Returns -1 if even the section has changed
-  int _indexToLastEqualFormat(List<_ResultNode> path, FormatusNode node) {
-    if (node.isLineBreak) return -1;
+  /// Returns -1 if even the section has changed e.g. when reached a linefeed
+  int _indexToLastEqualFormat(
+    List<FormatusNode> textNodes,
+    int nodeIndex,
+    List<_ResultNode> path,
+  ) {
+    FormatusNode node = textNodes[nodeIndex];
+
+    //--- handle linefeed
+    if (node.isLineFeed) {
+      return -1;
+    }
+
     int i = 0;
     while (true) {
       if (i >= path.length || i >= node.formats.length) break;
@@ -241,22 +262,30 @@ class FormatusResults {
   }
 
   void _removeLastPathEntry(List<_ResultNode> path, List<TextSpan> sections) {
-    Color color = (path.last.formatus == Formatus.color)
-        ? path.last.color
+    _ResultNode removed = path.removeLast();
+
+    //--- Create span from removed node
+    Color color = (removed.formatus == Formatus.color)
+        ? removed.color
         : Colors.transparent;
     TextStyle? style = (color == Colors.transparent)
-        ? path.last.formatus.style
+        ? removed.formatus.style
         : TextStyle(color: color);
-    TextSpan span = TextSpan(children: path.last.spans, style: style);
-    if (path.length < 2) {
+    TextSpan span = TextSpan(children: removed.spans, style: style);
+
+    //--- Attach span
+    if (path.isEmpty) {
       sections.add(span);
     } else {
-      path[path.length - 2].spans.add(span);
+      path.last.spans.add(span);
     }
-    if (path.last.formatus != Formatus.lineBreak) {
-      formattedText += '</${path.last.formatus.key}>';
+
+    //--- Close node in html output
+    if (removed.formatus.isList) {
+      formattedText += '</li>';
+    } else if (removed.formatus != Formatus.lineFeed) {
+      formattedText += '</${removed.formatus.key}>';
     }
-    path.removeLast();
   }
 }
 
@@ -267,6 +296,8 @@ class _ResultNode {
   String attribute = '';
   Color color = Colors.transparent;
   Formatus formatus = Formatus.placeHolder;
+
+  bool get isList => formatus.isList;
 
   /// Used to fill text in [TextField] or [TextFormField]
   List<InlineSpan> spans = [];
