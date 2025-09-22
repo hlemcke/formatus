@@ -182,7 +182,7 @@ class _FormatusBarState extends State<FormatusBarImpl> {
 
   void _deactivateSectionActions() {
     for (FormatusAction action in widget.actions) {
-      if (action.isSection) {
+      if (action.isSection || action.isList) {
         _selectedFormats.remove(action.formatus);
       }
     }
@@ -194,7 +194,7 @@ class _FormatusBarState extends State<FormatusBarImpl> {
       context,
       anchorAtCursor ?? FormatusAnchor(),
     );
-    debugPrint('Anchor = $result');
+    debugPrint('Anchor result = $result');
     widget.controller.anchorAtCursor = result;
   }
 
@@ -218,6 +218,8 @@ class _FormatusBarState extends State<FormatusBarImpl> {
       _onEditAnchor();
     } else if (formatus == Formatus.color) {
       return _selectAndRememberColor();
+    } else if (formatus == Formatus.image) {
+      _onSelectImage();
     } else if (formatus.isSection || formatus.isList) {
       _deactivateSectionActions();
       _selectedFormats.add(formatus);

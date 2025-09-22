@@ -29,6 +29,8 @@ class FormatusAction {
     this.style = style ?? formatus.style;
   }
 
+  bool get isList => formatus.isList;
+
   bool get isSection => formatus.isSection;
 }
 
