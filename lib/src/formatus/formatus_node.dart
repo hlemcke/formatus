@@ -85,6 +85,9 @@ class FormatusNode {
       formats.toSet().difference(otherFormats).isNotEmpty ||
       color != otherColor;
 
+  /// Returns `true` if last format is image
+  bool get isImage => formats.last == Formatus.image;
+
   /// Returns `true` if this is a linefeed between two sections
   bool get isLineFeed => formats[0] == Formatus.lineFeed;
 

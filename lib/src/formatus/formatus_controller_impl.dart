@@ -23,6 +23,9 @@ class FormatusControllerImpl extends TextEditingController
   /// Tree-like structure with nodes for formatting and text leaf nodes
   late FormatusDocument document;
 
+  /// Map of images. Key is [FormatusImage.src]
+  Map<String, FormatusImage> imageMap = {};
+
   /// Color of current node. _transparent_ is not used
   Color selectedColor = Colors.transparent;
 
@@ -36,7 +39,11 @@ class FormatusControllerImpl extends TextEditingController
   ///
   /// Creates a controller for [TextField] or [TextFormField].
   ///
-  FormatusControllerImpl({String? formattedText, this.onChanged}) {
+  FormatusControllerImpl({
+    String? formattedText,
+    this.onChanged,
+    this.imageMap = const {},
+  }) {
     document = FormatusDocument(formatted: formattedText ?? '');
     _rememberNodeResults();
     _text = document.results.plainText;
@@ -80,6 +87,18 @@ class FormatusControllerImpl extends TextEditingController
       // TODO insert anchor node at cursor position
     }
     document.computeResults();
+  }
+
+  /// Returns image element at cursor position or `null` if there is none
+  FormatusImage? get imageAtCursor {
+    NodeMeta meta = document.computeMeta(selection.baseOffset);
+    return meta.node.isImage
+        ? FormatusImage(src: meta.node.attribute, alt: meta.node.text)
+        : null;
+  }
+
+  set imageAtCursor(FormatusImage? image) {
+    if (image == null) return;
   }
 
   ///

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../formatus.dart';
 import 'formatus_controller_impl.dart';
 import 'formatus_document.dart';
 
@@ -14,9 +15,12 @@ abstract class FormatusController extends TextEditingController {
   factory FormatusController({
     String? formattedText,
     ValueChanged<String>? onChanged,
-  }) =>
-      FormatusControllerImpl(
-          formattedText: formattedText, onChanged: onChanged);
+    Map<String, FormatusImage> imageMap = const {},
+  }) => FormatusControllerImpl(
+    formattedText: formattedText,
+    onChanged: onChanged,
+    imageMap: imageMap,
+  );
 
   /// Returns current text as a html formatted string
   String get formattedText;

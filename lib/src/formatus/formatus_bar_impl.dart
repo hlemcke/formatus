@@ -70,6 +70,9 @@ class FormatusBarImpl extends StatefulWidget implements FormatusBar {
     if (onEditAnchor == null) {
       this.actions.remove(anchorAction);
     }
+    if (onSelectImage == null) {
+      this.actions.remove(imageAction);
+    }
   }
 
   @override
@@ -193,6 +196,16 @@ class _FormatusBarState extends State<FormatusBarImpl> {
     );
     debugPrint('Anchor = $result');
     widget.controller.anchorAtCursor = result;
+  }
+
+  Future<void> _onSelectImage() async {
+    FormatusImage? imageAtCursor = widget.controller.imageAtCursor;
+    FormatusImage? result = await widget.onSelectImage!(
+      context,
+      imageAtCursor ?? FormatusImage(),
+    );
+    debugPrint('Image = $result');
+    widget.controller.imageAtCursor = result;
   }
 
   ///

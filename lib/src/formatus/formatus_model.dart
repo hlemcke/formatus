@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
 import 'formatus_document.dart';
@@ -268,9 +270,10 @@ class FormatusAnchor {
 ///
 class FormatusImage {
   String alt;
+  Uint8List? bytes;
   String src;
 
-  FormatusImage({this.alt = '', this.src = ''});
+  FormatusImage({this.alt = '', this.bytes, this.src = ''});
 
   FormatusImage clear() {
     alt = '';
@@ -278,10 +281,9 @@ class FormatusImage {
     return this;
   }
 
-  String toHtml() => '\u{003c}img src="$src" alt="$alt" />';
-
   @override
-  String toString() => toHtml();
+  String toString() =>
+      '\u{003c}img src=$src alt=$alt length=${bytes?.length ?? 0}';
 }
 
 ///
