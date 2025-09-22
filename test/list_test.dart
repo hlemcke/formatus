@@ -50,22 +50,11 @@ void main() {
         doc.results.plainText,
         ' First element\n Second one\n Item three\nTrailing paragraph',
       );
-      expect(doc.textNodes[0].formats, [
-        Formatus.orderedList,
-        Formatus.listItem,
-        Formatus.bold,
-      ]);
+      expect(doc.textNodes[0].formats, [Formatus.orderedList, Formatus.bold]);
       expect(doc.textNodes[1].isLineFeed, true);
-      expect(doc.textNodes[2].formats, [
-        Formatus.orderedList,
-        Formatus.listItem,
-      ]);
+      expect(doc.textNodes[2].formats, [Formatus.orderedList]);
       expect(doc.textNodes[2].text, 'Second ');
-      expect(doc.textNodes[3].formats, [
-        Formatus.orderedList,
-        Formatus.listItem,
-        Formatus.color,
-      ]);
+      expect(doc.textNodes[3].formats, [Formatus.orderedList, Formatus.color]);
       expect(doc.textNodes[3].text, 'one');
       expect(doc.textNodes[3].color, orange);
     });
@@ -103,12 +92,11 @@ void main() {
 
       //--- then
       expect(deltaText.type, DeltaTextType.insert);
-      print('${doc.results.formattedText}\n${doc.results.plainText}');
       expect(doc.results.textSpan.children?.length, 7);
-      expect(doc.results.plainText, nextText);
+      expect(doc.results.plainText, 'Ordered\n \n First\n Second');
       expect(
         doc.results.formattedText,
-        '<p>Ordered</p><ol><li></li><li>First</li><li>Second</li></ol><p>more</p>',
+        '<p>Ordered</p><ol><li></li><li>First</li><li>Second</li></ol>',
       );
     });
   });

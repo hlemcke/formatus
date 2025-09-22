@@ -77,7 +77,7 @@ class FormatusResults {
     textSpan = TextSpan(children: sections, style: Formatus.root.style);
   }
 
-  /// Appends format at index [i] of [node] to [path] and extends `formattedText`
+  /// Appends format from index [i] of [node] to [path] and extends `formattedText`
   void _appendNodeFormatToPath(
     List<ResultNode> path,
     FormatusNode node,
@@ -87,33 +87,27 @@ class FormatusResults {
     path.add(resultNode);
     if (resultNode.formatus == Formatus.color) {
       resultNode.color = node.color;
-    } else if (resultNode.isList) {
+    }
+
+    if (node.isLineFeed) return;
+
+    if (resultNode.isList) {
       if (_listType == Formatus.noList) {
         _listType = resultNode.formatus;
+        formattedText += '<${_listType.key}>';
       }
-      _listItemNumber = resultNode.formatus == Formatus.unorderedList
+      formattedText += '<li';
+      _listItemNumber = _listType == Formatus.unorderedList
           ? 0
           : (_listItemNumber <= 0)
           ? 1
           : _listItemNumber + 1;
       plainText += ' ';
       resultNode.spans.add(
-        resultNode.formatus == Formatus.orderedList
+        resultNode.formatus == Formatus.unorderedList
             ? WidgetSpan(child: Text('\u2022 '))
             : WidgetSpan(child: Text('$_listItemNumber. ')),
       );
-    }
-    if (node.isLineFeed) return;
-    if (_listType.isList && (node.section != _listType)) {
-      formattedText += '</${_listType.key}>';
-      _listType = Formatus.noList;
-    }
-    if (resultNode.isList) {
-      if (_listType == Formatus.noList) {
-        _listType = node.section;
-        formattedText += '<${_listType.key}>';
-      }
-      formattedText += '<li';
     } else {
       formattedText += '<${resultNode.formatus.key}';
     }

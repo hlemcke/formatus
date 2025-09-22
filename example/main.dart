@@ -16,9 +16,9 @@ const Map<String, String> textTemplates = {
 <p>Third line <i>contains <s>nested</s> and</i> <u>under<b>line</b>d</u> text.</p>
 ''',
   'Lists': '''
-  <h2>Unordered List</h2>
+  <h2>ul</h2>
   <ul><li>Apple</li><li>Kiwi</li></ul>
-  <h3>Ordered List</h3>
+  <h3>ol</h3>
   <ol><li>First item</li><li>Second entry</li></ol>
   ''',
   'Anchor': '''

@@ -437,10 +437,7 @@ class FormatusDocument {
     int cursorIndex = deltaText.prevSelection.start;
     NodeMeta meta = computeMeta(cursorIndex);
     FormatusNode newNode = meta.node.isList
-        ? FormatusNode(
-            formats: [meta.node.section, Formatus.listItem],
-            text: ' ',
-          )
+        ? FormatusNode(formats: [meta.node.section], text: '')
         : FormatusNode(formats: [Formatus.paragraph], text: '');
 
     if (deltaText.isAtStart) {

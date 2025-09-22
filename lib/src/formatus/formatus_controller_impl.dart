@@ -274,8 +274,8 @@ class FormatusControllerImpl extends TextEditingController
       int delta = (selection.baseOffset < 0)
           ? 2
           : (prevStart > selection.baseOffset)
-          ? 1
-          : -1;
+          ? -1
+          : 1;
       int offset = selection.baseOffset + delta;
       debugPrint(
         '_updateSelection $meta cursor: ${selection.baseOffset} -> $offset',
