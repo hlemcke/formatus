@@ -264,6 +264,27 @@ class FormatusAnchor {
 }
 
 ///
+///
+///
+class FormatusImage {
+  String alt;
+  String src;
+
+  FormatusImage({this.alt = '', this.src = ''});
+
+  FormatusImage clear() {
+    alt = '';
+    src = '';
+    return this;
+  }
+
+  String toHtml() => '\u{003c}img src="$src" alt="$alt" />';
+
+  @override
+  String toString() => toHtml();
+}
+
+///
 /// HTML colors used in [Formatus].
 /// Values are official HTML colors.
 ///

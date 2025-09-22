@@ -5,7 +5,7 @@ import 'formatus_node.dart';
 
 class FormatusParser {
   late String _formatted;
-  List<FormatusNode> _nodes = [];
+  final List<FormatusNode> _nodes = [];
   Formatus _listType = Formatus.noList;
 
   FormatusParser({required String formatted}) {

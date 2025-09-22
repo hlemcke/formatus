@@ -160,7 +160,9 @@ class FormatusControllerImpl extends TextEditingController
   }
 
   /// Used to determine if to fire `onChanged`
-  FormatusResults _prevNodeResults = FormatusResults();
+  FormatusResults _prevNodeResults = FormatusResults(
+    textNodes: [FormatusNode.placeHolder],
+  );
 
   @visibleForTesting
   FormatusResults get prevNodeResults => _prevNodeResults;

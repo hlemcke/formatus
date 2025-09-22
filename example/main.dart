@@ -26,6 +26,7 @@ const Map<String, String> textTemplates = {
   <p>Anchor to <a href="https://icanhazdadjoke.com">dad jokes</a> is funny.</p>
   <p>Another one to <a href="https://www.duckduckgo.com">Duck Duck Go</a> search</p>
   ''',
+  'Inlines': '<p><b><i><u>all</u> italic</i> bold</b> plain</p>',
 };
 
 class MyApp extends StatelessWidget {
@@ -98,7 +99,6 @@ class _MyHomePageState extends State<MyHomePage> {
         actions: formatusDefaultActions,
         controller: controller,
         onEditAnchor: (context, anchor) => _onEditAnchor(context, anchor),
-        onTapAnchor: (context, anchor) => _onTapAnchor(context, anchor),
         textFieldFocus: _formatusFocus,
       ),
       TextFormField(

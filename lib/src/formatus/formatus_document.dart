@@ -59,7 +59,9 @@ class FormatusDocument {
   bool forViewer = false;
 
   /// Updated by [computeResults]
-  FormatusResults results = FormatusResults();
+  FormatusResults results = FormatusResults(
+    textNodes: [FormatusNode.placeHolder],
+  );
 
   /// List of text nodes in sequence of occurrence
   List<FormatusNode> textNodes = [];
@@ -188,10 +190,10 @@ class FormatusDocument {
   }
 
   ///
-  /// Computes `formattedText` and results for [TextField]
+  /// Computes `TextSpan' for [TextField] and `formattedText`
   ///
   void computeResults() =>
-      results = FormatusResults.fromNodes(textNodes, forViewer);
+      results = FormatusResults(textNodes: textNodes, forViewer: forViewer);
 
   ///
   /// Apply `formats` to selected text-range.

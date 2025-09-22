@@ -39,9 +39,9 @@ typedef AnchorEditor =
       FormatusAnchor anchor,
     );
 
-/// Signature for callback `onTapAnchor`
-typedef AnchorActivity =
-    Future<void> Function(BuildContext context, FormatusAnchor anchor);
+/// Signature for callback `onSelectImage``
+typedef ImageSelector =
+    Future<FormatusImage?> Function(BuildContext context, FormatusImage image);
 
 ///
 /// Actions to format text.
@@ -71,7 +71,7 @@ abstract class FormatusBar extends StatefulWidget {
     bool condenseActions = false,
     Axis direction = Axis.horizontal,
     AnchorEditor? onEditAnchor,
-    AnchorActivity? onTapAnchor,
+    ImageSelector? onSelectImage,
     FocusNode? textFieldFocus,
   }) => FormatusBarImpl(
     key: key,
@@ -81,13 +81,15 @@ abstract class FormatusBar extends StatefulWidget {
     compactActions: condenseActions,
     direction: direction,
     onEditAnchor: onEditAnchor,
-    onTapAnchor: onTapAnchor,
+    onSelectImage: onSelectImage,
     textFieldFocus: textFieldFocus,
   );
 }
 
 /// Separately specified to put into expected position
 final FormatusAction anchorAction = FormatusAction(formatus: Formatus.anchor);
+
+final FormatusAction imageAction = FormatusAction(formatus: Formatus.image);
 
 final List<FormatusAction> formatusDefaultActions = [
   FormatusAction(formatus: Formatus.header1),
@@ -103,4 +105,5 @@ final List<FormatusAction> formatusDefaultActions = [
   FormatusAction(formatus: Formatus.strikeThrough),
   FormatusAction(formatus: Formatus.color),
   anchorAction,
+  imageAction,
 ];

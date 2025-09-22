@@ -75,7 +75,7 @@ void main() {
   });
 
   //---
-  group('Tree Tests == results computations', () {
+  group('Tree Tests == section results', () {
     //---
     test('Compute results for two sections', () {
       //--- given
@@ -117,9 +117,12 @@ void main() {
         'Line 3 with bold and nested words',
       );
     });
+  });
 
+  //---
+  group('Tree Tests == color results', () {
     ///
-    test('Compute results for first inline with deprecated color blue', () {
+    test('Results for first inline with deprecated color blue', () {
       //--- given
       String divBlue = '<div style="color: #ff0000ff;">';
       String formatted = '<p><color 0xFF0000ff>abc</color> def</p>';
@@ -134,7 +137,7 @@ void main() {
     });
 
     ///
-    test('Compute results for second inline with deprecated color blue', () {
+    test('Results for second inline with deprecated color blue', () {
       //--- given
       String divBlue = '<div style="color: #ff0000ff;">';
       String formatted = '<p>abc <color 0xFF0000ff>def</color> ghi</p>';
@@ -146,6 +149,23 @@ void main() {
       expect(doc.textNodes.length, 3);
       expect(doc.results.plainText, 'abc def ghi');
       expect(doc.results.formattedText, '<p>abc ${divBlue}def</div> ghi</p>');
+    });
+  });
+
+  //---
+  group('Tree Tests == deep nested inlines', () {
+    ///
+    test('One section with many inlines at start', () {
+      String formatted = '<p><b><i><u>all</u> italic</i> bold</b> plain</p>';
+
+      //--- when
+      FormatusDocument doc = FormatusDocument(formatted: formatted);
+
+      //--- then
+      expect(doc.textNodes.length, 4);
+      expect(doc.results.formattedText, formatted);
+      expect(doc.results.plainText, 'all italic bold plain');
+      expect(doc.results.textSpan.children?.length, 1);
     });
   });
 }

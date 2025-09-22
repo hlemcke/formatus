@@ -40,7 +40,7 @@ class FormatusBarImpl extends StatefulWidget implements FormatusBar {
   /// Callback invoked when user double taps on an anchor text.
   ///
   /// The callback get the [FormatusAnchor] from cursor position.
-  final AnchorActivity? onTapAnchor;
+  final ImageSelector? onSelectImage;
 
   /// Supply [FocusNode] from [TextField] to have [FormatusBar] automatically
   /// switch back focus to the text field after any format change.
@@ -63,7 +63,7 @@ class FormatusBarImpl extends StatefulWidget implements FormatusBar {
     this.compactActions = false,
     this.direction = Axis.horizontal,
     this.onEditAnchor,
-    this.onTapAnchor,
+    this.onSelectImage,
     this.textFieldFocus,
   }) {
     this.actions = actions ?? formatusDefaultActions;
