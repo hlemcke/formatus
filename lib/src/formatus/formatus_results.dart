@@ -37,6 +37,13 @@ class FormatusResults {
     build();
   }
 
+  ///
+  /// Computes the three results:
+  ///
+  /// 1. [formattedText] in html format. Can be stored externally
+  /// 2. [plainText] given to [TextEditingController]
+  /// 3. [textSpan] given to [TextField]
+  ///
   void build() {
     List<ResultNode> path = [];
     List<TextSpan> sections = [];

@@ -114,6 +114,8 @@ class FormatusNode {
   /// Returns section format
   Formatus get section => formats[0];
 
+  set section(Formatus formatus) => formats[0] = formatus;
+
   ///
   @override
   String toString() {

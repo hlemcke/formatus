@@ -209,6 +209,7 @@ class FormatusControllerImpl extends TextEditingController
     }
 
     //--- Immediate handling of unmodified text but possible range change
+    debugPrint('--- _prev="${_prevNodeResults.plainText}\n--- text="$text');
     if (_prevNodeResults.plainText == text) {
       _updateSelection();
       return;
@@ -242,8 +243,8 @@ class FormatusControllerImpl extends TextEditingController
     _onListen();
   }
 
-  /// Computes [FormatusResults] and fires [onChanged]
-  /// if `formattedText` has changed.
+  /// Remembers [FormatusResults].
+  /// Fires [onChanged] if `formattedText` has changed.
   void _rememberNodeResults() {
     if ((_prevNodeResults.formattedText != document.results.formattedText) &&
         (onChanged != null)) {
@@ -253,7 +254,8 @@ class FormatusControllerImpl extends TextEditingController
     _updateSelection();
   }
 
-  /// Handle cursor position and selection
+  /// Handle cursor position and selection.
+  /// Repositions cursor if in front of a list-item
   void _updateSelection() {
     NodeMeta meta = document.computeMeta(selection.baseOffset);
     selectedColor = meta.node.color;
@@ -269,7 +271,7 @@ class FormatusControllerImpl extends TextEditingController
       '_updateSelection prev=$prevStart base=${selection.baseOffset} $meta',
     );
 
-    //--- Cursor positioned in front of lists WidgetSpan
+    //--- Cursor positioned in front of list-item
     if (meta.node.isList && (selection.baseOffset < meta.textBegin)) {
       int delta = (selection.baseOffset < 0)
           ? 2

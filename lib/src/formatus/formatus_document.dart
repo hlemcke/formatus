@@ -155,7 +155,7 @@ class FormatusDocument {
     int charCount = 0;
     int listPrefixes = 0;
     int nodeIndex = 0;
-    while (nodeIndex < textNodes.length - 1) {
+    while (nodeIndex < textNodes.length) {
       listPrefixes += textNodes[nodeIndex].section.isList ? 1 : 0;
       int nodeLength = textNodes[nodeIndex].length;
       if (charIndex <= (charCount + listPrefixes + nodeLength)) {
@@ -167,10 +167,13 @@ class FormatusDocument {
 
     //--- Advance to next node if:
     // a) there is a next node
-    // b) next node has same format
+    // b) next node has same section format
     // c) cursor is at end of this node
     // d) last char of this node is a space
-    int textOffset = charIndex - (charCount + listPrefixes);
+    int textOffset = (charIndex - (charCount + listPrefixes)).clamp(
+      0,
+      textNodes.length - 1,
+    );
     FormatusNode node = textNodes[nodeIndex];
     if (node.isLineFeed ||
         ((nodeIndex < textNodes.length - 1) &&
@@ -257,16 +260,14 @@ class FormatusDocument {
   ///
   void updateSectionFormat(int cursorIndex, Formatus newSectionFormat) {
     NodeMeta meta = computeMeta(cursorIndex);
-    meta.node.formats[0] = newSectionFormat;
-    Formatus oldSectionFormat = meta.node.formats[0];
-    for (
-      int i = meta.nodeIndex;
-      (i > 0) && (textNodes[i].formats[0] == oldSectionFormat);
-      i--
-    ) {
-      textNodes[i].formats[0] = newSectionFormat;
+    meta.node.section = newSectionFormat;
+
+    //--- Update nodes prefixing this one until LF or start
+    int nodeIndex = meta.nodeIndex;
+    for (int i = nodeIndex - 1; i >= 0 && textNodes[i].isNotLineFeed; i--) {
+      textNodes[i].section = newSectionFormat;
     }
-    _updateSectionOfNodesUntilLineBreak(meta.nodeIndex);
+    _updateSectionsForward(meta.nodeIndex);
     computeResults();
   }
 
@@ -373,7 +374,7 @@ class FormatusDocument {
         textNodes.removeAt(firstIndexToDelete);
         count--;
       }
-      _updateSectionOfNodesUntilLineBreak(firstIndexToDelete - 1);
+      _updateSectionsForward(firstIndexToDelete - 1);
     }
     computeResults();
   }
@@ -422,7 +423,7 @@ class FormatusDocument {
   void _handleLineBreakDelete(DeltaText deltaText) {
     NodeMeta meta = computeMeta(deltaText.headLength);
     textNodes.removeAt(meta.nodeIndex + 1); // remove line-break node
-    _updateSectionOfNodesUntilLineBreak(meta.nodeIndex);
+    _updateSectionsForward(meta.nodeIndex);
   }
 
   ///
@@ -481,11 +482,9 @@ class FormatusDocument {
   }
 
   ///
-  /// Sets section format of following nodes to current one until line-break.
+  /// Sets section format of following nodes to current one until line-break or end.
   ///
-  /// If next node is similar then append its text to previous one and delete it.
-  ///
-  void _updateSectionOfNodesUntilLineBreak(int nodeIndex) {
+  void _updateSectionsForward(int nodeIndex) {
     Formatus currentSection = textNodes[nodeIndex].formats[0];
     for (
       int i = nodeIndex + 1;
@@ -493,11 +492,6 @@ class FormatusDocument {
       i++
     ) {
       textNodes[i].formats[0] = currentSection;
-      if (textNodes[i].isSimilar(textNodes[i - 1])) {
-        textNodes[i - 1].text += textNodes[i].text;
-        textNodes.removeAt(i);
-        i--;
-      }
     }
   }
 }
