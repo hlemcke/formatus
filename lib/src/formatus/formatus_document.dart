@@ -199,6 +199,9 @@ class FormatusDocument {
   void computeResults() =>
       results = FormatusResults(textNodes: textNodes, forViewer: forViewer);
 
+  ///
+  /// Inserts [newNode] at `offset` in _node_
+  ///
   void insertNewNode(NodeMeta meta, FormatusNode newNode) {
     if (meta.textOffset == 0) {
       textNodes.insert(meta.nodeIndex, newNode);
@@ -207,10 +210,10 @@ class FormatusDocument {
     } else {
       FormatusNode node = textNodes[meta.nodeIndex];
       FormatusNode clone = node.clone();
-      textNodes.insert(meta.nodeIndex, newNode);
-      textNodes.insert(meta.nodeIndex, clone);
-      clone.text = clone.text.substring(0, meta.textOffset);
-      node.text = node.text.substring(meta.textOffset);
+      node.text = node.text.substring(0, meta.textOffset);
+      clone.text = clone.text.substring(meta.textOffset);
+      textNodes.insert(meta.nodeIndex + 1, clone);
+      textNodes.insert(meta.nodeIndex + 1, newNode);
     }
   }
 
@@ -449,8 +452,8 @@ class FormatusDocument {
 
     if (deltaText.isAtStart) {
       // debugPrint('insert line break at start -> $meta');
+      textNodes.insert(0, FormatusNode.lineBreak);
       textNodes.insert(0, newNode);
-      textNodes.insert(1, FormatusNode.lineBreak);
     } else if (deltaText.isAtEnd) {
       // debugPrint('insert line break at end -> $meta');
       textNodes.add(FormatusNode.lineBreak);
@@ -461,12 +464,12 @@ class FormatusDocument {
       textNodes.insert(meta.nodeIndex + 2, newNode);
     } else if ((results.plainText[cursorIndex - 1] == '\n') ||
         (meta.node.isList && results.plainText[cursorIndex - 2] == '\n')) {
-      // debugPrint('insert line break in front of section -> $meta');
+      // debugPrint('insert line break at start of section -> $meta');
       textNodes.insert(meta.nodeIndex, FormatusNode.lineBreak);
       textNodes.insert(meta.nodeIndex, newNode);
     } else {
-      // debugPrint('insert line break in middle of section -> $meta');
-      insertNewNode(meta, newNode);
+      // debugPrint('insert line break in middle of node -> $meta');
+      insertNewNode(meta, FormatusNode.lineBreak);
     }
   }
 

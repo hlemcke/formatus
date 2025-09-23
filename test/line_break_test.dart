@@ -118,7 +118,6 @@ void main() {
       //--- then
       expect(doc.textNodes.length, 5);
       expect(doc.results.plainText, nextText);
-      expect(doc.results.plainText, nextText);
       expect(doc.results.formattedText, '<h1>ab</h1><h1>c</h1><p>def</p>');
     });
   });
@@ -170,6 +169,8 @@ void main() {
       expect(doc.results.plainText, nextText);
       expect(doc.results.formattedText, '<h1><b>abc</b></h1><h1> def</h1>');
     });
+
+    ///
     test('Insert Line-Break within first inline', () {
       //--- given
       String formatted = '<h1><b>abc</b> def</h1>';

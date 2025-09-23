@@ -47,7 +47,6 @@ class FormatusControllerImpl extends TextEditingController
     images.map((i) => _imageMap[i.src] = i);
     document = FormatusDocument(formatted: formattedText ?? '');
     _rememberNodeResults();
-    _text = document.results.plainText;
     addListener(_onListen);
   }
 
@@ -141,7 +140,6 @@ class FormatusControllerImpl extends TextEditingController
     }
     document = FormatusDocument(formatted: formatted);
     _rememberNodeResults();
-    _text = document.results.plainText;
   }
 
   List<Formatus> get formatsAtCursor {
@@ -200,6 +198,9 @@ class FormatusControllerImpl extends TextEditingController
     extentOffset: 0,
   );
 
+  @visibleForTesting
+  void onListen() => _onListen();
+
   ///
   /// This closure will be called by the underlying system whenever the
   /// content of the text field changes or cursor is repositioned.
@@ -239,15 +240,6 @@ class FormatusControllerImpl extends TextEditingController
     document.updateText(deltaText, selectedFormats, color: selectedColor);
     int cursorPosition = selection.baseOffset;
     _rememberNodeResults();
-    _text = document.results.plainText;
-    selection = TextSelection.fromPosition(
-      TextPosition(offset: cursorPosition),
-    );
-  }
-
-  @visibleForTesting
-  void onListen() {
-    _onListen();
   }
 
   bool _areSelectionsDifferent(TextSelection a, TextSelection b) =>
