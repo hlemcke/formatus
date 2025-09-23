@@ -119,10 +119,12 @@ class FormatusResults {
       formattedText += '<${resultNode.formatus.key}';
     }
     if (resultNode.formatus == Formatus.anchor) {
-      formattedText += ' '; // space between "<a"
+      formattedText += ' href="${node.attribute}"';
+    }
+    if (resultNode.formatus == Formatus.image) {
+      formattedText += ' src="${node.attribute}"';
     }
     if (i + 1 == node.formats.length) {
-      formattedText += node.attribute;
       formattedText += node.hasColor
           ? ' style="color: #${hexFromColor(node.color)};"'
           : '';

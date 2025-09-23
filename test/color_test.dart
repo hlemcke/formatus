@@ -164,5 +164,34 @@ void main() {
         '<p>Color ${orangeDiv}Ora</div>nge</p>',
       );
     });
+
+    test('Change color of everything, even already colored part', () {
+      //--- given
+      String formatted =
+          '<p>This is ${orangeDiv}Colored.</div> This is not.</p>';
+      String limeDiv = '<div style="color: #ffcddc39;">';
+      FormatusDocument doc = FormatusDocument(formatted: formatted);
+      TextSelection selection = const TextSelection(
+        baseOffset: 0,
+        extentOffset: 29,
+      );
+
+      //--- when
+      doc.updateInlineFormat(selection, {
+        Formatus.paragraph,
+        Formatus.color,
+      }, color: Colors.lime);
+
+      //--- then
+      expect(doc.textNodes.length, 1);
+      expect(doc.results.plainText, 'This is Colored. This is not.');
+      expect(
+        doc.results.formattedText,
+        '<p>${limeDiv}This is Colored. This is not.</div></p>',
+      );
+      expect(doc.textNodes[0].formats, [Formatus.paragraph, Formatus.color]);
+      expect(doc.textNodes[0].text, 'This is Colored. This is not.');
+      expect(doc.textNodes[0].color, Colors.lime);
+    });
   });
 }

@@ -15,11 +15,11 @@ abstract class FormatusController extends TextEditingController {
   factory FormatusController({
     String? formattedText,
     ValueChanged<String>? onChanged,
-    Map<String, FormatusImage> imageMap = const {},
+    List<FormatusImage> images = const [],
   }) => FormatusControllerImpl(
     formattedText: formattedText,
     onChanged: onChanged,
-    imageMap: imageMap,
+    images: images,
   );
 
   /// Returns current text as a html formatted string

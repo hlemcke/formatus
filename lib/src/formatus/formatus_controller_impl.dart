@@ -24,7 +24,7 @@ class FormatusControllerImpl extends TextEditingController
   late FormatusDocument document;
 
   /// Map of images. Key is [FormatusImage.src]
-  Map<String, FormatusImage> imageMap = {};
+  Map<String, FormatusImage> _imageMap = {};
 
   /// Color of current node. _transparent_ is not used
   Color selectedColor = Colors.transparent;
@@ -42,8 +42,9 @@ class FormatusControllerImpl extends TextEditingController
   FormatusControllerImpl({
     String? formattedText,
     this.onChanged,
-    this.imageMap = const {},
+    List<FormatusImage> images = const [],
   }) {
+    images.map((i) => _imageMap[i.src] = i);
     document = FormatusDocument(formatted: formattedText ?? '');
     _rememberNodeResults();
     _text = document.results.plainText;
@@ -79,14 +80,14 @@ class FormatusControllerImpl extends TextEditingController
     //--- Anchor to be inserted at cursor position
     else {
       FormatusNode anchorNode = FormatusNode(
-        formats: node.formats,
+        formats: [node.section, Formatus.anchor],
         text: anchor.name,
       );
       anchorNode.attribute = anchor.href;
-      anchorNode.formats.add(Formatus.anchor);
-      // TODO insert anchor node at cursor position
+      document.insertNewNode(meta, anchorNode);
     }
     document.computeResults();
+    _rememberNodeResults();
   }
 
   /// Returns image element at cursor position or `null` if there is none

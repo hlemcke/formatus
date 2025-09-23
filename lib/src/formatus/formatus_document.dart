@@ -155,9 +155,10 @@ class FormatusDocument {
     int charCount = 0;
     int listPrefixes = 0;
     int nodeIndex = 0;
+    int nodeLength = 0;
     while (nodeIndex < textNodes.length) {
       listPrefixes += textNodes[nodeIndex].section.isList ? 1 : 0;
-      int nodeLength = textNodes[nodeIndex].length;
+      nodeLength = textNodes[nodeIndex].length;
       if (charIndex <= (charCount + listPrefixes + nodeLength)) {
         break;
       }
@@ -172,7 +173,7 @@ class FormatusDocument {
     // d) last char of this node is a space
     int textOffset = (charIndex - (charCount + listPrefixes)).clamp(
       0,
-      textNodes.length - 1,
+      nodeLength,
     );
     FormatusNode node = textNodes[nodeIndex];
     if (node.isLineFeed ||
@@ -197,6 +198,21 @@ class FormatusDocument {
   ///
   void computeResults() =>
       results = FormatusResults(textNodes: textNodes, forViewer: forViewer);
+
+  void insertNewNode(NodeMeta metaStart, FormatusNode newNode) {
+    if (metaStart.textOffset == 0) {
+      textNodes.insert(metaStart.nodeIndex, newNode);
+    } else if (metaStart.textOffset >= metaStart.length) {
+      textNodes.insert(metaStart.nodeIndex + 1, newNode);
+    } else {
+      FormatusNode node = textNodes[metaStart.nodeIndex];
+      FormatusNode clone = node.clone();
+      textNodes.insert(metaStart.nodeIndex, newNode);
+      textNodes.insert(metaStart.nodeIndex, clone);
+      clone.text = clone.text.substring(0, metaStart.textOffset);
+      node.text = node.text.substring(metaStart.textOffset);
+    }
+  }
 
   ///
   /// Apply `formats` to selected text-range.
@@ -321,17 +337,7 @@ class FormatusDocument {
         if (newNode.hasColor) {
           newNode.color = color;
         }
-        if (metaStart.textOffset == 0) {
-          textNodes.insert(metaStart.nodeIndex, newNode);
-        } else if (metaStart.textOffset >= metaStart.length) {
-          textNodes.insert(metaStart.nodeIndex + 1, newNode);
-        } else {
-          FormatusNode clone = node.clone();
-          textNodes.insert(metaStart.nodeIndex, newNode);
-          textNodes.insert(metaStart.nodeIndex, clone);
-          clone.text = clone.text.substring(0, metaStart.textOffset);
-          node.text = node.text.substring(metaStart.textOffset);
-        }
+        insertNewNode(metaStart, newNode);
       } else {
         node.text =
             node.text.substring(0, metaStart.textOffset) +
