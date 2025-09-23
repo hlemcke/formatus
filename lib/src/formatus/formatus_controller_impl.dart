@@ -142,7 +142,6 @@ class FormatusControllerImpl extends TextEditingController
     document = FormatusDocument(formatted: formatted);
     _rememberNodeResults();
     _text = document.results.plainText;
-    value = TextEditingValue(text: text);
   }
 
   List<Formatus> get formatsAtCursor {
@@ -187,6 +186,9 @@ class FormatusControllerImpl extends TextEditingController
   @visibleForTesting
   FormatusResults get prevNodeResults => _prevNodeResults;
 
+  /// Can be modified before set in [TextEditingController]
+  TextSelection _nextSelection = _emptySelection;
+
   /// Used to determine range difference
   TextSelection _prevSelection = _emptySelection;
 
@@ -209,10 +211,14 @@ class FormatusControllerImpl extends TextEditingController
       return;
     }
 
+    //--- cannot update selection! (would refire _onListen)
+    _nextSelection = selection;
+
     //--- Immediate handling of unmodified text but possible range change
-    debugPrint('--- _prev="${_prevNodeResults.plainText}\n--- text="$text');
     if (_prevNodeResults.plainText == text) {
-      _updateSelection();
+      if (_areSelectionsDifferent(_prevSelection, _nextSelection)) {
+        _updateSelection();
+      }
       return;
     }
 
@@ -244,6 +250,9 @@ class FormatusControllerImpl extends TextEditingController
     _onListen();
   }
 
+  bool _areSelectionsDifferent(TextSelection a, TextSelection b) =>
+      a.baseOffset != b.baseOffset || a.extentOffset != b.extentOffset;
+
   /// Remembers [FormatusResults].
   /// Fires [onChanged] if `formattedText` has changed.
   void _rememberNodeResults() {
@@ -255,36 +264,31 @@ class FormatusControllerImpl extends TextEditingController
     _updateSelection();
   }
 
-  /// Handle cursor position and selection.
-  /// Repositions cursor if in front of a list-item
+  /// Remembers _selection_ from [_nextSelection].
+  /// Repositions cursor if in front of a list-item.
+  /// Last step is updating [value] of [TextEditingController]
   void _updateSelection() {
-    NodeMeta meta = document.computeMeta(selection.baseOffset);
+    NodeMeta meta = document.computeMeta(_nextSelection.baseOffset);
     selectedColor = meta.node.color;
 
-    //--- Update previous selection (clone it)
-    int prevStart = _prevSelection.baseOffset;
-    _prevSelection = TextSelection(
-      baseOffset: selection.baseOffset,
-      extentOffset: selection.extentOffset,
-    );
-
-    debugPrint(
-      '_updateSelection prev=$prevStart base=${selection.baseOffset} $meta',
-    );
-
     //--- Cursor positioned in front of list-item
-    if (meta.node.isList && (selection.baseOffset < meta.textBegin)) {
-      int delta = (selection.baseOffset < 0)
+    if (meta.node.isList && (_nextSelection.baseOffset < meta.textBegin)) {
+      int delta = (_nextSelection.baseOffset < 0)
           ? 2
-          : (prevStart > selection.baseOffset)
+          : (_prevSelection.baseOffset > _nextSelection.baseOffset)
           ? -1
           : 1;
-      int offset = selection.baseOffset + delta;
-      debugPrint(
-        '_updateSelection $meta cursor: ${selection.baseOffset} -> $offset',
-      );
-      super.selection = TextSelection(baseOffset: offset, extentOffset: offset);
+      int offset = _nextSelection.baseOffset + delta;
+      _nextSelection = TextSelection(baseOffset: offset, extentOffset: offset);
     }
+    _prevSelection = _nextSelection;
+    debugPrint(
+      '_rememberSelection: [${_prevSelection.baseOffset}, ${_prevSelection.extentOffset}]',
+    );
+    value = TextEditingValue(
+      text: _prevNodeResults.plainText,
+      selection: _prevSelection,
+    );
   }
 }
 

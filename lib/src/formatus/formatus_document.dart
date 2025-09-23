@@ -199,18 +199,18 @@ class FormatusDocument {
   void computeResults() =>
       results = FormatusResults(textNodes: textNodes, forViewer: forViewer);
 
-  void insertNewNode(NodeMeta metaStart, FormatusNode newNode) {
-    if (metaStart.textOffset == 0) {
-      textNodes.insert(metaStart.nodeIndex, newNode);
-    } else if (metaStart.textOffset >= metaStart.length) {
-      textNodes.insert(metaStart.nodeIndex + 1, newNode);
+  void insertNewNode(NodeMeta meta, FormatusNode newNode) {
+    if (meta.textOffset == 0) {
+      textNodes.insert(meta.nodeIndex, newNode);
+    } else if (meta.textOffset >= meta.length) {
+      textNodes.insert(meta.nodeIndex + 1, newNode);
     } else {
-      FormatusNode node = textNodes[metaStart.nodeIndex];
+      FormatusNode node = textNodes[meta.nodeIndex];
       FormatusNode clone = node.clone();
-      textNodes.insert(metaStart.nodeIndex, newNode);
-      textNodes.insert(metaStart.nodeIndex, clone);
-      clone.text = clone.text.substring(0, metaStart.textOffset);
-      node.text = node.text.substring(metaStart.textOffset);
+      textNodes.insert(meta.nodeIndex, newNode);
+      textNodes.insert(meta.nodeIndex, clone);
+      clone.text = clone.text.substring(0, meta.textOffset);
+      node.text = node.text.substring(meta.textOffset);
     }
   }
 
@@ -448,11 +448,11 @@ class FormatusDocument {
         : FormatusNode(formats: [Formatus.paragraph], text: '');
 
     if (deltaText.isAtStart) {
-      // debugPrint('insert line break at start or end of section -> $meta');
+      // debugPrint('insert line break at start -> $meta');
       textNodes.insert(0, newNode);
       textNodes.insert(1, FormatusNode.lineBreak);
     } else if (deltaText.isAtEnd) {
-      // debugPrint('insert line break at end');
+      // debugPrint('insert line break at end -> $meta');
       textNodes.add(FormatusNode.lineBreak);
       textNodes.add(newNode);
     } else if (results.plainText[cursorIndex] == '\n') {
@@ -466,17 +466,7 @@ class FormatusDocument {
       textNodes.insert(meta.nodeIndex, newNode);
     } else {
       // debugPrint('insert line break in middle of section -> $meta');
-      if (meta.textOffset == 0) {
-        textNodes.insert(meta.nodeIndex, FormatusNode.lineBreak);
-      } else if (meta.textOffset >= meta.length) {
-        textNodes.insert(meta.nodeIndex + 1, FormatusNode.lineBreak);
-      } else {
-        FormatusNode head = meta.node.clone();
-        head.text = head.text.substring(0, meta.textOffset);
-        textNodes.insert(meta.nodeIndex, head);
-        textNodes.insert(meta.nodeIndex + 1, FormatusNode.lineBreak);
-        meta.node.text = meta.node.text.substring(meta.textOffset);
-      }
+      insertNewNode(meta, newNode);
     }
   }
 
