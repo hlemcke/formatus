@@ -23,7 +23,7 @@ class FormatusBarImpl extends StatefulWidget implements FormatusBar {
   /// `?` -> the icon of the inline format if a single format is applied
   /// `n` -> the number of applied inline formats
   ///
-  final bool compactActions;
+  final bool condenseActions;
 
   /// Required controller
   final FormatusControllerImpl controller;
@@ -60,7 +60,7 @@ class FormatusBarImpl extends StatefulWidget implements FormatusBar {
     required this.controller,
     List<FormatusAction>? actions,
     this.alignment = WrapAlignment.start,
-    this.compactActions = false,
+    this.condenseActions = false,
     this.direction = Axis.horizontal,
     this.onEditAnchor,
     this.onSelectImage,
@@ -107,8 +107,8 @@ class _FormatusBarState extends State<FormatusBarImpl> {
   void initState() {
     super.initState();
     _ctrl = widget.controller;
-    _ctrl.addListener(_updateActivatedActions);
     _deactivateActions();
+    _ctrl.addListener(_updateActionsDisplay);
   }
 
   @override
@@ -116,12 +116,13 @@ class _FormatusBarState extends State<FormatusBarImpl> {
       ? Wrap(
           alignment: widget.alignment,
           direction: widget.direction,
-          children: widget.compactActions
+          children: widget.condenseActions
               ? [_buildSectionGroup(), _buildListGroup(), _buildInlineGroup()]
               : [
                   for (FormatusAction action in widget.actions)
-                    _FormatusButton(
+                    FormatusButton(
                       action: action,
+                      key: ValueKey('${action.formatus.key}_${widget.key}'),
                       isSelected: _selectedFormats.contains(action.formatus),
                       onPressed: () => _onToggleAction(action.formatus),
                       textColor: _selectedColor,
@@ -137,7 +138,7 @@ class _FormatusBarState extends State<FormatusBarImpl> {
             DropdownMenuEntry(
               value: action.formatus,
               label: '',
-              labelWidget: _FormatusButton(
+              labelWidget: FormatusButton(
                 action: action,
                 isSelected: _selectedFormats.contains(action.formatus),
                 onPressed: () => _onToggleAction(action.formatus),
@@ -276,26 +277,20 @@ class _FormatusBarState extends State<FormatusBarImpl> {
     ),
   );
 
-  void _updateActivatedActions() {
-    List<Formatus> formatsInPath = _ctrl.formatsAtCursor;
-    _deactivateActions();
-    for (Formatus format in formatsInPath) {
-      _selectedFormats.add(format);
-    }
-    setState(() {});
-  }
+  void _updateActionsDisplay() => setState(() {});
 }
 
 ///
 /// Single formatting action
 ///
-class _FormatusButton extends StatelessWidget {
+class FormatusButton extends StatelessWidget {
   final FormatusAction action;
   final bool isSelected;
   final VoidCallback? onPressed;
   final Color textColor;
 
-  const _FormatusButton({
+  const FormatusButton({
+    super.key,
     required this.action,
     this.isSelected = false,
     this.onPressed,

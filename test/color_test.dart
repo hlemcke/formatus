@@ -194,4 +194,34 @@ void main() {
       expect(doc.textNodes[0].color, Colors.lime);
     });
   });
+
+  ///
+  group('Apply color to multiple nodes', () {
+    //---
+    test('Apply color to nested inlines', () {
+      //--- given
+      String formatted =
+          '<p>This <b>is</b> ${orangeDiv}Colored.</div> This is <i>not</i></p>';
+      String limeDiv = '<div style="color: #ffcddc39;">';
+      FormatusDocument doc = FormatusDocument(formatted: formatted);
+      TextSelection selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: doc.results.plainText.length,
+      );
+
+      //--- when
+      doc.updateInlineFormat(selection, {
+        Formatus.paragraph,
+        Formatus.color,
+      }, color: Colors.lime);
+
+      //--- then
+      expect(doc.textNodes.length, 7);
+      expect(doc.results.plainText, 'This is Colored. This is not');
+      expect(
+        doc.results.formattedText,
+        '''<p>${limeDiv}This <b>is</b> Colored. This is <i>not</i></p>''',
+      );
+    });
+  });
 }

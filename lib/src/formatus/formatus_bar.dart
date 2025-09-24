@@ -80,7 +80,7 @@ abstract class FormatusBar extends StatefulWidget {
     controller: controller as FormatusControllerImpl,
     actions: actions,
     alignment: alignment,
-    compactActions: condenseActions,
+    condenseActions: condenseActions,
     direction: direction,
     onEditAnchor: onEditAnchor,
     onSelectImage: onSelectImage,

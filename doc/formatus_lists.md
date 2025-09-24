@@ -1,6 +1,6 @@
 # Lists
 
-Formatus allows to create and edit both ordered and unordered lists.
+`Formatus` allows to create and edit both ordered and unordered lists.
 
 ## Formatus Node
 

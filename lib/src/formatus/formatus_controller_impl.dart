@@ -24,7 +24,7 @@ class FormatusControllerImpl extends TextEditingController
   late FormatusDocument document;
 
   /// Map of images. Key is [FormatusImage.src]
-  Map<String, FormatusImage> _imageMap = {};
+  final Map<String, FormatusImage> _imageMap = {};
 
   /// Color of current node. _transparent_ is not used
   Color selectedColor = Colors.transparent;
@@ -262,6 +262,8 @@ class FormatusControllerImpl extends TextEditingController
   void _updateSelection() {
     NodeMeta meta = document.computeMeta(_nextSelection.baseOffset);
     selectedColor = meta.node.color;
+    selectedFormats = document.textNodes[meta.nodeIndex].formats.toSet();
+    int plainLength = document.results.plainText.length;
 
     //--- Cursor positioned in front of list-item
     if (meta.node.isList && (_nextSelection.baseOffset < meta.textBegin)) {
@@ -272,6 +274,9 @@ class FormatusControllerImpl extends TextEditingController
           : 1;
       int offset = _nextSelection.baseOffset + delta;
       _nextSelection = TextSelection(baseOffset: offset, extentOffset: offset);
+    } else if ((_nextSelection.baseOffset >= plainLength) ||
+        (_nextSelection.extentOffset >= plainLength)) {
+      _nextSelection = TextSelection.collapsed(offset: plainLength);
     }
     _prevSelection = _nextSelection;
     debugPrint(
