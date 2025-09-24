@@ -179,6 +179,7 @@ class FormatusDocument {
     if (node.isLineFeed ||
         ((nodeIndex < textNodes.length - 1) &&
             node.section == textNodes[nodeIndex + 1].section &&
+            (node.length > 0) &&
             (node.length == textOffset) &&
             (node.text[textOffset - 1] == ' '))) {
       charCount = charIndex + textOffset;

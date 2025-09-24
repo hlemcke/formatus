@@ -269,21 +269,22 @@ class FormatusAnchor {
 ///
 ///
 class FormatusImage {
-  String alt;
+  String aria;
   Uint8List? bytes;
   String src;
 
-  FormatusImage({this.alt = '', this.bytes, this.src = ''});
+  FormatusImage({this.aria = '', this.bytes, this.src = ''});
 
   FormatusImage clear() {
-    alt = '';
+    aria = '';
+    bytes = null;
     src = '';
     return this;
   }
 
   @override
   String toString() =>
-      '\u{003c}img src=$src alt=$alt length=${bytes?.length ?? 0}';
+      '\u{003c}img src=$src aria-label="$aria" length=${bytes?.length ?? 0}';
 }
 
 ///

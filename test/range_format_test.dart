@@ -4,14 +4,16 @@ import 'package:formatus/formatus.dart';
 import 'package:formatus/src/formatus/formatus_document.dart';
 
 void main() {
-  group('Apply format to text range', () {
+  group('Apply format to single node', () {
     //---
     test('No selection -> no format update', () {
       //--- given
       String formatted = '<h1>Title Line</h1>';
       FormatusDocument doc = FormatusDocument(formatted: formatted);
-      TextSelection selection =
-          const TextSelection(baseOffset: 6, extentOffset: 6);
+      TextSelection selection = const TextSelection(
+        baseOffset: 6,
+        extentOffset: 6,
+      );
 
       //--- when
       doc.updateInlineFormat(selection, {Formatus.underline});
@@ -27,8 +29,10 @@ void main() {
       //--- given
       String formatted = '<h1>Title Line</h1>';
       FormatusDocument doc = FormatusDocument(formatted: formatted);
-      TextSelection selection =
-          const TextSelection(baseOffset: 0, extentOffset: 5);
+      TextSelection selection = const TextSelection(
+        baseOffset: 0,
+        extentOffset: 5,
+      );
 
       //--- when
       doc.updateInlineFormat(selection, {Formatus.header1, Formatus.bold});
@@ -46,8 +50,10 @@ void main() {
       //--- given
       String formatted = '<h1>Title Line</h1>';
       FormatusDocument doc = FormatusDocument(formatted: formatted);
-      TextSelection selection =
-          const TextSelection(baseOffset: 6, extentOffset: 10);
+      TextSelection selection = const TextSelection(
+        baseOffset: 6,
+        extentOffset: 10,
+      );
 
       //--- when
       doc.updateInlineFormat(selection, {Formatus.header1, Formatus.bold});
@@ -65,8 +71,10 @@ void main() {
       //--- given
       String formatted = '<h1>Title middle Line</h1>';
       FormatusDocument doc = FormatusDocument(formatted: formatted);
-      TextSelection selection =
-          const TextSelection(baseOffset: 6, extentOffset: 10);
+      TextSelection selection = const TextSelection(
+        baseOffset: 6,
+        extentOffset: 10,
+      );
 
       //--- when
       doc.updateInlineFormat(selection, {Formatus.header1, Formatus.bold});
@@ -88,8 +96,10 @@ void main() {
       //--- given
       String prevHtml = '<p>Some <b>bold</b> text</p>';
       FormatusDocument doc = FormatusDocument(formatted: prevHtml);
-      TextSelection selection =
-          const TextSelection(baseOffset: 5, extentOffset: 9);
+      TextSelection selection = const TextSelection(
+        baseOffset: 5,
+        extentOffset: 9,
+      );
 
       //--- when
       doc.updateInlineFormat(selection, {Formatus.paragraph});
@@ -98,6 +108,33 @@ void main() {
       expect(doc.textNodes.length, 1);
       expect(doc.textNodes[0].formats, [Formatus.paragraph]);
       expect(doc.textNodes[0].text, 'Some bold text');
+    });
+  });
+
+  group('Apply format to multiple nodes', () {
+    //---
+    test('Make full text italic', () {
+      //--- given
+      String formatted = '<h1><b>Title</b> Line</h1>';
+      FormatusDocument doc = FormatusDocument(formatted: formatted);
+      TextSelection selection = const TextSelection(
+        baseOffset: 0,
+        extentOffset: 10,
+      );
+
+      //--- when
+      doc.updateInlineFormat(selection, {Formatus.italic});
+
+      //--- then
+      expect(doc.textNodes.length, 2);
+      expect(doc.textNodes[0].formats, [
+        Formatus.header1,
+        Formatus.bold,
+        Formatus.italic,
+      ]);
+      expect(doc.textNodes[0].text, 'Title');
+      expect(doc.textNodes[1].formats, [Formatus.header1, Formatus.italic]);
+      expect(doc.textNodes[1].text, ' Line');
     });
   });
 }

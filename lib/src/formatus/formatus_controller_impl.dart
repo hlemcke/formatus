@@ -93,12 +93,39 @@ class FormatusControllerImpl extends TextEditingController
   FormatusImage? get imageAtCursor {
     NodeMeta meta = document.computeMeta(selection.baseOffset);
     return meta.node.isImage
-        ? FormatusImage(src: meta.node.attribute, alt: meta.node.text)
+        ? FormatusImage(src: meta.node.attribute, aria: meta.node.ariaLabel)
         : null;
   }
 
   set imageAtCursor(FormatusImage? image) {
-    if (image == null) return;
+    NodeMeta meta = document.computeMeta(selection.baseOffset);
+    FormatusNode node = meta.node;
+
+    //--- Image exists at cursor position
+    if (node.isImage) {
+      if (image == null) {
+        document.textNodes.removeAt(meta.nodeIndex);
+      } else {
+        node.ariaLabel = image.aria;
+        //node.text = image.name; --- no text to show for an image ?
+        node.attribute = image.src;
+      }
+    } else if (image == null) {
+      return;
+    }
+    //--- Image to be inserted at cursor position
+    else {
+      FormatusNode anchorNode = FormatusNode(
+        formats: [node.section, Formatus.image],
+        ariaLabel: node.ariaLabel,
+        text: '', //---no text to be shown for images
+      );
+      anchorNode.ariaLabel = image.aria;
+      anchorNode.attribute = image.src;
+      document.insertNewNode(meta, anchorNode);
+    }
+    document.computeResults();
+    _rememberNodeResults();
   }
 
   ///

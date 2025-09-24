@@ -122,7 +122,13 @@ class FormatusResults {
       formattedText += ' href="${node.attribute}"';
     }
     if (resultNode.formatus == Formatus.image) {
+      debugPrint('---------------------------------------------');
+      debugPrint('src="${node.attribute}", aria-label="${node.ariaLabel}"');
+      debugPrint('---------------------------------------------');
       formattedText += ' src="${node.attribute}"';
+      if (node.ariaLabel.isNotEmpty) {
+        formattedText += ' aria-label="${node.ariaLabel}"';
+      }
     }
     if (i + 1 == node.formats.length) {
       formattedText += node.hasColor

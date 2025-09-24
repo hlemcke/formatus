@@ -7,6 +7,9 @@ import 'formatus_model.dart';
 /// attribute.
 ///
 class FormatusNode {
+  /// Accessible rich internet application standard
+  String ariaLabel;
+
   ///
   /// Optional attribute
   ///
@@ -29,6 +32,7 @@ class FormatusNode {
   FormatusNode({
     required this.formats,
     required this.text,
+    this.ariaLabel = '',
     this.attribute = '',
     this.color = Colors.transparent,
   });
