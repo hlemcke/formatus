@@ -13,12 +13,17 @@ void main() {
       FormatusDocument doc = FormatusDocument(formatted: formatted);
       String prevText = doc.results.plainText;
       DeltaText deltaText = DeltaText(
-          prevText: prevText,
-          prevSelection:
-              TextSelection(baseOffset: 0, extentOffset: prevText.length),
-          nextText: newText,
-          nextSelection:
-              TextSelection(baseOffset: 0, extentOffset: newText.length));
+        prevText: prevText,
+        prevSelection: TextSelection(
+          baseOffset: 0,
+          extentOffset: prevText.length,
+        ),
+        nextText: newText,
+        nextSelection: TextSelection(
+          baseOffset: 0,
+          extentOffset: newText.length,
+        ),
+      );
 
       //--- when
       doc.updateText(deltaText, {Formatus.header1});
@@ -39,12 +44,17 @@ void main() {
       FormatusDocument doc = FormatusDocument(formatted: formatted);
       String prevText = doc.results.plainText;
       DeltaText deltaText = DeltaText(
-          prevText: prevText,
-          prevSelection:
-              TextSelection(baseOffset: 0, extentOffset: prevText.length),
-          nextText: newText,
-          nextSelection:
-              TextSelection(baseOffset: 0, extentOffset: newText.length));
+        prevText: prevText,
+        prevSelection: TextSelection(
+          baseOffset: 0,
+          extentOffset: prevText.length,
+        ),
+        nextText: newText,
+        nextSelection: TextSelection(
+          baseOffset: 0,
+          extentOffset: newText.length,
+        ),
+      );
 
       //--- when
       doc.updateText(deltaText, {Formatus.paragraph});
@@ -53,7 +63,7 @@ void main() {
       expect(deltaText.isAll, true);
       expect(deltaText.type, DeltaTextType.update);
       expect(doc.textNodes.length, 1);
-      expect(doc.textNodes[0].formats, [Formatus.paragraph]);
+      expect(doc.textNodes[0].formats, [Formatus.header1]);
       expect(doc.textNodes[0].text, newText);
     });
   });

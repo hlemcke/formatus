@@ -92,9 +92,6 @@ class FormatusResults {
   ) {
     ResultNode resultNode = ResultNode()..formatus = node.formats[i];
     path.add(resultNode);
-    if (resultNode.formatus == Formatus.color) {
-      resultNode.color = node.color;
-    }
 
     if (node.isLineFeed) return;
 
@@ -118,22 +115,18 @@ class FormatusResults {
     } else {
       formattedText += '<${resultNode.formatus.key}';
     }
+
+    //--- some special cases with html tag attributes
     if (resultNode.formatus == Formatus.anchor) {
       formattedText += ' href="${node.attribute}"';
-    }
-    if (resultNode.formatus == Formatus.image) {
-      debugPrint('---------------------------------------------');
-      debugPrint('src="${node.attribute}", aria-label="${node.ariaLabel}"');
-      debugPrint('---------------------------------------------');
+    } else if (resultNode.formatus == Formatus.color) {
+      resultNode.color = node.color;
+      formattedText += ' style="color: #${hexFromColor(node.color)};"';
+    } else if (resultNode.formatus == Formatus.image) {
       formattedText += ' src="${node.attribute}"';
       if (node.ariaLabel.isNotEmpty) {
         formattedText += ' aria-label="${node.ariaLabel}"';
       }
-    }
-    if (i + 1 == node.formats.length) {
-      formattedText += node.hasColor
-          ? ' style="color: #${hexFromColor(node.color)};"'
-          : '';
     }
     formattedText += '>';
   }
@@ -145,9 +138,9 @@ class FormatusResults {
   /// TODO change this when Flutter supports subscript and superscript in [TextSpan]
   ///
   void _appendSpan(FormatusNode node, List<ResultNode> path) {
-    if (node.isSubscript) {
+    if (node.hasSubscript) {
       return _appendSpanSubscript(path, node);
-    } else if (node.isSuperscript) {
+    } else if (node.hasSuperscript) {
       return _appendSpanSuperscript(path, node);
     }
     path.last.spans.add(TextSpan(text: node.text));

@@ -52,10 +52,7 @@ void main() {
       );
 
       //--- when
-      doc.updateInlineFormat(selection, {
-        Formatus.header1,
-        Formatus.color,
-      }, color: orange);
+      doc.updateInlineFormat(selection, Formatus.color, color: orange);
 
       //--- then
       expect(doc.textNodes.length, 2);
@@ -72,7 +69,7 @@ void main() {
     });
 
     //---
-    test('Apply color to second word in first section', () {
+    test('Apply color to second word in single section', () {
       //--- given
       String formatted = '<h1>First Line</h1>';
       FormatusDocument doc = FormatusDocument(formatted: formatted);
@@ -82,10 +79,7 @@ void main() {
       );
 
       //--- when
-      doc.updateInlineFormat(selection, {
-        Formatus.header1,
-        Formatus.color,
-      }, color: orange);
+      doc.updateInlineFormat(selection, Formatus.color, color: orange);
 
       //--- then
       expect(doc.textNodes.length, 2);
@@ -113,10 +107,7 @@ void main() {
       );
 
       //--- when
-      doc.updateInlineFormat(selection, {
-        Formatus.paragraph,
-        Formatus.color,
-      }, color: Colors.lime);
+      doc.updateInlineFormat(selection, Formatus.color, color: Colors.lime);
 
       //--- then
       expect(doc.textNodes.length, 3);
@@ -146,7 +137,11 @@ void main() {
       );
 
       //--- when
-      doc.updateInlineFormat(selection, {Formatus.paragraph});
+      doc.updateInlineFormat(
+        selection,
+        Formatus.color,
+        color: Colors.transparent,
+      );
 
       //--- then
       expect(doc.textNodes.length, 3);
@@ -171,16 +166,13 @@ void main() {
           '<p>This is ${orangeDiv}Colored.</div> This is not.</p>';
       String limeDiv = '<div style="color: #ffcddc39;">';
       FormatusDocument doc = FormatusDocument(formatted: formatted);
-      TextSelection selection = const TextSelection(
+      TextSelection selection = TextSelection(
         baseOffset: 0,
-        extentOffset: 29,
+        extentOffset: doc.results.plainText.length,
       );
 
       //--- when
-      doc.updateInlineFormat(selection, {
-        Formatus.paragraph,
-        Formatus.color,
-      }, color: Colors.lime);
+      doc.updateInlineFormat(selection, Formatus.color, color: Colors.lime);
 
       //--- then
       expect(doc.textNodes.length, 1);
@@ -201,7 +193,7 @@ void main() {
     test('Apply color to nested inlines', () {
       //--- given
       String formatted =
-          '<p>This <b>is</b> ${orangeDiv}Colored.</div> This is <i>not</i></p>';
+          '<p>This <b>is</b> ${orangeDiv}colored.</div> This is <i>not</i></p>';
       String limeDiv = '<div style="color: #ffcddc39;">';
       FormatusDocument doc = FormatusDocument(formatted: formatted);
       TextSelection selection = TextSelection(
@@ -210,17 +202,16 @@ void main() {
       );
 
       //--- when
-      doc.updateInlineFormat(selection, {
-        Formatus.paragraph,
-        Formatus.color,
-      }, color: Colors.lime);
+      doc.updateInlineFormat(selection, Formatus.color, color: Colors.lime);
 
       //--- then
-      expect(doc.textNodes.length, 7);
-      expect(doc.results.plainText, 'This is Colored. This is not');
+      expect(doc.textNodes.length, 4);
+      expect(doc.results.plainText, 'This is colored. This is not');
       expect(
         doc.results.formattedText,
-        '''<p>${limeDiv}This <b>is</b> Colored. This is <i>not</i></p>''',
+        '<p>${limeDiv}This </div>'
+        '<b>${limeDiv}is</div></b>${limeDiv} colored. This is </div>'
+        '<i>${limeDiv}not</div></i></p>',
       );
     });
   });

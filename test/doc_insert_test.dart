@@ -14,10 +14,11 @@ void main() {
       FormatusDocument doc = FormatusDocument(formatted: formatted);
       String prevText = doc.results.plainText;
       DeltaText deltaText = DeltaText(
-          prevText: prevText,
-          prevSelection: TextSelection(baseOffset: 0, extentOffset: 0),
-          nextText: 'X',
-          nextSelection: TextSelection(baseOffset: 1, extentOffset: 1));
+        prevText: prevText,
+        prevSelection: TextSelection(baseOffset: 0, extentOffset: 0),
+        nextText: 'X',
+        nextSelection: TextSelection(baseOffset: 1, extentOffset: 1),
+      );
 
       //--- when
       doc.updateText(deltaText, {Formatus.paragraph});
@@ -31,24 +32,26 @@ void main() {
     ///
     test('Insert single char at start with same format', () {
       //--- given
-      String formatted = '<h1>abc <b>def <u>ghi</u></b> <i>jkl</i> mno</h1>'
+      String formatted =
+          '<h1>abc <b>def <u>ghi</u></b> <i>jkl</i> mno</h1>'
           '<p><b>pqr</b> stu</p>';
       FormatusDocument doc = FormatusDocument(formatted: formatted);
       expect(doc.textNodes.length, 9);
       String prevText = doc.results.plainText;
       DeltaText deltaText = DeltaText(
-          prevText: prevText,
-          prevSelection: TextSelection(baseOffset: 0, extentOffset: 0),
-          nextText: 'X$prevText',
-          nextSelection: TextSelection(baseOffset: 1, extentOffset: 1));
+        prevText: prevText,
+        prevSelection: TextSelection(baseOffset: 0, extentOffset: 0),
+        nextText: 'X$prevText',
+        nextSelection: TextSelection(baseOffset: 1, extentOffset: 1),
+      );
 
       //--- when
-      doc.updateText(deltaText, {Formatus.paragraph});
+      doc.updateText(deltaText, {Formatus.header1});
 
       //--- then
-      expect(doc.textNodes.length, 10);
+      expect(doc.textNodes.length, 9);
       expect(doc.results.plainText, 'X$prevText');
-      expect(doc.results.formattedText, '<p>X</p>$formatted');
+      expect(doc.results.formattedText, '<h1>X${formatted.substring(4)}');
     });
 
     ///
@@ -60,10 +63,11 @@ void main() {
       String prevText = doc.results.plainText;
       String nextText = 'abcX\ndef';
       DeltaText deltaText = DeltaText(
-          prevText: prevText,
-          prevSelection: TextSelection(baseOffset: 3, extentOffset: 3),
-          nextText: nextText,
-          nextSelection: TextSelection(baseOffset: 4, extentOffset: 4));
+        prevText: prevText,
+        prevSelection: TextSelection(baseOffset: 3, extentOffset: 3),
+        nextText: nextText,
+        nextSelection: TextSelection(baseOffset: 4, extentOffset: 4),
+      );
 
       //--- when
       doc.updateText(deltaText, {Formatus.header1});
@@ -83,10 +87,11 @@ void main() {
       String prevText = doc.results.plainText;
       String nextText = 'abc\ndefX';
       DeltaText deltaText = DeltaText(
-          prevText: prevText,
-          prevSelection: TextSelection(baseOffset: 7, extentOffset: 7),
-          nextText: nextText,
-          nextSelection: TextSelection(baseOffset: 8, extentOffset: 8));
+        prevText: prevText,
+        prevSelection: TextSelection(baseOffset: 7, extentOffset: 7),
+        nextText: nextText,
+        nextSelection: TextSelection(baseOffset: 8, extentOffset: 8),
+      );
 
       //--- when
       doc.updateText(deltaText, {Formatus.paragraph});
@@ -106,10 +111,11 @@ void main() {
       String prevText = doc.results.plainText;
       String nextText = 'abXc\ndef';
       DeltaText deltaText = DeltaText(
-          prevText: prevText,
-          prevSelection: TextSelection(baseOffset: 2, extentOffset: 2),
-          nextText: nextText,
-          nextSelection: TextSelection(baseOffset: 3, extentOffset: 3));
+        prevText: prevText,
+        prevSelection: TextSelection(baseOffset: 2, extentOffset: 2),
+        nextText: nextText,
+        nextSelection: TextSelection(baseOffset: 3, extentOffset: 3),
+      );
 
       //--- when
       doc.updateText(deltaText, {Formatus.header1});
@@ -129,10 +135,11 @@ void main() {
       String prevText = doc.results.plainText;
       String nextText = 'abc boXld\ndef';
       DeltaText deltaText = DeltaText(
-          prevText: prevText,
-          prevSelection: TextSelection(baseOffset: 6, extentOffset: 6),
-          nextText: nextText,
-          nextSelection: TextSelection(baseOffset: 7, extentOffset: 7));
+        prevText: prevText,
+        prevSelection: TextSelection(baseOffset: 6, extentOffset: 6),
+        nextText: nextText,
+        nextSelection: TextSelection(baseOffset: 7, extentOffset: 7),
+      );
 
       //--- when
       doc.updateText(deltaText, {Formatus.header1, Formatus.bold});
@@ -155,10 +162,11 @@ void main() {
       String prevText = doc.results.plainText;
       String nextText = 'abc boXld\ndef';
       DeltaText deltaText = DeltaText(
-          prevText: prevText,
-          prevSelection: TextSelection(baseOffset: 6, extentOffset: 6),
-          nextText: nextText,
-          nextSelection: TextSelection(baseOffset: 7, extentOffset: 7));
+        prevText: prevText,
+        prevSelection: TextSelection(baseOffset: 6, extentOffset: 6),
+        nextText: nextText,
+        nextSelection: TextSelection(baseOffset: 7, extentOffset: 7),
+      );
 
       //--- when
       doc.updateText(deltaText, {Formatus.header1, Formatus.underline});
@@ -167,9 +175,10 @@ void main() {
       expect(doc.textNodes.length, 6);
       expect(doc.results.plainText, nextText);
       expect(
-          doc.results.formattedText,
-          '<h1>abc <b>bo</b><u>X</u>'
-          '<b>ld</b></h1><p>def</p>');
+        doc.results.formattedText,
+        '<h1>abc <b>bo</b><u>X</u>'
+        '<b>ld</b></h1><p>def</p>',
+      );
     });
   });
 }

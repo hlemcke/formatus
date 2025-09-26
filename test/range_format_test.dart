@@ -10,7 +10,7 @@ final String orangeDiv = '<div style="color: #ffff9800;">';
 void main() {
   group('Apply format to single node', () {
     //---
-    test('No selection -> no format update', () {
+    test('No text range -> no format update', () {
       //--- given
       String formatted = '<h1>Title Line</h1>';
       FormatusDocument doc = FormatusDocument(formatted: formatted);
@@ -20,7 +20,7 @@ void main() {
       );
 
       //--- when
-      doc.updateInlineFormat(selection, {Formatus.underline});
+      doc.updateInlineFormat(selection, Formatus.underline);
 
       //--- then
       expect(doc.textNodes.length, 1);
@@ -29,7 +29,7 @@ void main() {
     });
 
     //---
-    test('Change format of first word', () {
+    test('Change format of first word to bold', () {
       //--- given
       String formatted = '<h1>Title Line</h1>';
       FormatusDocument doc = FormatusDocument(formatted: formatted);
@@ -39,7 +39,7 @@ void main() {
       );
 
       //--- when
-      doc.updateInlineFormat(selection, {Formatus.header1, Formatus.bold});
+      doc.updateInlineFormat(selection, Formatus.bold);
 
       //--- then
       expect(doc.textNodes.length, 2);
@@ -50,7 +50,7 @@ void main() {
     });
 
     //---
-    test('Change format of last word', () {
+    test('Set format of last word to bold', () {
       //--- given
       String formatted = '<h1>Title Line</h1>';
       FormatusDocument doc = FormatusDocument(formatted: formatted);
@@ -60,7 +60,7 @@ void main() {
       );
 
       //--- when
-      doc.updateInlineFormat(selection, {Formatus.header1, Formatus.bold});
+      doc.updateInlineFormat(selection, Formatus.bold);
 
       //--- then
       expect(doc.textNodes.length, 2);
@@ -81,7 +81,7 @@ void main() {
       );
 
       //--- when
-      doc.updateInlineFormat(selection, {Formatus.header1, Formatus.bold});
+      doc.updateInlineFormat(selection, Formatus.bold);
 
       //--- then
       expect(doc.textNodes.length, 3);
@@ -96,7 +96,7 @@ void main() {
 
   ///
   group('Remove format from text range', () {
-    test('Remove format from middle word', () {
+    test('Remove format from bold middle word', () {
       //--- given
       String prevHtml = '<p>Some <b>bold</b> text</p>';
       FormatusDocument doc = FormatusDocument(formatted: prevHtml);
@@ -106,7 +106,7 @@ void main() {
       );
 
       //--- when
-      doc.updateInlineFormat(selection, {Formatus.paragraph});
+      doc.updateInlineFormat(selection, Formatus.bold);
 
       //--- then
       expect(doc.textNodes.length, 1);
@@ -127,7 +127,7 @@ void main() {
       );
 
       //--- when
-      doc.updateInlineFormat(selection, {Formatus.italic});
+      doc.updateInlineFormat(selection, Formatus.italic);
 
       //--- then
       expect(doc.textNodes.length, 2);
@@ -141,7 +141,7 @@ void main() {
       expect(doc.textNodes[1].text, ' Line');
     });
     //---
-    test('Change color of text with multiple formats', () {
+    test('Change color of whole text having multiple inline formats', () {
       //--- given
       String formatted = '<h1><b>Title </b><i>Line </i><u>With </u>Color</h1>';
       FormatusDocument doc = FormatusDocument(formatted: formatted);
@@ -151,16 +151,14 @@ void main() {
       );
 
       //--- when
-      doc.updateInlineFormat(selection, {
-        Formatus.header1,
-        Formatus.color,
-      }, color: orange);
+      doc.updateInlineFormat(selection, Formatus.color, color: orange);
 
       //--- then
       expect(doc.textNodes.length, 4);
       expect(
         doc.results.formattedText,
-        '<h1>$orangeDiv<b>Title </b><i>Line </i><u>With </u>Color</div></h1>',
+        '<h1><b>${orangeDiv}Title </div></b><i>${orangeDiv}Line </div></i>'
+        '<u>${orangeDiv}With </div></u>${orangeDiv}Color</div></h1>',
       );
       //"Title "
       expect(doc.textNodes[0].formats, [
@@ -192,40 +190,42 @@ void main() {
       expect(doc.textNodes[3].color, orange);
     });
     //---
-    test('Change format of text with colored word', () {
+    test('Change format of text containing a colored word', () {
       //--- given
       String formatted = '<h1>${orangeDiv}Title </div>Line</h1>';
       FormatusDocument doc = FormatusDocument(formatted: formatted);
-      TextSelection selection = const TextSelection(
+      TextSelection selection = TextSelection(
         baseOffset: 0,
-        extentOffset: 10,
+        extentOffset: doc.results.plainText.length,
       );
 
       //--- when
-      doc.updateInlineFormat(selection, {Formatus.italic});
+      doc.updateInlineFormat(selection, Formatus.italic);
 
       //--- then
       expect(doc.textNodes.length, 2);
-      expect(doc.textNodes[0].formats, [Formatus.header1, Formatus.italic]);
+      expect(doc.textNodes[0].formats, [
+        Formatus.header1,
+        Formatus.color,
+        Formatus.italic,
+      ]);
       expect(doc.textNodes[0].text, 'Title ');
       expect(doc.textNodes[0].color, orange);
 
       expect(doc.textNodes[1].formats, [Formatus.header1, Formatus.italic]);
       expect(doc.textNodes[1].text, 'Line');
     });
+
     //---
-    test('Make paragraph with multiple formats headline', () {
+    test('Change paragraph to h1', () {
       //--- given
       String formatted =
           '<p><b>Title </b><i>Line </i><u>With </u>${orangeDiv}Color</div></p>';
       FormatusDocument doc = FormatusDocument(formatted: formatted);
-      TextSelection selection = const TextSelection(
-        baseOffset: 0,
-        extentOffset: 10,
-      );
+      TextSelection selection = TextSelection.collapsed(offset: 4);
 
       //--- when
-      doc.updateInlineFormat(selection, {Formatus.header1});
+      doc.updateSectionFormat(selection, Formatus.header1);
 
       //--- then
       expect(doc.textNodes.length, 4);

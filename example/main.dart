@@ -193,15 +193,6 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     ),
   );
-
-  Future<void> _onTapAnchor(BuildContext context, FormatusAnchor anchor) =>
-      showAdaptiveDialog(
-        context: context,
-        builder: (BuildContext context) => AlertDialog(
-          title: Text('Display Anchor'),
-          content: Text('display media'),
-        ),
-      );
 }
 
 ///

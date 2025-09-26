@@ -246,7 +246,7 @@ void main() {
     });
 
     //
-    test('Delete line-break in text range', () {
+    test('Delete text range containing linefeed', () {
       //--- given
       String formatted = '<h1>abc</h1><p>def</p>';
       FormatusDocument doc = FormatusDocument(formatted: formatted);

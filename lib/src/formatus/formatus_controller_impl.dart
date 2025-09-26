@@ -169,12 +169,6 @@ class FormatusControllerImpl extends TextEditingController
     _rememberNodeResults();
   }
 
-  List<Formatus> get formatsAtCursor {
-    if (!selection.isValid) return [];
-    NodeMeta meta = document.computeMeta(selection.start);
-    return meta.node.formats;
-  }
-
   @override
   set text(String _) {
     throw Exception(
@@ -182,24 +176,17 @@ class FormatusControllerImpl extends TextEditingController
     );
   }
 
-  /// Internally used to update string in `TextField` or `TextFormField`
-  set _text(String textForSuper) => super.text = textForSuper;
-
-  /// Updates formats in selected text range.
-  /// [FormatusBar] has already updated `selectedFormats` and `selectedColor`
+  /// User has selected a text range and activated a format or a color
+  /// in [FormatusBar].
   void updateInlineFormat(Formatus formatus) {
     if (selection.isCollapsed) return;
-    document.updateInlineFormat(
-      selection,
-      selectedFormats,
-      color: selectedColor,
-    );
+    document.updateInlineFormat(selection, formatus, color: selectedColor);
     _rememberNodeResults();
   }
 
   /// Changes section-format at current cursor position
   void updateSectionFormat(Formatus formatus) {
-    document.updateSectionFormat(selection.start, formatus);
+    document.updateSectionFormat(selection, formatus);
     _rememberNodeResults();
   }
 
@@ -257,7 +244,7 @@ class FormatusControllerImpl extends TextEditingController
       nextSelection: selection,
       nextText: text,
     );
-    debugPrint('=== _onListen => $deltaText');
+    // debugPrint('=== _onListen => $deltaText');
 
     //--- Replace all line-break in pasted text by single space
     // TODO transform pasted line-breaks to separate sections
@@ -265,7 +252,6 @@ class FormatusControllerImpl extends TextEditingController
       deltaText._textAdded = deltaText._textAdded.replaceAll('\n', ' ');
     }
     document.updateText(deltaText, selectedFormats, color: selectedColor);
-    int cursorPosition = selection.baseOffset;
     _rememberNodeResults();
   }
 
@@ -306,9 +292,6 @@ class FormatusControllerImpl extends TextEditingController
       _nextSelection = TextSelection.collapsed(offset: plainLength);
     }
     _prevSelection = _nextSelection;
-    debugPrint(
-      '_rememberSelection: [${_prevSelection.baseOffset}, ${_prevSelection.extentOffset}]',
-    );
     value = TextEditingValue(
       text: _prevNodeResults.plainText,
       selection: _prevSelection,

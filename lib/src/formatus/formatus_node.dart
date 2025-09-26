@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'formatus_model.dart';
 
 ///
-/// Node resembles part of all text with a list of formats and one optional
-/// attribute.
+/// A [FormatusNode] contains a sequence of characters with a different format
+/// than its predecessor or successor has.
 ///
 class FormatusNode {
   /// Accessible rich internet application standard
@@ -12,7 +12,6 @@ class FormatusNode {
 
   ///
   /// Optional attribute
-  ///
   /// * anchor -> href
   /// * image -> src
   String attribute;
@@ -43,34 +42,39 @@ class FormatusNode {
     text: '\n',
   );
 
-  /// Single final empty node to be used as placeholder to ensure null safety
+  /// Single empty node to be used as placeholder to ensure null safety
   static final FormatusNode placeHolder = FormatusNode(
     formats: [Formatus.placeHolder],
     text: '',
   );
 
-  ///
-  /// Applies `selectedFormats` to `formats` by removing missing formats
-  /// and by appending additional ones.
-  ///
-  void applyFormats(Set<Formatus> selectedFormats, Color color) {
-    Set<Formatus> toAdd = selectedFormats.difference(formats.toSet());
-    formats.addAll(toAdd);
-    //--- Apply color
-    if (formats.contains(Formatus.color)) {
-      this.color = color;
-      if (color == Colors.transparent) {
-        formats.remove(Formatus.color);
+  /// Appends [formatus] to [formats] if `apply is true`.
+  /// Else removes it. Does nothing if node is either anchor or image.
+  void applyFormat(bool apply, Formatus formatus, Color color) {
+    if (isAnchor || isImage) return;
+    if (apply) {
+      if (!formats.contains(formatus)) {
+        formats.add(formatus);
       }
-    }
-    Set<Formatus> toRemove = formats.toSet().difference(selectedFormats);
-    for (Formatus formatus in toRemove) {
+      if (formatus == Formatus.color) {
+        if (color == Colors.transparent) {
+          this.color = Colors.transparent;
+          formats.remove(Formatus.color);
+        } else {
+          this.color = color;
+        }
+      }
+    } else {
       formats.remove(formatus);
+      if (formatus == Formatus.color) {
+        color = Colors.transparent;
+      }
     }
   }
 
   /// Returns a deep clone of this one
   FormatusNode clone() => FormatusNode(formats: formats.toList(), text: text)
+    ..ariaLabel = ariaLabel
     ..attribute = attribute
     ..color = color;
 
@@ -79,6 +83,12 @@ class FormatusNode {
 
   /// Returns `true` if this node has a color
   bool get hasColor => formats.contains(Formatus.color);
+
+  /// Returns `true` if this nodes text is formatted as subscript
+  bool get hasSubscript => formats.contains(Formatus.subscript);
+
+  /// Returns `true` if this nodes text is formatted as superscript
+  bool get hasSuperscript => formats.contains(Formatus.superscript);
 
   /// Returns `true` if last format is anchor
   bool get isAnchor => formats.last == Formatus.anchor;
@@ -106,12 +116,6 @@ class FormatusNode {
       !isDifferent(other.formats.toSet(), other.color) &&
       (attribute == other.attribute);
 
-  /// Returns `true` if this nodes text is formatted as subscript
-  bool get isSubscript => formats.contains(Formatus.subscript);
-
-  /// Returns `true` if this nodes text is formatted as superscript
-  bool get isSuperscript => formats.contains(Formatus.superscript);
-
   /// Length of text
   int get length => text.length;
 
@@ -119,6 +123,22 @@ class FormatusNode {
   Formatus get section => formats[0];
 
   set section(Formatus formatus) => formats[0] = formatus;
+
+  void mixFormats(
+    Set<Formatus> selectedFormats, {
+    Color selectedColor = Colors.transparent,
+  }) {
+    Set<Formatus> given = selectedFormats.toSet();
+    for (Formatus formatus in formats) {
+      if (!given.remove(formatus)) {
+        formats.remove(formatus);
+      }
+    }
+    formats.addAll(given.toList());
+    color = formats.contains(Formatus.color)
+        ? selectedColor
+        : Colors.transparent;
+  }
 
   ///
   @override
