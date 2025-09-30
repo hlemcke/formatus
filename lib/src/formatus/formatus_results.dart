@@ -84,7 +84,12 @@ class FormatusResults {
     textSpan = TextSpan(children: sections, style: Formatus.root.style);
   }
 
-  /// Appends format from index [i] of [node] to [path] and extends `formattedText`
+  ///
+  /// Appends format from index [i] of [node] to [path].
+  ///
+  /// * extends `formattedText`
+  /// * appends space to `plainText` if [node] is image or list
+  ///
   void _appendNodeFormatToPath(
     List<ResultNode> path,
     FormatusNode node,
@@ -101,12 +106,12 @@ class FormatusResults {
         formattedText += '<${_listType.key}>';
       }
       formattedText += '<li';
+      plainText += ' ';
       _listItemNumber = _listType == Formatus.unorderedList
           ? 0
           : (_listItemNumber <= 0)
           ? 1
           : _listItemNumber + 1;
-      plainText += ' ';
       resultNode.spans.add(
         resultNode.formatus == Formatus.unorderedList
             ? WidgetSpan(child: Text('\u2022 '))
@@ -123,6 +128,7 @@ class FormatusResults {
       resultNode.color = node.color;
       formattedText += ' style="color: #${hexFromColor(node.color)};"';
     } else if (resultNode.formatus == Formatus.image) {
+      plainText += ' ';
       formattedText += ' src="${node.attribute}"';
       if (node.ariaLabel.isNotEmpty) {
         formattedText += ' aria-label="${node.ariaLabel}"';

@@ -142,13 +142,12 @@ class FormatusControllerImpl extends TextEditingController
   @override
   void clear() {
     super.clear();
-    document.clear();
     selectedColor = Colors.transparent;
     selectedFormats.clear();
     selectedFormats.add(Formatus.paragraph);
-    _prevSelection = _emptySelection;
-    document.computeResults();
-    _rememberNodeResults();
+    document.clear();
+    _nextSelection = selection;
+    _prevNodeResults = document.results;
   }
 
   /// Computes index to text node
@@ -169,14 +168,7 @@ class FormatusControllerImpl extends TextEditingController
     _rememberNodeResults();
   }
 
-  @override
-  set text(String _) {
-    throw Exception(
-      'Not supported. Use formattedText=... to replace current text',
-    );
-  }
-
-  /// User has selected a text range and activated a format or a color
+  /// After selectin a text range user has activated a format or a color
   /// in [FormatusBar].
   void updateInlineFormat(Formatus formatus) {
     if (selection.isCollapsed) return;
@@ -198,6 +190,9 @@ class FormatusControllerImpl extends TextEditingController
   @visibleForTesting
   FormatusResults get prevNodeResults => _prevNodeResults;
 
+  /// Used to update text if user has edited it
+  bool _needsTextUpdate = false;
+
   /// Can be modified before set in [TextEditingController]
   TextSelection _nextSelection = _emptySelection;
 
@@ -212,6 +207,10 @@ class FormatusControllerImpl extends TextEditingController
     extentOffset: 0,
   );
 
+  /// Returns `true` if _baseOffset_ or _extendOffset_ differ
+  bool _areSelectionsDifferent(TextSelection a, TextSelection b) =>
+      a.baseOffset != b.baseOffset || a.extentOffset != b.extentOffset;
+
   @visibleForTesting
   void onListen() => _onListen();
 
@@ -220,20 +219,22 @@ class FormatusControllerImpl extends TextEditingController
   /// content of the text field changes or cursor is repositioned.
   ///
   void _onListen() {
-    //--- Immediate handling of full deletion
-    if (text.isEmpty) {
-      clear();
-      return;
-    }
-
     //--- cannot update selection! (would refire _onListen)
     _nextSelection = selection;
 
     //--- Immediate handling of unmodified text but possible range change
     if (_prevNodeResults.plainText == text) {
+      _needsTextUpdate = false;
       if (_areSelectionsDifferent(_prevSelection, _nextSelection)) {
         _updateSelection();
       }
+      return;
+    }
+    _needsTextUpdate = true;
+
+    //--- Immediate handling of full deletion
+    if (text.isEmpty) {
+      clear();
       return;
     }
 
@@ -244,19 +245,16 @@ class FormatusControllerImpl extends TextEditingController
       nextSelection: selection,
       nextText: text,
     );
-    // debugPrint('=== _onListen => $deltaText');
+    debugPrint('=== _onListen => $deltaText');
 
     //--- Replace all line-break in pasted text by single space
-    // TODO transform pasted line-breaks to separate sections
+    // TODO transform pasted line-breaks into separate sections
     if (deltaText._textAdded.length > 1) {
       deltaText._textAdded = deltaText._textAdded.replaceAll('\n', ' ');
     }
     document.updateText(deltaText, selectedFormats, color: selectedColor);
     _rememberNodeResults();
   }
-
-  bool _areSelectionsDifferent(TextSelection a, TextSelection b) =>
-      a.baseOffset != b.baseOffset || a.extentOffset != b.extentOffset;
 
   /// Remembers [FormatusResults].
   /// Fires [onChanged] if `formattedText` has changed.
@@ -287,15 +285,23 @@ class FormatusControllerImpl extends TextEditingController
           : 1;
       int offset = _nextSelection.baseOffset + delta;
       _nextSelection = TextSelection(baseOffset: offset, extentOffset: offset);
-    } else if ((_nextSelection.baseOffset >= plainLength) ||
-        (_nextSelection.extentOffset >= plainLength)) {
+    } else if ((_nextSelection.baseOffset > plainLength) ||
+        (_nextSelection.extentOffset > plainLength)) {
       _nextSelection = TextSelection.collapsed(offset: plainLength);
     }
-    _prevSelection = _nextSelection;
-    value = TextEditingValue(
-      text: _prevNodeResults.plainText,
-      selection: _prevSelection,
-    );
+    if (_areSelectionsDifferent(_prevSelection, _nextSelection)) {
+      _prevSelection = _nextSelection;
+      if (_needsTextUpdate) {
+        value = TextEditingValue(
+          text: _prevNodeResults.plainText,
+          selection: _prevSelection,
+        );
+      } else {
+        selection = _nextSelection;
+      }
+    } else {
+      super.text = _prevNodeResults.plainText;
+    }
   }
 }
 
