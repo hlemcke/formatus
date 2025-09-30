@@ -278,6 +278,9 @@ class FormatusControllerImpl extends TextEditingController
     NodeMeta meta = document.computeMeta(_nextSelection.baseOffset);
     selectedColor = meta.node.color;
     selectedFormats = document.textNodes[meta.nodeIndex].formats.toSet();
+    if (meta.node.isAnchor && (meta.textOffset >= meta.length)) {
+      selectedFormats.remove(Formatus.anchor);
+    }
     int plainLength = document.results.plainText.length;
 
     //--- Cursor positioned in front of list-item

@@ -96,7 +96,8 @@ class FormatusNode {
   /// Returns `true` if `otherFormats` or `otherColor` is different
   bool isDifferent(Set<Formatus> otherFormats, Color otherColor) =>
       (formats.length != otherFormats.length) ||
-      formats.toSet().difference(otherFormats).isNotEmpty ||
+      !formats.toSet().containsAll(otherFormats) ||
+      !otherFormats.containsAll(formats.toSet()) ||
       color != otherColor;
 
   /// Returns `true` if last format is image

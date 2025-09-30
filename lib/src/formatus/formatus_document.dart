@@ -349,7 +349,9 @@ class FormatusDocument {
     //--- text added
     if (deltaText.textAdded.isNotEmpty) {
       //--- new text has same formats => just insert it
-      if (formats.difference(headNode.formats.toSet()).isEmpty &&
+      Set<Formatus> headFormats = headNode.formats.toSet();
+      if (formats.containsAll(headFormats) &&
+          headFormats.containsAll(formats) &&
           (color == headNode.color)) {
         headNode.text =
             headNode.text.substring(0, headMeta.textOffset) +
