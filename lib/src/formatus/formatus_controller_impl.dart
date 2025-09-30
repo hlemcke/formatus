@@ -141,13 +141,13 @@ class FormatusControllerImpl extends TextEditingController
   /// Sets empty text with Paragraph and one empty _textNode_
   @override
   void clear() {
-    super.clear();
     selectedColor = Colors.transparent;
     selectedFormats.clear();
     selectedFormats.add(Formatus.paragraph);
     document.clear();
-    _nextSelection = selection;
+    _cleanup();
     _prevNodeResults = document.results;
+    super.clear();
   }
 
   /// Computes index to text node
@@ -164,6 +164,7 @@ class FormatusControllerImpl extends TextEditingController
       clear();
       return;
     }
+    _cleanup();
     document = FormatusDocument(formatted: formatted);
     _rememberNodeResults();
   }
@@ -183,9 +184,7 @@ class FormatusControllerImpl extends TextEditingController
   }
 
   /// Used to determine if to fire `onChanged`
-  FormatusResults _prevNodeResults = FormatusResults(
-    textNodes: [FormatusNode.placeHolder],
-  );
+  FormatusResults _prevNodeResults = FormatusResults.placeHolder;
 
   @visibleForTesting
   FormatusResults get prevNodeResults => _prevNodeResults;
@@ -210,6 +209,11 @@ class FormatusControllerImpl extends TextEditingController
   /// Returns `true` if _baseOffset_ or _extendOffset_ differ
   bool _areSelectionsDifferent(TextSelection a, TextSelection b) =>
       a.baseOffset != b.baseOffset || a.extentOffset != b.extentOffset;
+
+  void _cleanup() {
+    _prevNodeResults = FormatusResults.placeHolder;
+    _prevSelection = _emptySelection;
+  }
 
   @visibleForTesting
   void onListen() => _onListen();

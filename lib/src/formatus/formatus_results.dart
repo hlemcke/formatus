@@ -15,6 +15,10 @@ class FormatusResults {
   /// `true` produces [textSpan] for [FormatusViewer]
   bool forViewer;
 
+  static final FormatusResults placeHolder = FormatusResults(
+    textNodes: [FormatusNode.placeHolder],
+  );
+
   /// Plain text for [TextEditingController]
   String plainText = '';
 
