@@ -50,6 +50,12 @@ class FormatusControllerImpl extends TextEditingController
     addListener(_onListen);
   }
 
+  @override
+  void dispose() {
+    removeListener(_onListen);
+    super.dispose();
+  }
+
   // TODO implement factory FormatusController.fromMarkdown
 
   /// Returns anchor element at cursor position or `null` if there is none
