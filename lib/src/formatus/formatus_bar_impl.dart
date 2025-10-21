@@ -104,6 +104,12 @@ class _FormatusBarState extends State<FormatusBarImpl> {
       _selectedFormats.firstWhere((f) => f.isSection);
 
   @override
+  void dispose() {
+    _ctrl.removeListener(_updateActionsDisplay);
+    super.dispose();
+  }
+
+  @override
   void initState() {
     super.initState();
     _ctrl = widget.controller;
