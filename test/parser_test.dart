@@ -154,8 +154,7 @@ void main() {
     //---
     test('parse color blue from deprecated format', () {
       //--- given
-      String blueDiv = '<color 0xFF0000ff>';
-      String formatted = '<p>abc ${blueDiv}def</color></p>';
+      String formatted = '<p>abc <color 0xFF0000ff>blue</color></p>';
       FormatusParser parser = FormatusParser(formatted: formatted);
 
       //--- when
@@ -166,7 +165,7 @@ void main() {
       expect(nodes[0].formats, [Formatus.paragraph]);
       expect(nodes[0].text, 'abc ');
       expect(nodes[1].formats, [Formatus.paragraph, Formatus.color]);
-      expect(nodes[1].text, 'def');
+      expect(nodes[1].text, 'blue');
       expect(nodes[1].color, Color(0xFF0000ff));
     });
 

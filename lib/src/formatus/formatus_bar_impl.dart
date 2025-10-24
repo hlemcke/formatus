@@ -23,7 +23,7 @@ class FormatusBarImpl extends StatefulWidget implements FormatusBar {
   /// `?` -> the icon of the inline format if a single format is applied
   /// `n` -> the number of applied inline formats
   ///
-  final bool condenseActions;
+  final bool condense;
 
   /// Required controller
   final FormatusControllerImpl controller;
@@ -60,12 +60,13 @@ class FormatusBarImpl extends StatefulWidget implements FormatusBar {
     required this.controller,
     List<FormatusAction>? actions,
     this.alignment = WrapAlignment.start,
-    this.condenseActions = false,
+    this.condense = false,
     this.direction = Axis.horizontal,
     this.onEditAnchor,
     this.onSelectImage,
     this.textFieldFocus,
   }) {
+    //--- Cleanup actions
     this.actions = actions ?? formatusDefaultActions;
     if (onEditAnchor == null) {
       this.actions.remove(anchorAction);
@@ -85,23 +86,17 @@ class FormatusBarImpl extends StatefulWidget implements FormatusBar {
 class _FormatusBarState extends State<FormatusBarImpl> {
   late final FormatusControllerImpl _ctrl;
 
+  final List<FormatusAction> _groupSections = [];
+  final List<FormatusAction> _groupInlines = [];
+  final List<FormatusAction> _groupLists = [];
+  final List<FormatusAction> _groupSizes = [
+    FormatusAction(formatus: Formatus.big),
+    FormatusAction(formatus: Formatus.small),
+  ];
+
   Color get _selectedColor => _ctrl.selectedColor;
 
   Set<Formatus> get _selectedFormats => _ctrl.selectedFormats;
-
-  /// Get current inline formats
-  List<Formatus> get _currentInlineFormats =>
-      _selectedFormats.where((f) => f.isInline).toList();
-
-  /// Get current list. Returns _placeHolder_ if not in a list element
-  Formatus get _currentListFormat => _selectedFormats.firstWhere(
-    (f) => f.isList,
-    orElse: () => Formatus.placeHolder,
-  );
-
-  /// Get current section format
-  Formatus get _currentSectionFormat =>
-      _selectedFormats.firstWhere((f) => f.isSection);
 
   @override
   void dispose() {
@@ -115,6 +110,9 @@ class _FormatusBarState extends State<FormatusBarImpl> {
     _ctrl = widget.controller;
     _deactivateActions();
     _ctrl.addListener(_updateActionsDisplay);
+    _fillGroup(_groupInlines, FormatusType.inline);
+    _fillGroup(_groupLists, FormatusType.list);
+    _fillGroup(_groupSections, FormatusType.section);
   }
 
   @override
@@ -122,8 +120,12 @@ class _FormatusBarState extends State<FormatusBarImpl> {
       ? Wrap(
           alignment: widget.alignment,
           direction: widget.direction,
-          children: widget.condenseActions
-              ? [_buildSectionGroup(), _buildListGroup(), _buildInlineGroup()]
+          children: widget.condense
+              ? [
+                  _buildGroup(FormatusType.section, _groupSections),
+                  _buildGroup(FormatusType.list, _groupLists),
+                  _buildGroup(FormatusType.inline, _groupInlines),
+                ]
               : [
                   for (FormatusAction action in widget.actions)
                     FormatusButton(
@@ -137,53 +139,32 @@ class _FormatusBarState extends State<FormatusBarImpl> {
         )
       : SizedBox.shrink();
 
-  Widget _buildGroup(List<Formatus> currents, List<FormatusAction> actions) =>
-      DropdownMenu(
-        dropdownMenuEntries: [
-          for (FormatusAction action in actions)
-            DropdownMenuEntry(
-              value: action.formatus,
-              label: '',
-              labelWidget: FormatusButton(
-                action: action,
-                isSelected: _selectedFormats.contains(action.formatus),
-                onPressed: () => _onToggleAction(action.formatus),
-              ),
-            ),
-        ],
-        label: (currents.length > 1)
-            ? Text('${currents.length}')
-            : currents.first.icon,
+  Widget _buildGroup(FormatusType type, List<FormatusAction> actions) {
+    int activeCount = 0;
+    FormatusButton? activeButton;
+    List<DropdownMenuEntry> entries = [];
+    for (FormatusAction action in actions) {
+      bool isActive = _selectedFormats.contains(action.formatus);
+      activeCount += isActive ? 1 : 0;
+      FormatusButton button = FormatusButton(
+        action: action,
+        isSelected: isActive,
+        onPressed: () => _onToggleAction(action.formatus),
       );
-
-  final List<FormatusAction> _groupSection = [
-    FormatusAction(formatus: Formatus.header1),
-    FormatusAction(formatus: Formatus.header2),
-    FormatusAction(formatus: Formatus.header3),
-    FormatusAction(formatus: Formatus.paragraph),
-  ];
-
-  Widget _buildSectionGroup() =>
-      _buildGroup([_currentSectionFormat], _groupSection);
-
-  final List<FormatusAction> _groupList = [
-    FormatusAction(formatus: Formatus.orderedList),
-    FormatusAction(formatus: Formatus.unorderedList),
-  ];
-
-  Widget _buildListGroup() => _buildGroup([_currentListFormat], _groupList);
-
-  final List<FormatusAction> _groupInline = [
-    FormatusAction(formatus: Formatus.bold),
-    FormatusAction(formatus: Formatus.italic),
-    FormatusAction(formatus: Formatus.strikeThrough),
-    FormatusAction(formatus: Formatus.underline),
-    FormatusAction(formatus: Formatus.subscript),
-    FormatusAction(formatus: Formatus.superscript),
-  ];
-
-  Widget _buildInlineGroup() =>
-      _buildGroup(_currentInlineFormats, _groupInline);
+      activeButton = isActive ? button : activeButton;
+      entries.add(
+        DropdownMenuEntry(
+          value: action.formatus,
+          label: '',
+          labelWidget: button,
+        ),
+      );
+    }
+    return DropdownMenu(
+      dropdownMenuEntries: entries,
+      label: (activeCount > 1) ? Text('$activeCount') : activeButton,
+    );
+  }
 
   void _deactivateActions() => _selectedFormats.clear();
 
@@ -191,6 +172,14 @@ class _FormatusBarState extends State<FormatusBarImpl> {
     for (FormatusAction action in widget.actions) {
       if (action.isSection || action.isList) {
         _selectedFormats.remove(action.formatus);
+      }
+    }
+  }
+
+  void _fillGroup(List<FormatusAction> group, FormatusType type) {
+    for (FormatusAction action in widget.actions) {
+      if (action.formatus.type == type) {
+        group.add(action);
       }
     }
   }
@@ -304,24 +293,41 @@ class FormatusButton extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return (action.formatus == Formatus.gap)
-        ? SizedBox(height: 8, width: 8)
-        : IconButton(
-            color:
-                ((action.formatus == Formatus.color) &&
-                    (textColor != Colors.transparent))
-                ? textColor
-                : null,
-            icon: action.icon,
-            isSelected: isSelected,
-            key: ValueKey<String>(action.formatus.name),
-            onPressed: onPressed,
-            style: isSelected
-                ? _formatusButtonStyleActive
-                : _formatusButtonStyle,
-          );
-  }
+  Widget build(BuildContext context) => (action.formatus == Formatus.gap)
+      ? SizedBox(height: 8, width: 8)
+      : (action.formatus == Formatus.textSize)
+      ? _buildSizeSelector()
+      : IconButton(
+          color:
+              ((action.formatus == Formatus.color) &&
+                  (textColor != Colors.transparent))
+              ? textColor
+              : null,
+          icon: action.icon,
+          isSelected: isSelected,
+          key: ValueKey<String>(action.formatus.name),
+          onPressed: onPressed,
+          style: isSelected ? _formatusButtonStyleActive : _formatusButtonStyle,
+        );
+
+  Widget _buildSizeSelector() => PopupMenuButton(
+    itemBuilder: (BuildContext context) => [
+      for (Formatus formatus in [])
+        PopupMenuItem(
+          key: ValueKey(formatus.key),
+          value: formatus,
+          child: FormatusButton(
+            action: FormatusAction(formatus: formatus),
+            isSelected: false,
+            onPressed: () => {},
+          ),
+        ),
+    ],
+    child: Badge(
+      label: Icon(Icons.arrow_drop_down_circle_outlined),
+      child: Icon(Icons.format_size_outlined),
+    ),
+  );
 }
 
 final ButtonStyle _formatusButtonStyle = ButtonStyle(

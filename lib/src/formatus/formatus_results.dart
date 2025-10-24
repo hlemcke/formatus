@@ -76,7 +76,7 @@ class FormatusResults {
 
       //--- Append [InlineSpan] according to texts typography
       _appendSpan(node, path);
-      formattedText += node.isLineFeed ? '' : node.text;
+      formattedText += node.isLineFeed ? '' : node.escapedText;
       plainText += node.text;
     }
 

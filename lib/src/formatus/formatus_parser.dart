@@ -95,9 +95,11 @@ class FormatusParser {
       if (offset < _formatted.length) {
         int end = _formatted.indexOf('<', offset);
         if (end > offset) {
+          String text = _formatted.substring(offset, end);
+          text = text.replaceAll(lessThan, '<');
           FormatusNode node = FormatusNode(
             formats: formats.toList(),
-            text: _formatted.substring(offset, end),
+            text: text,
           );
           node.attribute = tag.attribute;
           node.color = tag.color;

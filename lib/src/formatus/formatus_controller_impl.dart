@@ -221,15 +221,27 @@ class FormatusControllerImpl extends TextEditingController
     _prevSelection = _emptySelection;
   }
 
+  /// Handles pasted text by:
+  ///
+  /// * replacing all CRLF by a single space
+  bool _handlePastedText(DeltaText deltaText) {
+    if (deltaText.textAdded.length < 2) return false;
+    deltaText._textAdded = deltaText._textAdded.replaceAll('\r', '');
+    deltaText._textAdded = deltaText._textAdded.replaceAll('\n', ' ');
+
+    //--- Check if pasted text contains html tags
+    return false;
+  }
+
   @visibleForTesting
   void onListen() => _onListen();
 
   ///
-  /// This closure will be called by the underlying system whenever the
-  /// content of the text field changes or cursor is repositioned.
+  /// Will be called by the underlying system whenever
+  /// the content of the text field changes or cursor is repositioned.
   ///
   void _onListen() {
-    //--- cannot update selection! (would refire _onListen)
+    //--- must not update selection! (would refire _onListen)
     _nextSelection = selection;
 
     //--- Immediate handling of unmodified text but possible range change
@@ -256,11 +268,8 @@ class FormatusControllerImpl extends TextEditingController
       nextText: text,
     );
     debugPrint('=== _onListen => $deltaText');
-
-    //--- Replace all line-break in pasted text by single space
-    // TODO transform pasted line-breaks into separate sections
-    if (deltaText._textAdded.length > 1) {
-      deltaText._textAdded = deltaText._textAdded.replaceAll('\n', ' ');
+    if (_handlePastedText(deltaText)) {
+      // return document.insertFormatted(deltaText);
     }
     document.updateText(deltaText, selectedFormats, color: selectedColor);
     _rememberNodeResults();

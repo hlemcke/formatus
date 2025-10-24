@@ -130,7 +130,7 @@ void main() {
         controller.document.results.formattedText,
         '<p>Our logo: <img src="logo.png" aria-label="Djarjo Logo"></img></p>',
       );
-      expect(controller.document.results.plainText, 'Our logo: ');
+      expect(controller.document.results.plainText, 'Our logo:  ');
       expect(controller.document.textNodes.length, 2);
       expect(controller.document.textNodes[0].formats, [Formatus.paragraph]);
       expect(controller.document.textNodes[0].text, 'Our logo: ');
@@ -165,7 +165,11 @@ void main() {
         controller.document.results.formattedText,
         '<p>This <img src="logo.png" aria-label="Djarjo Logo"></img>is a logo</p>',
       );
-      expect(controller.document.results.plainText, 'This is a logo');
+      expect(
+        controller.document.results.plainText,
+        'This  is a logo',
+        reason: 'plainText inserts a space at image position',
+      );
       expect(controller.document.textNodes.length, 3);
       expect(controller.document.textNodes[0].formats, [Formatus.paragraph]);
       expect(controller.document.textNodes[0].text, 'This ');
@@ -202,7 +206,11 @@ void main() {
         controller.document.results.formattedText,
         '<p><img src="logo.png" aria-label="Djarjo Logo"></img>Our logo</p>',
       );
-      expect(controller.document.results.plainText, 'Our logo');
+      expect(
+        controller.document.results.plainText,
+        ' Our logo',
+        reason: 'plainText inserts a space at image position',
+      );
       expect(controller.document.textNodes.length, 2);
       expect(controller.document.textNodes[0].formats, [
         Formatus.paragraph,

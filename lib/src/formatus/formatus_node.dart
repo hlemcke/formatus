@@ -4,7 +4,7 @@ import 'formatus_model.dart';
 
 ///
 /// A [FormatusNode] contains a sequence of characters with a different format
-/// than its predecessor or successor has.
+/// than its predecessor or successor.
 ///
 class FormatusNode {
   /// Accessible rich internet application standard
@@ -77,6 +77,9 @@ class FormatusNode {
     ..ariaLabel = ariaLabel
     ..attribute = attribute
     ..color = color;
+
+  /// Returns text with all `<` replaced by html less than
+  String get escapedText => text.replaceAll('<', lessThan);
 
   /// Returns `true` if last format requires an attribute
   bool get hasAttribute => attribute.isNotEmpty;

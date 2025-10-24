@@ -9,7 +9,8 @@ void main() {
 const String initialTemplateKey = 'Lists';
 const Map<String, String> textTemplates = {
   'Empty': '',
-  'Short': '<p><color 0xFF0000ff>Blue</> with <b>bold</> words</>',
+  'Short':
+      '<p><div style="color: #0xFF0000ff">Blue</> with <b>bold</> words</>',
   'Long': '''
 <h1>Formatus Features</h1>
 <h2>Text with <b>bold</b>, <i>italic</i> and <u>underlined</u> words</h2>.
@@ -63,6 +64,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   late FormatusController controller;
   final FocusNode _formatusFocus = FocusNode(debugLabel: 'formatus');
+  bool condenseActions = false;
   String savedText = '';
 
   @override
@@ -86,14 +88,16 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
   }
 
-  PreferredSizeWidget _buildAppBar() => AppBar(
-    title: const Text('Formatus Rich-Text-Editor'),
-    actions: [_buildTextPreselection()],
-  );
+  PreferredSizeWidget _buildAppBar() =>
+      AppBar(title: const Text('Formatus Rich-Text-Editor'));
 
   Widget _buildBody() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [_buildTextPreselection(), _buildCondenser()],
+      ),
       const Divider(color: Colors.deepPurpleAccent),
       FormatusBar(
         actions: formatusDefaultActions,
@@ -118,9 +122,21 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       const Divider(color: Colors.deepPurpleAccent),
       SizedBox(height: 16),
-      _buildSavedText(),
+      _buildFormattedText(),
       SizedBox(height: 16),
       _buildFormatusViewer(),
+    ],
+  );
+
+  Widget _buildCondenser() => Row(
+    mainAxisAlignment: MainAxisAlignment.start,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Text('condense actions'),
+      Checkbox(
+        onChanged: (v) => setState(() => condenseActions = v!),
+        value: condenseActions,
+      ),
     ],
   );
 
@@ -143,8 +159,10 @@ class _MyHomePageState extends State<MyHomePage> {
     ),
   );
 
-  Widget _buildSavedText() =>
-      Frame(label: 'Formatted Text', child: Text(controller.formattedText));
+  Widget _buildFormattedText() => Frame(
+    label: 'Formatted Text',
+    child: SelectableText(controller.formattedText, showCursor: true),
+  );
 
   Widget _buildTextPreselection() => DropdownMenu<String>(
     dropdownMenuEntries: [
@@ -152,7 +170,7 @@ class _MyHomePageState extends State<MyHomePage> {
         DropdownMenuEntry<String>(label: key, value: key),
     ],
     initialSelection: initialTemplateKey,
-    label: const Text('Preselect text'),
+    label: const Text('preselect text'),
     onSelected: (key) {
       _formatusFocus.requestFocus();
       setState(() => controller.formattedText = textTemplates[key]!);

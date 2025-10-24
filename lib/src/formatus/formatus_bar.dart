@@ -60,17 +60,14 @@ abstract class FormatusBar extends StatefulWidget {
   ///
   /// Supplying `null` for `actions` will use [formatusDefaultActions].
   ///
-  /// TODO `condenseActions` will bundle format actions by [DropdownMenu]s
-  /// TODO `onEditAnchor` to call a dialog to edit [FormatusAnchor]
-  /// TODO `onTapAnchor` to call function if anchor text is tapped
-  /// TODO `onSelectEmoji`
+  /// TODO `condense` will bundle format actions by [DropdownMenu]s
   ///
   factory FormatusBar({
     Key? key,
     required FormatusController controller,
     List<FormatusAction>? actions,
     WrapAlignment alignment = WrapAlignment.start,
-    bool condenseActions = false,
+    bool condense = false,
     Axis direction = Axis.horizontal,
     AnchorEditor? onEditAnchor,
     ImageSelector? onSelectImage,
@@ -80,7 +77,7 @@ abstract class FormatusBar extends StatefulWidget {
     controller: controller as FormatusControllerImpl,
     actions: actions,
     alignment: alignment,
-    condenseActions: condenseActions,
+    condense: condense,
     direction: direction,
     onEditAnchor: onEditAnchor,
     onSelectImage: onSelectImage,
@@ -106,6 +103,7 @@ final List<FormatusAction> formatusDefaultActions = [
   FormatusAction(formatus: Formatus.underline),
   FormatusAction(formatus: Formatus.strikeThrough),
   FormatusAction(formatus: Formatus.color),
+  FormatusAction(formatus: Formatus.textSize),
   anchorAction,
   imageAction,
 ];

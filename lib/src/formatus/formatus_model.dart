@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 
 import 'formatus_document.dart';
 
+const String lessThan = '&lt;';
+
 const double kDefaultFontSize = 14.0;
 
 ///
@@ -30,6 +32,14 @@ enum Formatus {
     FormatusType.inline,
     Icon(Icons.link),
     TextStyle(color: Colors.purpleAccent, decoration: TextDecoration.underline),
+  ),
+
+  /// Inline format for a smaller font size
+  big(
+    'big',
+    FormatusType.inline,
+    Icon(Icons.text_increase_outlined),
+    TextStyle(fontSize: kDefaultFontSize + 2),
   ),
 
   /// Inline format to display bold text
@@ -132,6 +142,14 @@ enum Formatus {
   ///
   root('body', FormatusType.root, null, TextStyle(fontSize: kDefaultFontSize)),
 
+  /// Inline format for a smaller font size
+  small(
+    'small',
+    FormatusType.inline,
+    Icon(Icons.text_decrease_outlined),
+    TextStyle(fontSize: kDefaultFontSize - 2),
+  ),
+
   /// Inline format to strike through text
   strikeThrough(
     's',
@@ -146,9 +164,9 @@ enum Formatus {
   /// underlined because it is prefixed with a non-blank char.
   subscript('sub', FormatusType.inline, FormatusActionText(text: 'sub'), null),
 
-  /// Inline format to make text smaller and put it a little bit above the line
+  /// Inline format to make text smaller and put it a bit above the line
   ///
-  /// In markdown this would look like: `x^y`
+  /// In markdown this is: `x^y`
   superscript(
     'super',
     FormatusType.inline,
@@ -156,14 +174,11 @@ enum Formatus {
     null,
   ),
 
-  /// TODO implement superscript
-  // superscript requires a suitable icon for the formatting action
-  // Example for x^y: TextSpan( text: 'x'),
-  // WidgetSpan(child: Transform.translate(
-  //  offset: Offset(2, -10), child: Text('y', style: TextStyle(fontSize: 20 )))
-
   /// plain text node -> format derived from parent nodes
   text('', FormatusType.inline, null, null),
+
+  /// Action to modify text size to big or small
+  textSize('', FormatusType.none, Icon(Icons.format_size_outlined), null),
 
   /// Inline format to underline text
   underline(
@@ -364,33 +379,30 @@ enum FormatusType {
 }
 
 ///
-/// Finds an enumeration item either by its name or by its key
+/// Finds enumeration value by [text].
 ///
-dynamic findEnum(
+/// If [withKey] is `true` then keys will be compared first.
+///
+/// If [text] is not found in [values] then [defaultValue] will be returned.
+///
+dynamic findEnum<T extends Enum>(
   String? text,
-  List<dynamic> values, {
-  dynamic defaultValue,
-  bool withKey = true,
+  Iterable<T> enumValues, {
+  T? defaultValue,
+  bool withKey = false,
 }) {
-  if (text != null) {
-    if (withKey) {
-      for (dynamic enumItem in values) {
-        if (enumItem.key == text) {
-          return enumItem;
-        }
-      }
+  if ((text == null) || text.isEmpty) return defaultValue;
+  if (withKey) {
+    for (dynamic enumItem in enumValues) {
+      if (text == enumItem.key) return enumItem;
     }
-    if (!text.contains('.')) {
-      String name = values[0].toString();
-      name = name.substring(0, name.indexOf('.'));
-      text = '$name.$text';
-    }
-    text = text.toLowerCase();
-    for (dynamic enumItem in values) {
-      if (enumItem.toString().toLowerCase() == text) {
-        return enumItem;
-      }
-    }
+  }
+  if (text.contains('.')) {
+    text = text.substring(text.lastIndexOf('.') + 1);
+  }
+  text = text.toLowerCase();
+  for (dynamic enumItem in enumValues) {
+    if (text == enumItem.toString().toLowerCase()) return enumItem;
   }
   return defaultValue;
 }
