@@ -32,6 +32,9 @@ class FormatusAction {
   bool get isList => formatus.isList;
 
   bool get isSection => formatus.isSection;
+
+  @override
+  String toString() => formatus.toString();
 }
 
 /// Signature for callback `onEditAnchor`

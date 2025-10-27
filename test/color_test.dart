@@ -210,7 +210,7 @@ void main() {
       expect(
         doc.results.formattedText,
         '<p>${limeDiv}This </div>'
-        '<b>${limeDiv}is</div></b>${limeDiv} colored. This is </div>'
+        '<b>${limeDiv}is</div></b>$limeDiv colored. This is </div>'
         '<i>${limeDiv}not</div></i></p>',
       );
     });

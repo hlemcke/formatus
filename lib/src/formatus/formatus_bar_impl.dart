@@ -77,22 +77,15 @@ class FormatusBarImpl extends StatefulWidget implements FormatusBar {
   }
 
   @override
-  State<StatefulWidget> createState() => _FormatusBarState();
+  State<StatefulWidget> createState() => FormatusBarState();
 }
 
 ///
 /// `selectedFormats` are managed in [FormatusController].
 ///
-class _FormatusBarState extends State<FormatusBarImpl> {
+class FormatusBarState extends State<FormatusBarImpl> {
   late final FormatusControllerImpl _ctrl;
-
-  final List<FormatusAction> _groupSections = [];
-  final List<FormatusAction> _groupInlines = [];
-  final List<FormatusAction> _groupLists = [];
-  final List<FormatusAction> _groupSizes = [
-    FormatusAction(formatus: Formatus.big),
-    FormatusAction(formatus: Formatus.small),
-  ];
+  late final FormatusActionGroups _groups;
 
   Color get _selectedColor => _ctrl.selectedColor;
 
@@ -108,11 +101,9 @@ class _FormatusBarState extends State<FormatusBarImpl> {
   void initState() {
     super.initState();
     _ctrl = widget.controller;
-    _deactivateActions();
     _ctrl.addListener(_updateActionsDisplay);
-    _fillGroup(_groupInlines, FormatusType.inline);
-    _fillGroup(_groupLists, FormatusType.list);
-    _fillGroup(_groupSections, FormatusType.section);
+    _groups = FormatusActionGroups(actions: widget.actions);
+    _deactivateActions();
   }
 
   @override
@@ -120,51 +111,29 @@ class _FormatusBarState extends State<FormatusBarImpl> {
       ? Wrap(
           alignment: widget.alignment,
           direction: widget.direction,
-          children: widget.condense
-              ? [
-                  _buildGroup(FormatusType.section, _groupSections),
-                  _buildGroup(FormatusType.list, _groupLists),
-                  _buildGroup(FormatusType.inline, _groupInlines),
-                ]
-              : [
-                  for (FormatusAction action in widget.actions)
-                    FormatusButton(
-                      action: action,
-                      key: ValueKey('${action.formatus.key}_${widget.key}'),
-                      isSelected: _selectedFormats.contains(action.formatus),
-                      onPressed: () => _onToggleAction(action.formatus),
-                      textColor: _selectedColor,
-                    ),
-                ],
+          children: widget.condense ? _buildCondensed() : _buildExpanded(),
         )
       : SizedBox.shrink();
 
-  Widget _buildGroup(FormatusType type, List<FormatusAction> actions) {
-    int activeCount = 0;
-    FormatusButton? activeButton;
-    List<DropdownMenuEntry> entries = [];
-    for (FormatusAction action in actions) {
-      bool isActive = _selectedFormats.contains(action.formatus);
-      activeCount += isActive ? 1 : 0;
-      FormatusButton button = FormatusButton(
-        action: action,
-        isSelected: isActive,
-        onPressed: () => _onToggleAction(action.formatus),
-      );
-      activeButton = isActive ? button : activeButton;
-      entries.add(
-        DropdownMenuEntry(
-          value: action.formatus,
-          label: '',
-          labelWidget: button,
-        ),
-      );
-    }
-    return DropdownMenu(
-      dropdownMenuEntries: entries,
-      label: (activeCount > 1) ? Text('$activeCount') : activeButton,
-    );
-  }
+  List<Widget> _buildCondensed() => [
+    FormatusGroupButton(ctrl: _ctrl, group: _groups[FormatusType.section]!),
+    FormatusGroupButton(ctrl: _ctrl, group: _groups[FormatusType.list]!),
+    FormatusGroupButton(ctrl: _ctrl, group: _groups[FormatusType.size]!),
+    FormatusGroupButton(ctrl: _ctrl, group: _groups[FormatusType.inline]!),
+  ];
+
+  List<Widget> _buildExpanded() => [
+    for (FormatusAction action in widget.actions)
+      (action.formatus == Formatus.textSize)
+          ? FormatusGroupButton(ctrl: _ctrl, group: _groups[FormatusType.size]!)
+          : FormatusButton(
+              action: action,
+              key: ValueKey('${action.formatus.key}_${widget.key}'),
+              isSelected: _selectedFormats.contains(action.formatus),
+              onPressed: () => _onToggleAction(action.formatus),
+              textColor: _selectedColor,
+            ),
+  ];
 
   void _deactivateActions() => _selectedFormats.clear();
 
@@ -172,14 +141,6 @@ class _FormatusBarState extends State<FormatusBarImpl> {
     for (FormatusAction action in widget.actions) {
       if (action.isSection || action.isList) {
         _selectedFormats.remove(action.formatus);
-      }
-    }
-  }
-
-  void _fillGroup(List<FormatusAction> group, FormatusType type) {
-    for (FormatusAction action in widget.actions) {
-      if (action.formatus.type == type) {
-        group.add(action);
       }
     }
   }
@@ -295,8 +256,6 @@ class FormatusButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) => (action.formatus == Formatus.gap)
       ? SizedBox(height: 8, width: 8)
-      : (action.formatus == Formatus.textSize)
-      ? _buildSizeSelector()
       : IconButton(
           color:
               ((action.formatus == Formatus.color) &&
@@ -307,33 +266,157 @@ class FormatusButton extends StatelessWidget {
           isSelected: isSelected,
           key: ValueKey<String>(action.formatus.name),
           onPressed: onPressed,
-          style: isSelected ? _formatusButtonStyleActive : _formatusButtonStyle,
+          style: isSelected
+              ? _formatusButtonStyleActive
+              : getFormatusButtonStyle(),
         );
-
-  Widget _buildSizeSelector() => PopupMenuButton(
-    itemBuilder: (BuildContext context) => [
-      for (Formatus formatus in [])
-        PopupMenuItem(
-          key: ValueKey(formatus.key),
-          value: formatus,
-          child: FormatusButton(
-            action: FormatusAction(formatus: formatus),
-            isSelected: false,
-            onPressed: () => {},
-          ),
-        ),
-    ],
-    child: Badge(
-      label: Icon(Icons.arrow_drop_down_circle_outlined),
-      child: Icon(Icons.format_size_outlined),
-    ),
-  );
 }
 
-final ButtonStyle _formatusButtonStyle = ButtonStyle(
-  //  iconSize: WidgetStateProperty.all(kMinInteractiveDimension * 0.7),
+///
+///
+///
+class FormatusActionGroups {
+  FormatusActionGroups({required List<FormatusAction> actions}) {
+    for (FormatusAction action in actions) {
+      this[action.formatus.type]?.actions.add(action);
+    }
+  }
+
+  FormatusActionGroup? operator [](FormatusType type) => {
+    FormatusType.inline: FormatusActionGroup(
+      icon: Icon(Icons.abc_outlined),
+      type: FormatusType.inline,
+    ),
+    FormatusType.list: FormatusActionGroup(
+      icon: Icon(Icons.line_weight_outlined),
+      type: FormatusType.list,
+    ),
+    FormatusType.section: FormatusActionGroup(
+      icon: Icon(Icons.question_mark_outlined),
+      isMandatory: true,
+      type: FormatusType.section,
+    ),
+    FormatusType.size: FormatusActionGroup(
+      actions: [
+        FormatusAction(formatus: Formatus.big),
+        FormatusAction(formatus: Formatus.small),
+      ],
+      icon: Icon(Icons.format_size_outlined),
+      type: FormatusType.size,
+    ),
+  }[type];
+}
+
+///
+/// Groups actions for a `condensed` [FormatusBar]
+///
+class FormatusActionGroup {
+  /// Type of this action group
+  final FormatusType type;
+
+  /// Icon displayed if no action is active
+  final Widget icon;
+
+  /// Actions will be filled by [FormatusBar]
+  late List<FormatusAction> actions;
+
+  /// One item must always be selected
+  final bool isMandatory;
+
+  FormatusActionGroup({
+    required this.type,
+    required this.icon,
+    List<FormatusAction>? actions,
+    this.isMandatory = false,
+  }) {
+    this.actions = (actions == null) ? [] : actions;
+  }
+}
+
+///
+/// Compact menu of formatting actions in a dropdown menu.
+///
+/// Button itself displays an icon followed by a dropdown arrow:
+///
+/// * [icon] if no action is active
+/// * _action_  if exactly one action is active
+/// * number of actions if multiple actions are active (only for inlines)
+///
+class FormatusGroupButton extends StatelessWidget {
+  final FormatusActionGroup group;
+  final FormatusControllerImpl ctrl;
+
+  const FormatusGroupButton({
+    super.key,
+    required this.ctrl,
+    required this.group,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    List<FormatusButton> buttons = [];
+    int count = 0;
+    FormatusButton? activeButton;
+
+    //--- determine active actions while building menu items
+    for (FormatusAction action in group.actions) {
+      bool isActive = ctrl.selectedFormats.contains(action.formatus);
+      count += isActive ? 1 : 0;
+      FormatusButton button = FormatusButton(
+        action: action,
+        isSelected: isActive,
+      );
+      buttons.add(button);
+      activeButton = isActive ? button : activeButton;
+    }
+
+    return IconButton(
+      icon: _buildGroupIcon(count, activeButton),
+      onPressed: () => _showIconMenu(context, buttons),
+      style: (count > 0)
+          ? _formatusButtonStyleActive
+          : getFormatusButtonStyle(isGroup: true),
+    );
+  }
+
+  Widget _buildGroupIcon(int count, FormatusButton? active) => Row(
+    mainAxisAlignment: MainAxisAlignment.start,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      (count == 0)
+          ? group.icon
+          : (count == 1)
+          ? active!
+          : Text('$count'),
+      Text(
+        '▼',
+        style: TextStyle(
+          fontSize: 12, // Control the size here
+          fontWeight: FontWeight.bold, // Make it look crisp
+          height: 1.0, // Adjust line height to compact vertical space
+        ),
+      ),
+    ],
+  );
+
+  void _showIconMenu(BuildContext context, List<FormatusButton> buttons) =>
+      showMenu(
+        context: context,
+        items: [
+          for (FormatusButton button in buttons) PopupMenuItem(child: button),
+        ],
+        position: RelativeRect.fromLTRB(0, 0, 0, 0),
+      );
+}
+
+ButtonStyle getFormatusButtonStyle({bool isGroup = false}) => ButtonStyle(
   fixedSize: WidgetStateProperty.all(
-    const Size.square(kMinInteractiveDimension * 0.7),
+    isGroup
+        ? Size(
+            kMinInteractiveDimension * 0.7 + 20,
+            kMinInteractiveDimension * 0.7,
+          )
+        : const Size.square(kMinInteractiveDimension * 0.7),
   ),
   shape: WidgetStateProperty.all<RoundedRectangleBorder>(
     const RoundedRectangleBorder(
@@ -346,7 +429,7 @@ final ButtonStyle _formatusButtonStyle = ButtonStyle(
   ),
 );
 
-final ButtonStyle _formatusButtonStyleActive = _formatusButtonStyle.merge(
+final ButtonStyle _formatusButtonStyleActive = getFormatusButtonStyle().merge(
   ButtonStyle(
     backgroundColor: WidgetStateProperty.all<Color>(Colors.amberAccent),
   ),

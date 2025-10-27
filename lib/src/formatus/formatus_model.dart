@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:formatus/formatus.dart';
 
 import 'formatus_document.dart';
 
@@ -88,7 +89,7 @@ enum Formatus {
   horizontalRuler('hr', FormatusType.section, Text('-'), null),
 
   /// Can be used to put a small gap between format actions
-  gap('?', FormatusType.bar, null, null),
+  gap('_', FormatusType.bar, null, null),
 
   /// Inline element to italicize text
   italic(
@@ -376,6 +377,9 @@ enum FormatusType {
 
   /// Section elements can only contain `inline` elements
   section,
+
+  /// Inline element to modify text size
+  size,
 }
 
 ///
