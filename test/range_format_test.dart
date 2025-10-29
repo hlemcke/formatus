@@ -121,9 +121,9 @@ void main() {
       //--- given
       String formatted = '<h1><b>Title</b> Line</h1>';
       FormatusDocument doc = FormatusDocument(formatted: formatted);
-      TextSelection selection = const TextSelection(
+      TextSelection selection = TextSelection(
         baseOffset: 0,
-        extentOffset: 10,
+        extentOffset: doc.results.plainText.length,
       );
 
       //--- when
@@ -145,9 +145,9 @@ void main() {
       //--- given
       String formatted = '<h1><b>Title </b><i>Line </i><u>With </u>Color</h1>';
       FormatusDocument doc = FormatusDocument(formatted: formatted);
-      TextSelection selection = const TextSelection(
+      TextSelection selection = TextSelection(
         baseOffset: 0,
-        extentOffset: 21,
+        extentOffset: doc.results.plainText.length,
       );
 
       //--- when
@@ -217,12 +217,15 @@ void main() {
     });
 
     //---
-    test('Change paragraph to h1', () {
+    test('Change paragraph with multiple formats to h1', () {
       //--- given
       String formatted =
           '<p><b>Title </b><i>Line </i><u>With </u>${orangeDiv}Color</div></p>';
       FormatusDocument doc = FormatusDocument(formatted: formatted);
-      TextSelection selection = TextSelection.collapsed(offset: 4);
+      TextSelection selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: doc.results.plainText.length,
+      );
 
       //--- when
       doc.updateSectionFormat(selection, Formatus.header1);
@@ -240,6 +243,184 @@ void main() {
       expect(doc.textNodes[2].text, 'With ');
       //"Color"
       expect(doc.textNodes[3].formats, [Formatus.header1, Formatus.color]);
+      expect(doc.textNodes[3].text, 'Color');
+      expect(doc.textNodes[3].color, orange);
+    });
+
+    //---
+    test('Make partially bold text full bold', () {
+      //--- given
+      String formatted =
+          '<p><b>Title </b><i>Line </i><u>With </u>${orangeDiv}Color</div></p>';
+      FormatusDocument doc = FormatusDocument(formatted: formatted);
+      TextSelection selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: doc.results.plainText.length,
+      );
+
+      //--- when
+      doc.updateInlineFormat(selection, Formatus.bold);
+
+      //--- then
+      expect(doc.textNodes.length, 4);
+      //"Title "
+      expect(doc.textNodes[0].formats, [Formatus.paragraph, Formatus.bold]);
+      expect(doc.textNodes[0].text, 'Title ');
+      //"Line "
+      expect(doc.textNodes[1].formats, [
+        Formatus.paragraph,
+        Formatus.italic,
+        Formatus.bold,
+      ]);
+      expect(doc.textNodes[1].text, 'Line ');
+      //"With "
+      expect(doc.textNodes[2].formats, [
+        Formatus.paragraph,
+        Formatus.underline,
+        Formatus.bold,
+      ]);
+      expect(doc.textNodes[2].text, 'With ');
+      //"Color"
+      expect(doc.textNodes[3].formats, [
+        Formatus.paragraph,
+        Formatus.color,
+        Formatus.bold,
+      ]);
+      expect(doc.textNodes[3].text, 'Color');
+      expect(doc.textNodes[3].color, orange);
+    });
+
+    //---
+    test('Make partially italic text full italic', () {
+      //--- given
+      String formatted =
+          '<p><b>Title </b><i>Line </i><u>With </u>${orangeDiv}Color</div></p>';
+      FormatusDocument doc = FormatusDocument(formatted: formatted);
+      TextSelection selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: doc.results.plainText.length,
+      );
+
+      //--- when
+      doc.updateInlineFormat(selection, Formatus.italic);
+
+      //--- then
+      expect(doc.textNodes.length, 4);
+      //"Title "
+      expect(doc.textNodes[0].formats, [
+        Formatus.paragraph,
+        Formatus.bold,
+        Formatus.italic,
+      ]);
+      expect(doc.textNodes[0].text, 'Title ');
+      //"Line "
+      expect(doc.textNodes[1].formats, [Formatus.paragraph, Formatus.italic]);
+      expect(doc.textNodes[1].text, 'Line ');
+      //"With "
+      expect(doc.textNodes[2].formats, [
+        Formatus.paragraph,
+        Formatus.underline,
+        Formatus.italic,
+      ]);
+      expect(doc.textNodes[2].text, 'With ');
+      //"Color"
+      expect(doc.textNodes[3].formats, [
+        Formatus.paragraph,
+        Formatus.color,
+        Formatus.italic,
+      ]);
+      expect(doc.textNodes[3].text, 'Color');
+      expect(doc.textNodes[3].color, orange);
+    });
+
+    //---
+    test('Make partially underlined text full underlined', () {
+      //--- given
+      String formatted =
+          '<p><b>Title </b><i>Line </i><u>With </u>${orangeDiv}Color</div></p>';
+      FormatusDocument doc = FormatusDocument(formatted: formatted);
+      TextSelection selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: doc.results.plainText.length,
+      );
+
+      //--- when
+      doc.updateInlineFormat(selection, Formatus.underline);
+
+      //--- then
+      expect(doc.textNodes.length, 4);
+      //"Title "
+      expect(doc.textNodes[0].formats, [
+        Formatus.paragraph,
+        Formatus.bold,
+        Formatus.underline,
+      ]);
+      expect(doc.textNodes[0].text, 'Title ');
+      //"Line "
+      expect(doc.textNodes[1].formats, [
+        Formatus.paragraph,
+        Formatus.italic,
+        Formatus.underline,
+      ]);
+      expect(doc.textNodes[1].text, 'Line ');
+      //"With "
+      expect(doc.textNodes[2].formats, [
+        Formatus.paragraph,
+        Formatus.underline,
+      ]);
+      expect(doc.textNodes[2].text, 'With ');
+      //"Color"
+      expect(doc.textNodes[3].formats, [
+        Formatus.paragraph,
+        Formatus.color,
+        Formatus.underline,
+      ]);
+      expect(doc.textNodes[3].text, 'Color');
+      expect(doc.textNodes[3].color, orange);
+    });
+
+    //---
+    test('Make partially colored text full colored', () {
+      //--- given
+      String formatted =
+          '<p><b>Title </b><i>Line </i><u>With </u>${orangeDiv}Color</div></p>';
+      FormatusDocument doc = FormatusDocument(formatted: formatted);
+      TextSelection selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: doc.results.plainText.length,
+      );
+
+      //--- when
+      doc.updateInlineFormat(selection, Formatus.color, color: orange);
+
+      //--- then
+      expect(doc.textNodes.length, 4);
+      //"Title "
+      expect(doc.textNodes[0].formats, [
+        Formatus.paragraph,
+        Formatus.bold,
+        Formatus.color,
+      ]);
+      expect(doc.textNodes[0].text, 'Title ');
+      expect(doc.textNodes[0].color, orange);
+      //"Line "
+      expect(doc.textNodes[1].formats, [
+        Formatus.paragraph,
+        Formatus.italic,
+        Formatus.color,
+      ]);
+      expect(doc.textNodes[1].text, 'Line ');
+      expect(doc.textNodes[1].color, orange);
+      //"With "
+      expect(doc.textNodes[2].formats, [
+        Formatus.paragraph,
+        Formatus.underline,
+        Formatus.color,
+      ]);
+      expect(doc.textNodes[2].text, 'With ');
+      expect(doc.textNodes[2].color, orange);
+      //"Color"
+      expect(doc.textNodes[3].formats, [Formatus.paragraph, Formatus.color]);
       expect(doc.textNodes[3].text, 'Color');
       expect(doc.textNodes[3].color, orange);
     });

@@ -59,10 +59,10 @@ Adding text may require removing first (in case a text-range range was selected)
 
 1. Compute headMeta and tailMeta
 2. update section in all nodes behind tailMeta until lineFeed
-2. loop all nodes from tailMeta until headMeta (backwards!)
+3. loop all nodes from tailMeta until headMeta (backwards!)
    => if node is linefeed then delete node
    => else update node section
-3. update section in all nodes in front of headMeta until lineFeed
+4. update section in all nodes in front of headMeta until lineFeed
 
 ## Algorithm for Inline Modification
 

@@ -67,7 +67,7 @@ class FormatusBarImpl extends StatefulWidget implements FormatusBar {
     this.textFieldFocus,
   }) {
     //--- Cleanup actions
-    this.actions = actions ?? formatusDefaultActions;
+    this.actions = actions ?? List.of(formatusDefaultActions);
     if (onEditAnchor == null) {
       this.actions.remove(anchorAction);
     }
