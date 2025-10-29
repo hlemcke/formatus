@@ -93,7 +93,10 @@ final FormatusAction anchorAction = FormatusAction(formatus: Formatus.anchor);
 
 final FormatusAction imageAction = FormatusAction(formatus: Formatus.image);
 
-final List<FormatusAction> formatusDefaultActions = [
+List<FormatusAction> get formatusDefaultActions =>
+    List.of(_formatusDefaultActions);
+
+final List<FormatusAction> _formatusDefaultActions = [
   FormatusAction(formatus: Formatus.header1),
   FormatusAction(formatus: Formatus.header2),
   FormatusAction(formatus: Formatus.header3),
