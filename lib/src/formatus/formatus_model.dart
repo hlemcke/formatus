@@ -176,7 +176,7 @@ enum Formatus {
   ),
 
   /// plain text node -> format derived from parent nodes
-  text('', FormatusType.inline, null, null),
+  text('?', FormatusType.inline, null, null),
 
   /// Action to modify text size to big or small
   textSize('', FormatusType.none, Icon(Icons.format_size_outlined), null),
@@ -216,19 +216,24 @@ enum Formatus {
       ? 1.9
       : (this == Formatus.header2)
       ? 1.6
-      : (this == Formatus.header1)
+      : (this == Formatus.header3)
       ? 1.3
       : 1.0; // <p>
 
   @override
   String toString() => '<$key>';
 
-  static Formatus find(String text) => findEnum(
-    text,
-    Formatus.values,
-    defaultValue: Formatus.text,
-    withKey: true,
-  );
+  static Formatus find(String text) {
+    if (text.isEmpty) return Formatus.text;
+    for (Formatus item in Formatus.values) {
+      if (text == item.key) return item;
+    }
+    text = text.toLowerCase();
+    for (Formatus item in Formatus.values) {
+      if (text == item.name) return item;
+    }
+    return Formatus.text;
+  }
 }
 
 ///
@@ -380,33 +385,4 @@ enum FormatusType {
 
   /// Inline element to modify text size
   size,
-}
-
-///
-/// Finds enumeration value by [text].
-///
-/// If [withKey] is `true` then keys will be compared first.
-///
-/// If [text] is not found in [values] then [defaultValue] will be returned.
-///
-dynamic findEnum<T extends Enum>(
-  String? text,
-  Iterable<T> enumValues, {
-  T? defaultValue,
-  bool withKey = false,
-}) {
-  if ((text == null) || text.isEmpty) return defaultValue;
-  if (withKey) {
-    for (dynamic enumItem in enumValues) {
-      if (text == enumItem.key) return enumItem;
-    }
-  }
-  if (text.contains('.')) {
-    text = text.substring(text.lastIndexOf('.') + 1);
-  }
-  text = text.toLowerCase();
-  for (dynamic enumItem in enumValues) {
-    if (text == enumItem.toString().toLowerCase()) return enumItem;
-  }
-  return defaultValue;
 }

@@ -16,7 +16,7 @@ Add the latest version of *Formatus* to the `pubspec.yaml` file:
 
 ```yaml
 flutter:
-  formatus: ^1.4.0+2
+  formatus: ^1.5.0
 ```
 
 Create a `FormatusController` and a `FormatusBar`.
@@ -57,16 +57,18 @@ void dispose() {
 
 ## Supported Formats
 
-* __H1__ -> Header 1 with largest font size
-* __H2__ -> Header 2 with larger font size
-* __H3__ -> Header 3 with large font size
-* __P__ -> Paragraph with standard font size
-* __B__ -> bold text
-* __I__ -> italicized text
-* __U__ -> underlined text
-* __S__ -> strike-through text
-* __sub__ -> subscript text
-* __sup__ -> superscript text
+* __H1__ → Header 1 with largest font size
+* __H2__ → Header 2 with larger font size
+* __H3__ → Header 3 with large font size
+* __P__ → Paragraph with standard font size
+* __OL__ → Ordered list
+* __UL__ → Unordered list
+* __B__ → bold text
+* __I__ → italicized text
+* __U__ → underlined text
+* __S__ → strike-through text
+* __sub__ → subscript text
+* __sup__ → superscript text
 
 
 ## 🔗 Project Links
@@ -82,7 +84,8 @@ void dispose() {
 1. Subscript and superscript are displayed correctly only in [FormatusViewer] because Flutter
    [TextField] and [TextFormField] do not support them
 2. Coloring is restricted to the 19 included colors
-3. Line-breaks in pasted text are replaced by spaces. Should better create separate sections.
+3. Line-breaks in pasted text are replaced by spaces
+4. Lists cannot be nested
 
 ## User Manual
 
@@ -102,16 +105,16 @@ Section
 
 This section describes the use cases for `Formatus`.
 
-* Position caret -> updates `FormatusBar` with formats at caret position
-* Select a text range -> updates `FormatusBar` with formats from selection start
+* Position caret → updates `FormatusBar` with formats at caret position
+* Select a text range → updates `FormatusBar` with formats from selection start
 * Activate another section-format in `FormatusBar`
-  -> the current section (defined by caret position or start of a selected text-range)
+  → the current section (defined by caret position or start of a selected text-range)
   will be changed to the activated section-format
-* Change an inline-format in `FormatusBar` -> if a text range is selected
+* Change an inline-format in `FormatusBar` → if a text range is selected
   then the selected text will be updated with the new format
-* Enter characters (via keyboard or by pasting from a clipboard) -> characters
+* Enter characters (via keyboard or by pasting from a clipboard) → characters
   will be inserted at caret position. Current format settings will be applied
-* Delete characters -> if this includes one or more (requires a text-range)
+* Delete characters → if this includes one or more (requires a text-range)
   line-breaks then the text right of the deleted text will be integrated
   into the top-level node at deletion start
 * Display the formatted text with `FormatusViewer`

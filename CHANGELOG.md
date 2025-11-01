@@ -1,3 +1,8 @@
+## 1.5.0
+* Parsing now just skips unknown tags
+* Added ordered and unordered lists
+* Added action to insert, modify and delete a link
+
 ## 1.4.1
 * Fixed bug when starting with an empty formatted string
 * Removed _subscript_ and _superscript_ from default formatting actions 

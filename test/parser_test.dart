@@ -354,4 +354,37 @@ void main() {
       expect(nodes[6].text, 'para');
     });
   });
+
+  group('Parser: test unknown tags and broken structure', () {
+    test('Parse tag em inside section p', () {
+      //--- given
+      String formatted = '<p>Para with <em>emphasized</em> text</p>';
+      FormatusParser parser = FormatusParser(formatted: formatted);
+
+      //--- when
+      List<FormatusNode> nodes = parser.parse();
+
+      //--- then
+      expect(nodes.length, 1);
+      expect(nodes[0].formats, [Formatus.paragraph]);
+      expect(nodes[0].text, 'Para with emphasized text');
+    });
+    test('Parse only tag em', () {
+      //--- given
+      String formatted = '<em>Emphasized with <b>bold</b> text</em>';
+      FormatusParser parser = FormatusParser(formatted: formatted);
+
+      //--- when
+      List<FormatusNode> nodes = parser.parse();
+
+      //--- then
+      expect(nodes.length, 3);
+      expect(nodes[0].formats, [Formatus.paragraph]);
+      expect(nodes[0].text, 'Emphasized with ');
+      expect(nodes[1].formats, [Formatus.paragraph, Formatus.bold]);
+      expect(nodes[1].text, 'bold');
+      expect(nodes[2].formats, [Formatus.paragraph]);
+      expect(nodes[2].text, ' text');
+    });
+  });
 }
