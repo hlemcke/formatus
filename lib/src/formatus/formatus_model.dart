@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:formatus/formatus.dart';
 
 import 'formatus_document.dart';
 
@@ -14,10 +13,11 @@ const double kDefaultFontSize = 14.0;
 ///
 /// * Sections
 /// * Lists
+/// * Sizes
 /// * Inlines
 ///
-/// Each entry provides default values for [FormatusAction] widget
-/// and display format. Some entries require an attribute.
+/// A _collapsible_ action collects formatting actions.
+/// It is identified by its key starting with `-`!
 ///
 enum Formatus {
   /// An html anchor element:
@@ -38,9 +38,9 @@ enum Formatus {
   /// Inline format for a smaller font size
   big(
     'big',
-    FormatusType.inline,
+    FormatusType.size,
     Icon(Icons.text_increase_outlined),
-    TextStyle(fontSize: kDefaultFontSize + 2),
+    TextStyle(fontSize: kDefaultFontSize + 3),
   ),
 
   /// Inline format to display bold text
@@ -49,6 +49,36 @@ enum Formatus {
     FormatusType.inline,
     Icon(Icons.format_bold),
     TextStyle(fontWeight: FontWeight.bold),
+  ),
+
+  /// End of actions to be added to previous collapse*
+  collapseEnd('--', FormatusType.bar, null, null),
+
+  /// Collapse inlines: B. I, U, S
+  collapseInlines('-I', FormatusType.inline, Icon(Icons.abc_outlined), null),
+
+  /// Collapse lists: ordered list, unordered list
+  collapseLists(
+    '-L',
+    FormatusType.list,
+    Icon(Icons.line_weight_outlined),
+    null,
+  ),
+
+  /// Collapse sections: H1, H2, H3, P
+  collapseSections(
+    '-P',
+    FormatusType.section,
+    Icon(Icons.question_mark_outlined),
+    null,
+  ),
+
+  /// Collapses sizes: big, small
+  collapseSizes(
+    '-S',
+    FormatusType.size,
+    Icon(Icons.format_size_outlined),
+    null,
   ),
 
   /// Inline format to display text in a specified color
@@ -146,9 +176,9 @@ enum Formatus {
   /// Inline format for a smaller font size
   small(
     'small',
-    FormatusType.inline,
+    FormatusType.size,
     Icon(Icons.text_decrease_outlined),
-    TextStyle(fontSize: kDefaultFontSize - 2),
+    TextStyle(fontSize: kDefaultFontSize - 3),
   ),
 
   /// Inline format to strike through text
@@ -178,9 +208,6 @@ enum Formatus {
   /// plain text node -> format derived from parent nodes
   text('?', FormatusType.inline, null, null),
 
-  /// Action to modify text size to big or small
-  textSize('', FormatusType.none, Icon(Icons.format_size_outlined), null),
-
   /// Inline format to underline text
   underline(
     'u',
@@ -204,6 +231,8 @@ enum Formatus {
   final TextStyle? style;
 
   const Formatus(this.key, this.type, this.icon, this.style);
+
+  bool get isCollapsible => key.startsWith('-');
 
   bool get isInline => type == FormatusType.inline;
 
@@ -357,12 +386,12 @@ String hexFromColor(Color color) {
 }
 
 ///
-/// Type of a [Formatus] action / style
+/// Type of a [Formatus] action
 ///
 enum FormatusType {
   /// Flutter supports alignment only for the whole text.
-  /// Therefor any action with this type will be applied as an attribute
-  /// to the outer \<body> element.
+  /// Therefor any action with this type is applied as an attribute
+  /// to the first section element.
   alignment,
 
   /// Used for bar-actions like a gap which do not apply any format to the text

@@ -81,11 +81,12 @@ void dispose() {
 
 ## Known Deficiencies
 
-1. Subscript and superscript are displayed correctly only in [FormatusViewer] because Flutter
-   [TextField] and [TextFormField] do not support them
-2. Coloring is restricted to the 19 included colors
+1. Horizontal ruler not yet implemented
+2. Coloring is restricted to 19 included colors
 3. Line-breaks in pasted text are replaced by spaces
 4. Lists cannot be nested
+5. Subscript and superscript are displayed correctly only in [FormatusViewer] because Flutter
+   [TextField] and [TextFormField] do not support them
 
 ## User Manual
 

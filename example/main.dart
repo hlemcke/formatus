@@ -93,14 +93,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget _buildBody() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
+    mainAxisAlignment: MainAxisAlignment.start,
     children: [
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [_buildTextPreselection(), _buildCondenser()],
-      ),
+      Align(alignment: Alignment.centerRight, child: _buildTextPreselection()),
       const Divider(color: Colors.deepPurpleAccent),
       FormatusBar(
-        actions: formatusDefaultActions,
+        actions: formatusCollapsedActions,
+        // actions: formatusDefaultActions,
         controller: controller,
         onEditAnchor: (context, anchor) => _onEditAnchor(context, anchor),
         textFieldFocus: _formatusFocus,
@@ -125,18 +124,6 @@ class _MyHomePageState extends State<MyHomePage> {
       _buildFormattedText(),
       SizedBox(height: 16),
       _buildFormatusViewer(),
-    ],
-  );
-
-  Widget _buildCondenser() => Row(
-    mainAxisAlignment: MainAxisAlignment.start,
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Text('condense actions'),
-      Checkbox(
-        onChanged: (v) => setState(() => condenseActions = v!),
-        value: condenseActions,
-      ),
     ],
   );
 

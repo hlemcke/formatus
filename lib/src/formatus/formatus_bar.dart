@@ -5,38 +5,6 @@ import 'formatus_controller.dart';
 import 'formatus_controller_impl.dart';
 import 'formatus_model.dart';
 
-///
-/// Extendable action to format text. Must be supplied to [FormatusBar]
-///
-class FormatusAction {
-  /// section or inline format
-  final Formatus formatus;
-
-  /// Used as [Widget] for formatting button
-  late final Widget icon;
-
-  /// Formatting to be applied to text
-  late final TextStyle? style;
-
-  ///
-  /// Action to format some text.
-  ///
-  /// If `icon` and `style` are not provided then their values
-  /// will be taken from `formatus`.
-  ///
-  FormatusAction({required this.formatus, Widget? icon, TextStyle? style}) {
-    this.icon = icon ?? formatus.icon ?? SizedBox(height: 8, width: 8);
-    this.style = style ?? formatus.style;
-  }
-
-  bool get isList => formatus.isList;
-
-  bool get isSection => formatus.isSection;
-
-  @override
-  String toString() => formatus.toString();
-}
-
 /// Signature for callback `onEditAnchor`
 typedef AnchorEditor =
     Future<FormatusAnchor?> Function(
@@ -63,14 +31,11 @@ abstract class FormatusBar extends StatefulWidget {
   ///
   /// Supplying `null` for `actions` will use [formatusDefaultActions].
   ///
-  /// TODO `condense` will bundle format actions by [DropdownMenu]s
-  ///
   factory FormatusBar({
     Key? key,
     required FormatusController controller,
-    List<FormatusAction>? actions,
+    List<Formatus>? actions,
     WrapAlignment alignment = WrapAlignment.start,
-    bool condense = false,
     Axis direction = Axis.horizontal,
     AnchorEditor? onEditAnchor,
     ImageSelector? onSelectImage,
@@ -80,7 +45,6 @@ abstract class FormatusBar extends StatefulWidget {
     controller: controller as FormatusControllerImpl,
     actions: actions,
     alignment: alignment,
-    condense: condense,
     direction: direction,
     onEditAnchor: onEditAnchor,
     onSelectImage: onSelectImage,
@@ -88,28 +52,65 @@ abstract class FormatusBar extends StatefulWidget {
   );
 }
 
-/// Separately specified to put into expected position
-final FormatusAction anchorAction = FormatusAction(formatus: Formatus.anchor);
+/// List of inlines -> sublist of Formatus.values in useful order
+List<Formatus> get listOfInlines => List.of(_listOfInlines);
+final List<Formatus> _listOfInlines = [
+  Formatus.bold,
+  Formatus.italic,
+  Formatus.underline,
+  Formatus.strikeThrough,
+  Formatus.subscript,
+  Formatus.superscript,
+];
 
-final FormatusAction imageAction = FormatusAction(formatus: Formatus.image);
+/// List of sections -> sublist of Formatus.values in useful order
+List<Formatus> get listOfLists => List.of(_listOfLists);
+final List<Formatus> _listOfLists = [
+  Formatus.unorderedList,
+  Formatus.orderedList,
+];
 
-List<FormatusAction> get formatusDefaultActions =>
-    List.of(_formatusDefaultActions);
+/// List of sections -> sublist of Formatus.values in useful order
+List<Formatus> get listOfSections => List.of(_listOfSections);
+final List<Formatus> _listOfSections = [
+  Formatus.header1,
+  Formatus.header2,
+  Formatus.header3,
+  Formatus.paragraph,
+];
 
-final List<FormatusAction> _formatusDefaultActions = [
-  FormatusAction(formatus: Formatus.header1),
-  FormatusAction(formatus: Formatus.header2),
-  FormatusAction(formatus: Formatus.header3),
-  FormatusAction(formatus: Formatus.paragraph),
-  FormatusAction(formatus: Formatus.unorderedList),
-  FormatusAction(formatus: Formatus.orderedList),
-  FormatusAction(formatus: Formatus.gap),
-  FormatusAction(formatus: Formatus.italic),
-  FormatusAction(formatus: Formatus.bold),
-  FormatusAction(formatus: Formatus.underline),
-  FormatusAction(formatus: Formatus.strikeThrough),
-  FormatusAction(formatus: Formatus.color),
-  FormatusAction(formatus: Formatus.textSize),
-  anchorAction,
-  imageAction,
+/// List of sizes -> sublist of Formatus.values in useful order
+List<Formatus> get listOfSizes => List.of(_listOfSizes);
+final List<Formatus> _listOfSizes = [Formatus.small, Formatus.big];
+
+List<Formatus> get formatusCollapsedActions => List.of(_collapsedActions);
+final List<Formatus> _collapsedActions = [
+  Formatus.collapseSections,
+  ...listOfSections,
+  Formatus.collapseLists,
+  ...listOfLists,
+  Formatus.collapseSizes,
+  ...listOfSizes,
+  Formatus.collapseInlines,
+  ...listOfInlines,
+];
+
+List<Formatus> get formatusDefaultActions => List.of(_defaultActions);
+
+final List<Formatus> _defaultActions = [
+  Formatus.header1,
+  Formatus.header2,
+  Formatus.header3,
+  Formatus.paragraph,
+  Formatus.unorderedList,
+  Formatus.orderedList,
+  Formatus.gap,
+  Formatus.italic,
+  Formatus.bold,
+  Formatus.underline,
+  Formatus.strikeThrough,
+  Formatus.color,
+  Formatus.collapseSizes,
+  Formatus.anchor,
+  Formatus.image,
 ];

@@ -152,7 +152,7 @@ class FormatusControllerImpl extends TextEditingController
     selectedFormats.add(Formatus.paragraph);
     document.clear();
     _cleanup();
-    _prevNodeResults = document.results;
+    _prevResults = document.results;
     super.clear();
   }
 
@@ -189,14 +189,14 @@ class FormatusControllerImpl extends TextEditingController
     _rememberNodeResults();
   }
 
-  /// Used to determine if to fire `onChanged`
-  FormatusResults _prevNodeResults = FormatusResults.placeHolder;
-
-  @visibleForTesting
-  FormatusResults get prevNodeResults => _prevNodeResults;
-
   /// Used to update text if user has edited it
   bool _needsTextUpdate = false;
+
+  /// Used to determine if to fire `onChanged`
+  FormatusResults _prevResults = FormatusResults.placeHolder;
+
+  @visibleForTesting
+  FormatusResults get prevResults => _prevResults;
 
   /// Can be modified before set in [TextEditingController]
   TextSelection _nextSelection = _emptySelection;
@@ -217,8 +217,9 @@ class FormatusControllerImpl extends TextEditingController
       a.baseOffset != b.baseOffset || a.extentOffset != b.extentOffset;
 
   void _cleanup() {
-    _prevNodeResults = FormatusResults.placeHolder;
+    _prevResults = FormatusResults.placeHolder;
     _prevSelection = _emptySelection;
+    text = '';
   }
 
   /// Handles pasted text by:
@@ -245,7 +246,7 @@ class FormatusControllerImpl extends TextEditingController
     _nextSelection = selection;
 
     //--- Immediate handling of unmodified text but possible range change
-    if (_prevNodeResults.plainText == text) {
+    if (_prevResults.plainText == text) {
       _needsTextUpdate = false;
       if (_areSelectionsDifferent(_prevSelection, _nextSelection)) {
         _updateSelection();
@@ -263,11 +264,11 @@ class FormatusControllerImpl extends TextEditingController
     //--- Determine delete / insert / update
     DeltaText deltaText = DeltaText(
       prevSelection: _prevSelection,
-      prevText: _prevNodeResults.plainText,
+      prevText: _prevResults.plainText,
       nextSelection: selection,
       nextText: text,
     );
-    debugPrint('=== _onListen => $deltaText');
+    // debugPrint('=== _onListen => $deltaText');
     if (_handlePastedText(deltaText)) {
       // return document.insertFormatted(deltaText);
     }
@@ -278,11 +279,11 @@ class FormatusControllerImpl extends TextEditingController
   /// Remembers [FormatusResults].
   /// Fires [onChanged] if `formattedText` has changed.
   void _rememberNodeResults() {
-    if ((_prevNodeResults.formattedText != document.results.formattedText) &&
+    if ((_prevResults.formattedText != document.results.formattedText) &&
         (onChanged != null)) {
       onChanged!(document.results.formattedText);
     }
-    _prevNodeResults = document.results;
+    _prevResults = document.results;
     _updateSelection();
   }
 
@@ -315,14 +316,14 @@ class FormatusControllerImpl extends TextEditingController
       _prevSelection = _nextSelection;
       if (_needsTextUpdate) {
         value = TextEditingValue(
-          text: _prevNodeResults.plainText,
+          text: _prevResults.plainText,
           selection: _prevSelection,
         );
       } else {
         selection = _nextSelection;
       }
     } else {
-      super.text = _prevNodeResults.plainText;
+      super.text = _prevResults.plainText;
     }
   }
 }
