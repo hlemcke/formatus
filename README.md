@@ -6,6 +6,7 @@ A plain Flutter Rich-Text-Editor without any dependencies.
 
 * Runs on all platforms
 * Supports multiple section and inline formats
+* Easy integration into `TextField` and `TextFormField`
 * Small and easy to use
 * No dependencies to other packages
 * Includes a viewer for the formatted text
