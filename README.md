@@ -16,7 +16,7 @@ Add the latest version of *Formatus* to the `pubspec.yaml` file:
 
 ```yaml
 flutter:
-  formatus: ^1.5.0
+  formatus: ^2.0.0
 ```
 
 Create a `FormatusController` and a `FormatusBar`.
@@ -69,6 +69,7 @@ void dispose() {
 * __S__ → strike-through text
 * __sub__ → subscript text
 * __sup__ → superscript text
+* __color__ → text coloring
 
 
 ## 🔗 Project Links

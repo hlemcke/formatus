@@ -59,6 +59,7 @@ final List<Formatus> _listOfInlines = [
   Formatus.italic,
   Formatus.underline,
   Formatus.strikeThrough,
+  Formatus.color,
   Formatus.subscript,
   Formatus.superscript,
 ];
