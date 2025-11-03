@@ -1,3 +1,7 @@
+## 2.0.1
+* Fixed bug to collapse actions properly
+* Sizes (big and small) are now mutually exclusive
+
 ## 2.0.0
 * Parsing skips unknown tags
 * Added ordered and unordered lists
