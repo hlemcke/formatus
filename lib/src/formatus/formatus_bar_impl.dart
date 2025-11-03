@@ -64,23 +64,24 @@ class FormatusBarImpl extends StatefulWidget implements FormatusBar {
   }
 
   void _cleanupActions(List<Formatus>? suppliedActions) {
-    if ((suppliedActions == null) || suppliedActions.isEmpty) {
-      actions.addAll(formatusDefaultActions);
-      return;
-    }
+    List<Formatus> initialActions = [
+      ...(suppliedActions == null) || suppliedActions.isEmpty
+          ? formatusDefaultActions
+          : suppliedActions,
+    ];
 
     //--- Remove anchor if onEditAnchor not supplied
     if (onEditAnchor == null) {
-      suppliedActions.remove(Formatus.anchor);
+      initialActions.remove(Formatus.anchor);
     }
 
     //--- Remove image if onSelectImage not supplied
     if (onSelectImage == null) {
-      suppliedActions.remove(Formatus.image);
+      initialActions.remove(Formatus.image);
     }
     //--- Build groups
     Formatus? currentCollapsible;
-    for (Formatus action in suppliedActions) {
+    for (Formatus action in initialActions) {
       if (action == Formatus.collapseEnd) {
         currentCollapsible = null;
       } else if (action.isCollapsible) {
