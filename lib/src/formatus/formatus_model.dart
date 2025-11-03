@@ -240,6 +240,8 @@ enum Formatus {
 
   bool get isSection => type == FormatusType.section;
 
+  bool get isSize => type == FormatusType.size;
+
   /// Scale factor used for sections
   double get scaleFactor => (this == Formatus.header1)
       ? 1.9

@@ -53,6 +53,13 @@ class FormatusNode {
   void applyFormat(bool apply, Formatus formatus, Color color) {
     if (isAnchor || isImage) return;
     if (apply) {
+      if (formatus.isSize) {
+        int index = indexOfSizeFormat;
+        if (index >= 0) {
+          formats[index] = formatus;
+          return;
+        }
+      }
       if (!formats.contains(formatus)) {
         formats.add(formatus);
       }
@@ -71,6 +78,8 @@ class FormatusNode {
       }
     }
   }
+
+  int get indexOfSizeFormat => formats.indexWhere((f) => f.isSize);
 
   /// Returns a deep clone of this one
   FormatusNode clone() => FormatusNode(formats: formats.toList(), text: text)
