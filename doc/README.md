@@ -1,13 +1,13 @@
-# FORMATUS -> A plain Flutter rich-text-editor
+# FORMATUS → A plain Flutter rich-text-editor
 
 ## Architecture
 
-1. [FormatusController] must be used as a [TextFormField] controller
-2. [FormatusActionBar] provides the formatting actions
-3. `FormatusActionBar` must be given the `FormatusController` on creation
+1. [FormatusBar] provides the formatting actions
+2. [FormatusController] must be used as a [TextFormField] controller
+3. Both `FormatusBar` and `FormatusController` must get the same `FocusNode` on creation
 4. `FormatusController` manages a tree-like document [FormatusDocument]
 5. `FormatusDocument` manages the formatting tree and all text nodes
-6. Supported top-level tags are h1, h2, h3, p
+6. Supported top-level tags are h1, h2, h3, p, ol, ul
 7. Top-level tags are separated by a line-break. There are no other line-breaks.
 8. Top-level tags contain nested elements like plain text or formatting elements like `<b>`
 9. Formatting elements can be nested
@@ -17,18 +17,15 @@
 
 The formatted text
 
-* is stored as an html body without the `body` tag
+* is stored as a html body without the `body` tag
 * starts with an opening top-level tag like `<h1>` or `<p>`
 * ends with a closing top-level tag like `</p>`
 
-## TODOs
+## Enhancements
 
-* publish to _pub.dev_
-* write documentation
+* parse Markdown format as input
 
-## Enhancement: Markdown
-
-The `Formatus` editor also supports `Markdown`. Following elements are supported:
+### Markdown formatting
 
 * `Heading` -> `# heading1`, `## heading 2`, `### heading 3`
 * `Italic`  -> `*italic text*`
