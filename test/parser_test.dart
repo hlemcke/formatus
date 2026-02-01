@@ -18,7 +18,7 @@ void main() {
 
       //--- then
       expect(nodes.length, 1);
-      expect(nodes[0].formats, [Formatus.header1]);
+      expect(nodes[0].section, Formatus.header1);
       expect(nodes[0].text, 'some text');
     });
 
@@ -34,7 +34,7 @@ void main() {
 
       //--- then
       expect(nodes.length, 5);
-      expect(nodes[0].formats, [Formatus.header1]);
+      expect(nodes[0].section, Formatus.header1);
       expect(nodes[0].text, 'Formatus ');
       expect(nodes[1].formats, [Formatus.header1, Formatus.bold]);
       expect(nodes[1].text, 'Features');

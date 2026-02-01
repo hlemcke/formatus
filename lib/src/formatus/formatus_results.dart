@@ -50,8 +50,10 @@ class FormatusResults {
   ///
   void build() {
     List<ResultNode> path = [];
-    List<TextSpan> sections = [];
+    List<TextSpan> sectionSpans = [];
     int indexToLastEqualFormat = -1;
+
+    //--- initial cleanups
     _combineSimilarNodes();
 
     //--- Loop text nodes ---
@@ -62,11 +64,11 @@ class FormatusResults {
       indexToLastEqualFormat = _indexToLastEqualFormat(nodeIndex, path);
 
       // --- remove and close trailing path entries
-      Formatus nextNodesFormat = (nodeIndex < textNodes.length - 1)
+      Formatus nextNodeSection = (nodeIndex < textNodes.length - 1)
           ? textNodes[nodeIndex + 1].section
           : Formatus.placeHolder;
       while (path.length - 1 > indexToLastEqualFormat) {
-        _removeLastPathEntry(path, sections, nextNodesFormat);
+        _removeLastPathEntry(path, sectionSpans, nextNodeSection);
       }
 
       // --- append additional node formats to path
@@ -82,10 +84,10 @@ class FormatusResults {
 
     // --- remove and close trailing path entries
     while (path.isNotEmpty) {
-      _removeLastPathEntry(path, sections, Formatus.placeHolder);
+      _removeLastPathEntry(path, sectionSpans, Formatus.placeHolder);
     }
     //--- wrap all section [TextSpan] into a root [TextSpan]
-    textSpan = TextSpan(children: sections, style: Formatus.root.style);
+    textSpan = TextSpan(children: sectionSpans, style: Formatus.root.style);
   }
 
   ///
@@ -226,6 +228,51 @@ class FormatusResults {
       i++;
     }
     return i - 1;
+  }
+
+  @visibleForTesting
+  void optimizeFormats(List<FormatusNode> nodes) => _optimizeFormats(nodes);
+
+  /// Optimize formats in nodes between linefeed-nodes
+  ///
+  /// Algorithm:
+  /// 1. loop blocks of nodes separated by linefeed-nodes
+  /// 2. find longest sequence of formats in block-nodes
+  /// 3.
+  void _optimizeFormats(List<FormatusNode> nodes) {
+    int start = 0;
+    while (start < nodes.length) {
+      int end = start;
+      while (end < nodes.length && nodes[end].isNotLineFeed) {
+        end++;
+      }
+      if (end > start) {
+        List<FormatusNode> block = nodes.sublist(start, end);
+        Map<Formatus, int> counts = {};
+        for (FormatusNode node in block) {
+          for (Formatus fmt in node.formats.sublist(1)) {
+            counts[fmt] = (counts[fmt] ?? 0) + 1;
+          }
+        }
+        var sortedTags = counts.keys.toList()
+          ..sort((a, b) {
+            int freqDiff = counts[b]! - counts[a]!;
+            return freqDiff != 0 ? freqDiff : a.name.compareTo(b.name);
+          });
+
+        //--- Reorder each node
+        for (FormatusNode node in block) {
+          Formatus section = node.section;
+          var rest = node.formats.sublist(1);
+          node.formats = [
+            section,
+            ...sortedTags.where((tag) => rest.contains(tag)),
+            ...rest.where((tag) => !sortedTags.contains(tag)),
+          ];
+        }
+      }
+      start = end + 1;
+    }
   }
 
   void _removeLastPathEntry(
