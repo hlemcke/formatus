@@ -26,6 +26,9 @@ class FormatusBarImpl extends StatefulWidget implements FormatusBar {
   /// Formatting actions are aligned horizontal (default) or vertical
   final Axis direction;
 
+  /// `true` will hide the bar if the focus is outside (default is `false`)
+  final bool hideInactive;
+
   /// Setting this parameter will include the link-action into the bar.
   ///
   /// Callback invoked when user activates the link-action in the bar.
@@ -56,6 +59,7 @@ class FormatusBarImpl extends StatefulWidget implements FormatusBar {
     List<Formatus>? actions,
     this.alignment = WrapAlignment.start,
     this.direction = Axis.horizontal,
+    this.hideInactive = false,
     this.onEditAnchor,
     this.onSelectImage,
     this.textFieldFocus,
@@ -123,8 +127,12 @@ class FormatusBarImpl extends StatefulWidget implements FormatusBar {
 ///
 /// `selectedFormats` are managed in [FormatusController].
 ///
-class FormatusBarState extends State<FormatusBarImpl> {
+class FormatusBarState extends State<FormatusBarImpl>
+    with SingleTickerProviderStateMixin {
   late final FormatusControllerImpl _ctrl;
+  late AnimationController _animCtrl;
+  late Animation<double> _heightFactor;
+  bool _isOverlayOpen = false; // track if in sub-menu or dialog
 
   Color get _selectedColor => _ctrl.selectedColor;
 
@@ -132,7 +140,9 @@ class FormatusBarState extends State<FormatusBarImpl> {
 
   @override
   void dispose() {
+    widget.textFieldFocus?.removeListener(_handleFocusChange);
     _ctrl.removeListener(_updateActionsDisplay);
+    _animCtrl.dispose();
     super.dispose();
   }
 
@@ -142,13 +152,43 @@ class FormatusBarState extends State<FormatusBarImpl> {
     _ctrl = widget.controller;
     _ctrl.addListener(_updateActionsDisplay);
     _deactivateActions();
+
+    //--- Setup Animation to hide / show the toolbar
+    _animCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    );
+    _heightFactor = CurvedAnimation(
+      curve: Curves.easeOutCubic,
+      parent: _animCtrl,
+    );
+    widget.textFieldFocus?.addListener(_handleFocusChange);
+
+    //--- Initial State: If field has focus, show immediately
+    if (widget.textFieldFocus?.hasFocus ?? false) {
+      _animCtrl.value = 1.0;
+    }
   }
 
   @override
-  Widget build(BuildContext context) => Wrap(
-    alignment: widget.alignment,
-    direction: widget.direction,
-    children: _buildActions(),
+  Widget build(BuildContext context) => SizeTransition(
+    sizeFactor: _heightFactor,
+    axisAlignment: -1.0,
+    child: FadeTransition(
+      opacity: _heightFactor,
+      child: Focus(
+        // This allows the bar to be part of the focus group
+        canRequestFocus: false,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 8.0),
+          child: Wrap(
+            alignment: widget.alignment,
+            direction: widget.direction,
+            children: _buildActions(),
+          ),
+        ),
+      ),
+    ),
   );
 
   List<Widget> _buildActions() => [
@@ -159,6 +199,7 @@ class FormatusBarState extends State<FormatusBarImpl> {
               ctrl: _ctrl,
               group: action,
               onPressed: _onToggleAction,
+              onTrackOverlay: _trackOverlay,
             )
           : FormatusActionButton(
               action: action,
@@ -188,6 +229,23 @@ class FormatusBarState extends State<FormatusBarImpl> {
     }
   }
 
+  void _handleFocusChange() {
+    if (!mounted) return;
+
+    if (widget.textFieldFocus?.hasFocus ?? false) {
+      _animCtrl.forward();
+    } else {
+      //--- Debounce hide
+      Future.delayed(const Duration(milliseconds: 150), () {
+        if (mounted &&
+            !(widget.textFieldFocus?.hasFocus ?? false) &&
+            !_isOverlayOpen) {
+          _animCtrl.reverse();
+        }
+      });
+    }
+  }
+
   Future<void> _onEditAnchor() async {
     FormatusAnchor? anchorAtCursor = widget.controller.anchorAtCursor;
     FormatusAnchor? result = await widget.onEditAnchor!(
@@ -213,13 +271,14 @@ class FormatusBarState extends State<FormatusBarImpl> {
   ///
   /// Only one section format may be active at any time.
   ///
-  void _onToggleAction(Formatus formatus) {
+  void _onToggleAction(Formatus formatus) async {
+    final TextSelection currentSelection = _ctrl.selection;
     if (formatus == Formatus.anchor) {
-      _onEditAnchor();
+      await _onEditAnchor();
     } else if (formatus == Formatus.color) {
       return _selectAndRememberColor();
     } else if (formatus == Formatus.image) {
-      _onSelectImage();
+      await _onSelectImage();
     } else if (formatus.isSection || formatus.isList) {
       _deactivateSectionActions();
       _selectedFormats.add(formatus);
@@ -231,11 +290,16 @@ class FormatusBarState extends State<FormatusBarImpl> {
       _selectedFormats.add(formatus);
       _ctrl.updateInlineFormat(formatus);
     }
-    setState(() => widget.textFieldFocus?.requestFocus());
+    if (mounted) {
+      widget.textFieldFocus?.requestFocus();
+      _ctrl.value = _ctrl.value.copyWith(selection: currentSelection);
+      setState(() {});
+    }
   }
 
   void _selectAndRememberColor() async {
-    Color? color = await _showColorDialog();
+    final TextSelection currentSelection = _ctrl.selection;
+    Color? color = await _trackOverlay(_showColorDialog());
     _ctrl.selectedColor = color ?? Colors.transparent;
     if (color == Colors.transparent) {
       _selectedFormats.remove(Formatus.color);
@@ -243,7 +307,10 @@ class FormatusBarState extends State<FormatusBarImpl> {
       _selectedFormats.add(Formatus.color);
     }
     _ctrl.updateInlineFormat(Formatus.color);
-    setState(() => widget.textFieldFocus?.requestFocus());
+    if (mounted) {
+      _ctrl.selection = currentSelection;
+      setState(() {});
+    }
   }
 
   Future<Color?> _showColorDialog() => showAdaptiveDialog<Color>(
@@ -276,7 +343,24 @@ class FormatusBarState extends State<FormatusBarImpl> {
     ),
   );
 
-  void _updateActionsDisplay() => setState(() {});
+  /// Wrapper for any action that opens a new Route (Dialog, Menu, Picker)
+  Future<T?> _trackOverlay<T>(Future<T?> overlayFuture) async {
+    final TextSelection currentSelection = _ctrl.selection;
+    _isOverlayOpen = true;
+    final result = await overlayFuture;
+    _isOverlayOpen = false;
+
+    //--- Return focus to text field so bar stays open after overlay is dismissed
+    if (mounted) {
+      widget.textFieldFocus?.requestFocus();
+      _ctrl.value = _ctrl.value.copyWith(selection: currentSelection);
+    }
+    return result;
+  }
+
+  void _updateActionsDisplay() {
+    if (mounted) setState(() {});
+  }
 }
 
 ///
@@ -328,6 +412,7 @@ class FormatusGroupButton extends StatelessWidget {
   final FormatusControllerImpl ctrl;
   final Formatus group;
   final ValueChanged<Formatus> onPressed;
+  final Future<T?> Function<T>(Future<T?> future) onTrackOverlay;
 
   const FormatusGroupButton({
     super.key,
@@ -335,6 +420,7 @@ class FormatusGroupButton extends StatelessWidget {
     required this.group,
     required this.actions,
     required this.onPressed,
+    required this.onTrackOverlay,
   });
 
   @override
@@ -390,24 +476,26 @@ class FormatusGroupButton extends StatelessWidget {
     final RenderBox button = context.findRenderObject() as RenderBox;
     final Offset offset = button.localToGlobal(Offset.zero);
     final Size size = button.size;
-    showMenu(
-      clipBehavior: Clip.hardEdge,
-      constraints: BoxConstraints.tightFor(width: buttonHeight + 8),
-      context: context,
-      items: [
-        for (FormatusActionButton button in buttons)
-          PopupMenuItem(
-            height: buttonHeight,
-            padding: EdgeInsets.zero,
-            child: button,
-          ),
-      ],
-      menuPadding: EdgeInsets.zero,
-      position: RelativeRect.fromLTRB(
-        offset.dx,
-        offset.dy + size.height,
-        offset.dx + size.width,
-        offset.dy,
+    onTrackOverlay(
+      showMenu(
+        clipBehavior: Clip.hardEdge,
+        constraints: BoxConstraints.tightFor(width: buttonHeight + 8),
+        context: context,
+        items: [
+          for (FormatusActionButton button in buttons)
+            PopupMenuItem(
+              height: buttonHeight,
+              padding: EdgeInsets.zero,
+              child: button,
+            ),
+        ],
+        menuPadding: EdgeInsets.zero,
+        position: RelativeRect.fromLTRB(
+          offset.dx,
+          offset.dy + size.height,
+          offset.dx + size.width,
+          offset.dy,
+        ),
       ),
     );
   }

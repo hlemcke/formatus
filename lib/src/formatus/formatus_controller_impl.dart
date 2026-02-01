@@ -297,7 +297,12 @@ class FormatusControllerImpl extends TextEditingController
     if (meta.node.isAnchor && (meta.textOffset >= meta.length)) {
       selectedFormats.remove(Formatus.anchor);
     }
+
     int plainLength = document.results.plainText.length;
+    if ((_nextSelection.baseOffset > plainLength) ||
+        (_nextSelection.extentOffset > plainLength)) {
+      _nextSelection = TextSelection.collapsed(offset: plainLength);
+    }
 
     //--- Cursor positioned in front of list-item
     if (meta.node.isList && (_nextSelection.baseOffset < meta.textBegin)) {
@@ -308,10 +313,8 @@ class FormatusControllerImpl extends TextEditingController
           : 1;
       int offset = _nextSelection.baseOffset + delta;
       _nextSelection = TextSelection(baseOffset: offset, extentOffset: offset);
-    } else if ((_nextSelection.baseOffset > plainLength) ||
-        (_nextSelection.extentOffset > plainLength)) {
-      _nextSelection = TextSelection.collapsed(offset: plainLength);
     }
+
     if (_areSelectionsDifferent(_prevSelection, _nextSelection)) {
       _prevSelection = _nextSelection;
       if (_needsTextUpdate) {

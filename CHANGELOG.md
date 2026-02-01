@@ -1,3 +1,8 @@
+## 2.0.2
+* added attribute `hideInactive` to `FormatusBar` to hide the bar when the focus
+  is outside both the bar and the text field
+* smooth transition of bar fading in and out
+
 ## 2.0.1
 * Fixed bug to collapse actions properly
 * Sizes (big and small) are now mutually exclusive

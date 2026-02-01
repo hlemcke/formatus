@@ -98,8 +98,6 @@ class _MyHomePageState extends State<MyHomePage> {
       Align(alignment: Alignment.centerRight, child: _buildTextPreselection()),
       const Divider(color: Colors.deepPurpleAccent),
       FormatusBar(
-        //actions: formatusCollapsedActions,
-        // actions: formatusDefaultActions,
         controller: controller,
         onEditAnchor: (context, anchor) => _onEditAnchor(context, anchor),
         textFieldFocus: _formatusFocus,
