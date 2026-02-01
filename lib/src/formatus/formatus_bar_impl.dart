@@ -1,13 +1,11 @@
 import 'dart:core';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'formatus_bar.dart';
 import 'formatus_controller_impl.dart';
 import 'formatus_model.dart';
-
-/// Height of a formatting action button
-final double buttonHeight = kMinInteractiveDimension * 0.7;
 
 ///
 /// Actions to format text.
@@ -149,6 +147,7 @@ class FormatusBarState extends State<FormatusBarImpl>
   @override
   void initState() {
     super.initState();
+    BarThemeConfig();
     _ctrl = widget.controller;
     _ctrl.addListener(_updateActionsDisplay);
     _deactivateActions();
@@ -364,6 +363,62 @@ class FormatusBarState extends State<FormatusBarImpl>
 }
 
 ///
+///
+///
+class BarThemeConfig {
+  static BarThemeConfig get instance => _instance!;
+  static BarThemeConfig? _instance;
+
+  final double height;
+  final double iconSize;
+  final double arrowSize;
+  final VisualDensity density;
+
+  BarThemeConfig._internal({
+    required this.height,
+    required this.iconSize,
+    required this.arrowSize,
+    required this.density,
+  });
+
+  factory BarThemeConfig() {
+    if (_instance == null) {
+      final bool isDesktop =
+          defaultTargetPlatform == TargetPlatform.macOS ||
+          defaultTargetPlatform == TargetPlatform.linux ||
+          defaultTargetPlatform == TargetPlatform.windows;
+
+      _instance = BarThemeConfig._internal(
+        height: isDesktop ? 30.0 : 38.0,
+        iconSize: isDesktop ? 18.0 : 22.0,
+        arrowSize: isDesktop ? 9.0 : 11.0,
+        density: isDesktop ? VisualDensity.compact : VisualDensity.standard,
+      );
+    }
+    return _instance!;
+  }
+
+  ButtonStyle getButtonStyle({bool isGroup = false, bool isSelected = false}) =>
+      ButtonStyle(
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        visualDensity: density,
+        backgroundColor: isSelected
+            ? WidgetStateProperty.all(Colors.amberAccent)
+            : null,
+        fixedSize: WidgetStateProperty.all(
+          isGroup ? Size(height + 14, height) : Size.square(height),
+        ),
+        padding: WidgetStateProperty.all(EdgeInsets.zero),
+        shape: WidgetStateProperty.all(
+          RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(4),
+            side: BorderSide(color: Colors.grey, width: 0.5),
+          ),
+        ),
+      );
+}
+
+///
 /// Single formatting action also used inside [FormatusGroupButton]
 ///
 class FormatusActionButton extends StatelessWidget {
@@ -392,9 +447,7 @@ class FormatusActionButton extends StatelessWidget {
           isSelected: isSelected,
           key: ValueKey<String>(action.name),
           onPressed: () => onPressed(action),
-          style: isSelected
-              ? getFormatusButtonStyleActive()
-              : getFormatusButtonStyle(),
+          style: BarThemeConfig.instance.getButtonStyle(isSelected: isSelected),
         );
 }
 
@@ -450,9 +503,10 @@ class FormatusGroupButton extends StatelessWidget {
     return IconButton(
       icon: _buildGroupIcon((count == 1) ? activeAction! : group, count),
       onPressed: () => _showIconMenu(context, buttons),
-      style: (count > 0)
-          ? getFormatusButtonStyleActive(isGroup: true)
-          : getFormatusButtonStyle(isGroup: true),
+      style: BarThemeConfig.instance.getButtonStyle(
+        isGroup: true,
+        isSelected: (count > 0),
+      ),
     );
   }
 
@@ -479,12 +533,14 @@ class FormatusGroupButton extends StatelessWidget {
     onTrackOverlay(
       showMenu(
         clipBehavior: Clip.hardEdge,
-        constraints: BoxConstraints.tightFor(width: buttonHeight + 8),
+        constraints: BoxConstraints.tightFor(
+          width: BarThemeConfig.instance.height + 8,
+        ),
         context: context,
         items: [
           for (FormatusActionButton button in buttons)
             PopupMenuItem(
-              height: buttonHeight,
+              height: BarThemeConfig.instance.height,
               padding: EdgeInsets.zero,
               child: button,
             ),
@@ -500,25 +556,3 @@ class FormatusGroupButton extends StatelessWidget {
     );
   }
 }
-
-ButtonStyle getFormatusButtonStyle({bool isGroup = false}) => ButtonStyle(
-  fixedSize: WidgetStateProperty.all(
-    isGroup ? Size(buttonHeight + 20, buttonHeight) : Size.square(buttonHeight),
-  ),
-  shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-    const RoundedRectangleBorder(
-      borderRadius: BorderRadius.only(
-        topLeft: Radius.circular(6),
-        topRight: Radius.circular(6),
-      ),
-      side: BorderSide(color: Colors.grey),
-    ),
-  ),
-);
-
-ButtonStyle getFormatusButtonStyleActive({bool isGroup = false}) =>
-    getFormatusButtonStyle(isGroup: isGroup).merge(
-      ButtonStyle(
-        backgroundColor: WidgetStateProperty.all<Color>(Colors.amberAccent),
-      ),
-    );

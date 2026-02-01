@@ -1,3 +1,6 @@
+## 2.0.3
+* added platform determination to size format-actions accordingly
+
 ## 2.0.2
 * added attribute `hideInactive` to `FormatusBar` to hide the bar when the focus
   is outside both the bar and the text field
