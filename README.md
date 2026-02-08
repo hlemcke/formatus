@@ -1,15 +1,16 @@
 # FORMATUS
 
-A plain Flutter Rich-Text-Editor without any dependencies.
+A plain Flutter Rich-Text-Editor without any dependencies
 
 ## Features
 
 * Runs on all platforms
-* Supports multiple section and inline formats
-* Easy integration into `TextField` and `TextFormField`
 * Small and easy to use
-* No dependencies to other packages
+* Directly integrates into `TextField` and `TextFormField`
+* No dependencies to other packages to keep it small and lightweight
+* Supports multiple section and inline formats
 * Includes a viewer for the formatted text
+* `FormatusBar` provides multiple callbacks to integrate your favorite packages
 
 ## Getting started
 
@@ -17,19 +18,21 @@ Add the latest version of *Formatus* to the `pubspec.yaml` file:
 
 ```yaml
 flutter:
-  formatus: ^2.0.1
+  formatus: ^2.1.0
 ```
 
-Create a `FormatusController` and a `FormatusBar`.
-Supply a `FocusNode` to both the `FormatusBar` and the `TextField` or `TextFormField`.
+Follow these steps:
 
+1. create a `FormatusController`
+2. create a `FocusNode`
+3. supply both `FormatusController` and `FocusNode` to the `FormatusBar` and the `TextField`
 
 ## Usage
 
 Use `Formatus` like this:
 
 ```dart
-  FocusNode focusNode = FocusNode(debugLabel: 'formatus');
+  FocusNode _formatusFocus = FocusNode(debugLabel: 'formatus');
   late FormatusController controller;
   String savedText = '';
 
@@ -41,6 +44,7 @@ void initState() {
 Widget build(BuildContext context) => Column( children: [
   FormatusBar(
     controller: controller,
+    hideInactive: true,
     textFieldFocus: _formatusFocus,
   ),
   TextFormField(
@@ -55,6 +59,39 @@ void dispose() {
   controller.dispose();
 }
 ```
+
+### Emojis
+
+`Formatus` has an action `emoji`. The button will become available as soon as an
+emoji selector callback is provided to `FormatusBar`. If only a small number
+of emojis is required then this approach is sufficient:
+
+```
+FormatusBar( ...,
+          onSelectEmoji: (context) async => await showDialog<String>(
+            context: context, builder: (context) => Dialog(
+              child: Wrap( children: ['😀', '🚀', '✅'].map( (e) => IconButton(
+                        icon: Text(e), onPressed: () => Navigator.pop(context, e),
+                      ), ).toList(), ), ), ),
+```
+
+A full emoji package like [emoji_picker_flutter](https://pub.dev/emoji_picker_flutter)
+can also be integrated easily:
+
+``` Dart
+FormatusBar( ...,
+          onSelectEmoji: (context) => showEmojiSelector(), );
+          
+Future<String?> showEmojiSelector() async =>
+  showAdaptiveDialog(context: context, builder: (BuildContext context) =>
+    Dialog( child: EmojiPicker(textEditingController: controller, ), ), );
+```
+
+## FAQ
+
+- **Q**: I can only enter one line of text. Enter does not work.
+  **A**: Supply `minLines: 2` or a larger value to `TextFormField`
+
 
 ## Supported Formats
 
@@ -81,6 +118,15 @@ void dispose() {
 - 🗂️ [Repository](https://github.com/hlemcke/formatus)
 
 
+## Enhancements
+
+* implement undo / redo functionality
+* parse Markdown format as input
+* optimize formatting tree by reshaking
+
+For an additional enhancement request please open an issue.
+
+
 ## Known Deficiencies
 
 1. Horizontal ruler not yet implemented
@@ -88,7 +134,7 @@ void dispose() {
 3. Line-breaks in pasted text are replaced by spaces
 4. Lists cannot be nested
 5. Subscript and superscript are displayed correctly only in [FormatusViewer] because Flutter
-   [TextField] and [TextFormField] do not support them
+   [TextField] and [TextFormField] do not support their editing
 
 ## User Manual
 
@@ -121,21 +167,6 @@ This section describes the use cases for `Formatus`.
   line-breaks then the text right of the deleted text will be integrated
   into the top-level node at deletion start
 * Display the formatted text with `FormatusViewer`
-
-
-## Future Enhancements
-
-1. Add format for unordered list
-2. Add format for ordered list (auto-counting)
-3. Add anchor with editable reference and displayed text
-4. Add action to insert an emoji. This should become an optional add-on action
-   similar to `FormatusAnchor`. Could also include converting an emoji name
-   into emoji inline (insert into current text node).
-5. Implement a `FormatusHistoryController` which supports formats and color
-6. Parse markdown as formatted input
-7. Export formatted text in markdown format
-
-For an additional enhancement-request please open an issue.
 
 
 ## Additional information

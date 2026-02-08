@@ -21,7 +21,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  FocusNode _textFieldFocus = FocusNode(debugLabel: 'formatus');
+  final FocusNode _textFieldFocus = FocusNode(debugLabel: 'formatus');
   late FormatusController controller;
   bool condenseActions = false;
   String savedText = '';
@@ -72,6 +72,7 @@ class _MyHomePageState extends State<MyHomePage> {
           controller: controller,
           hideInactive: true,
           textFieldFocus: _textFieldFocus,
+          tooltipBuilder: (context, action) => _buildTooltip(context, action),
         ),
         TextFormField(
           controller: controller,
@@ -92,6 +93,13 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     ),
   );
+
+  String? _buildTooltip(BuildContext context, Formatus action) =>
+      switch (action) {
+        Formatus.bold => 'Bold (Ctrl+B)',
+        Formatus.collapseSections => 'Section Styles',
+        _ => null,
+      };
 }
 
 ///

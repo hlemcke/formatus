@@ -12,7 +12,7 @@ void main() {
       //--- when
       FormatusBarImpl bar = FormatusBarImpl(
         controller: ctrl,
-        actions: formatusCollapsedActions,
+        actions: FormatusBar.collapsedActions,
       );
 
       //--- then

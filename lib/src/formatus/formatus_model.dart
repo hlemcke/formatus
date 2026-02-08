@@ -83,12 +83,9 @@ enum Formatus {
 
   /// Inline format to display text in a specified color
   color('div', FormatusType.inline, Icon(Icons.format_color_text), null),
-  colorDeprecated(
-    'color',
-    FormatusType.inline,
-    Icon(Icons.unpublished_outlined),
-    null,
-  ),
+
+  /// Inline action to insert an emoji
+  emoji('😊', FormatusType.none, Icon(Icons.emoji_emotions_outlined), null),
 
   /// Section element header 1 (largest)
   header1(

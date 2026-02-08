@@ -95,6 +95,24 @@ class FormatusControllerImpl extends TextEditingController
     _rememberNodeResults();
   }
 
+  void applyAnchor(FormatusAnchor? anchor) {
+    anchorAtCursor = anchor;
+  }
+
+  void applyImage(FormatusImage? image) {
+    imageAtCursor = image;
+  }
+
+  void applySelectedColor(Color? color) {
+    selectedColor = color ?? Colors.transparent;
+    if (color == Colors.transparent) {
+      selectedFormats.remove(Formatus.color);
+    } else {
+      selectedFormats.add(Formatus.color);
+    }
+    updateInlineFormat(Formatus.color);
+  }
+
   /// Returns image element at cursor position or `null` if there is none
   FormatusImage? get imageAtCursor {
     NodeMeta meta = document.computeMeta(selection.baseOffset);
@@ -173,6 +191,22 @@ class FormatusControllerImpl extends TextEditingController
     _cleanup();
     document = FormatusDocument(formatted: formatted);
     _rememberNodeResults();
+  }
+
+  /// Replaces current selection (or inserts at cursor) with [newText]
+  void replaceText(String newText) {
+    final String oldText = text;
+
+    //--- Safe bounds check
+    final int start = selection.start.clamp(0, oldText.length);
+    final int end = selection.end.clamp(0, oldText.length);
+
+    final String updatedText = oldText.replaceRange(start, end, newText);
+
+    value = TextEditingValue(
+      text: updatedText,
+      selection: TextSelection.collapsed(offset: start + newText.length),
+    );
   }
 
   /// After selectin a text range user has activated a format or a color

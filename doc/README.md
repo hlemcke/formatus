@@ -17,26 +17,6 @@
 
 The formatted text
 
-* is stored as a html body without the `body` tag
+* is stored as a HTML body without the `body` tag
 * starts with an opening top-level tag like `<h1>` or `<p>`
 * ends with a closing top-level tag like `</p>`
-
-## Enhancements
-
-* parse Markdown format as input
-
-### Markdown formatting
-
-* `Heading` -> `# heading1`, `## heading 2`, `### heading 3`
-* `Italic`  -> `*italic text*`
-* `Bold`    -> `**bold text**`
-* `Underline` -> `_underlined text_`
-* `Line through` -> `~~lined through text~~`
-* `Subscript` -> `H~2~O`
-* `Superscript` -> `a^2^ + b^2^ = c^2^`
-* `Horizontal rule` -> `---` as a single line with an empty line above
-* `Link` -> `[title](https://formatus.github.com)`
-* `Ordered list` -> `1. First item`
-* `Unordered list` -> `* item`
-* `Emoji` -> `That's funny :joy:` renders an emoji by its name
-* `Task list` -> `[x] completed\n[ ] still open`

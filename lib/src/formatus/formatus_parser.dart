@@ -167,13 +167,6 @@ class FormatusParser {
         k = content.indexOf('#');
         String hexColor = content.substring(k + 1, content.length - 1);
         tag.color = colorFromHex(hexColor);
-      }
-      // TODO remove this else block after 2025-12-31
-      else if (tag.formatus == Formatus.colorDeprecated) {
-        tag.formatus = Formatus.color;
-        k = content.indexOf('0x');
-        String hexColor = content.substring(k + 2, content.length);
-        tag.color = colorFromHex(hexColor);
       } else {
         tag.attribute = content.substring(k + 1);
       }
@@ -196,6 +189,7 @@ class _ParsedTag {
   _ParsedTag();
 
   bool get isKnown => formatus != Formatus.text;
+
   bool get isNotKnown => formatus == Formatus.text;
 
   @override

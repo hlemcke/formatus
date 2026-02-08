@@ -1,6 +1,12 @@
+## 2.1.0
+
+* added `EmojiSelector` to supply any emoji chooser
+* added `ColorSelector` to supply any color chooser. If not supplied then the internal one will be used
+* added `TooltipBuilder` to supply localized tooltips for actions
+
 ## 2.0.2
 * added attribute `hideInactive` to `FormatusBar` to hide the bar when the focus
-  is outside both the bar and the text field
+  is outside the bar, the text field and any overlay like an emoji selector
 * smooth transition of bar fading in and out
 * added platform determination to size format-actions accordingly
 

@@ -2,6 +2,7 @@ import 'dart:core';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'formatus_bar.dart';
 import 'formatus_controller_impl.dart';
@@ -13,7 +14,7 @@ import 'formatus_model.dart';
 class FormatusBarImpl extends StatefulWidget implements FormatusBar {
   final Map<Formatus, List<Formatus>> actionGroups = {};
 
-  /// Actions to be included in the toolbar (see [formatusDefaultActions])
+  /// Actions to be included in the toolbar (see [defaultActions])
   final List<Formatus> actions = [];
 
   final WrapAlignment alignment;
@@ -33,14 +34,23 @@ class FormatusBarImpl extends StatefulWidget implements FormatusBar {
   /// The callback gets the [FormatusAnchor] from cursor position.
   final AnchorEditor? onEditAnchor;
 
+  /// This callback activates and is used by action `color`
+  final ColorSelector? onSelectColor;
+
+  /// This callback activates and is used by action `emoji`
+  final EmojiSelector? onSelectEmoji;
+
   /// Callback invoked when user double taps on an anchor text.
   ///
-  /// The callback get the [FormatusAnchor] from cursor position.
+  /// The callback gets the [FormatusAnchor] from cursor position.
   final ImageSelector? onSelectImage;
 
   /// Supply [FocusNode] from [TextField] to have [FormatusBar] automatically
   /// switch back focus to the text field after any format change.
   final FocusNode? textFieldFocus;
+
+  /// Supply a builder to get localized tooltips
+  final TooltipBuilder? tooltipBuilder;
 
   ///
   /// Creates action bar to format text in a [TextField] or [TextFormField].
@@ -59,8 +69,11 @@ class FormatusBarImpl extends StatefulWidget implements FormatusBar {
     this.direction = Axis.horizontal,
     this.hideInactive = false,
     this.onEditAnchor,
+    this.onSelectColor,
+    this.onSelectEmoji,
     this.onSelectImage,
     this.textFieldFocus,
+    this.tooltipBuilder,
   }) {
     _cleanupActions(actions);
   }
@@ -68,13 +81,18 @@ class FormatusBarImpl extends StatefulWidget implements FormatusBar {
   void _cleanupActions(List<Formatus>? suppliedActions) {
     List<Formatus> initialActions = [
       ...(suppliedActions == null) || suppliedActions.isEmpty
-          ? formatusDefaultActions
+          ? FormatusBar.defaultActions
           : suppliedActions,
     ];
 
     //--- Remove anchor if onEditAnchor not supplied
     if (onEditAnchor == null) {
       initialActions.remove(Formatus.anchor);
+    }
+
+    //--- Remove emoji if onEditEmoji not supplied
+    if (onSelectEmoji == null) {
+      initialActions.remove(Formatus.emoji);
     }
 
     //--- Remove image if onSelectImage not supplied
@@ -106,13 +124,13 @@ class FormatusBarImpl extends StatefulWidget implements FormatusBar {
     for (Formatus group in actionGroups.keys) {
       if (actionGroups[group]!.isEmpty) {
         actionGroups[group] = (group == Formatus.collapseInlines)
-            ? listOfInlines
+            ? FormatusBar.listOfInlines
             : (group == Formatus.collapseLists)
-            ? listOfLists
+            ? FormatusBar.listOfLists
             : (group == Formatus.collapseSections)
-            ? listOfSections
+            ? FormatusBar.listOfSections
             : (group == Formatus.collapseSizes)
-            ? listOfSizes
+            ? FormatusBar.listOfSizes
             : [];
       }
     }
@@ -175,15 +193,18 @@ class FormatusBarState extends State<FormatusBarImpl>
     axisAlignment: -1.0,
     child: FadeTransition(
       opacity: _heightFactor,
-      child: Focus(
-        // This allows the bar to be part of the focus group
-        canRequestFocus: false,
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 8.0),
-          child: Wrap(
-            alignment: widget.alignment,
-            direction: widget.direction,
-            children: _buildActions(),
+      child: CallbackShortcuts(
+        bindings: _shortcutBindings,
+        child: Focus(
+          // This allows the bar to be part of the focus group
+          canRequestFocus: false,
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 8.0),
+            child: Wrap(
+              alignment: widget.alignment,
+              direction: widget.direction,
+              children: _buildActions(),
+            ),
           ),
         ),
       ),
@@ -206,6 +227,7 @@ class FormatusBarState extends State<FormatusBarImpl>
               isSelected: _selectedFormats.contains(action),
               onPressed: (action) => _onToggleAction(action),
               textColor: _selectedColor,
+              tooltipBuilder: widget.tooltipBuilder,
             ),
   ];
 
@@ -246,23 +268,19 @@ class FormatusBarState extends State<FormatusBarImpl>
   }
 
   Future<void> _onEditAnchor() async {
-    FormatusAnchor? anchorAtCursor = widget.controller.anchorAtCursor;
-    FormatusAnchor? result = await widget.onEditAnchor!(
-      context,
-      anchorAtCursor ?? FormatusAnchor(),
+    if (widget.onEditAnchor == null) return;
+    final FormatusAnchor? result = await _trackOverlay(
+      widget.onEditAnchor!(context, _ctrl.anchorAtCursor ?? FormatusAnchor()),
     );
-    debugPrint('Anchor result = $result');
-    widget.controller.anchorAtCursor = result;
+    if (result != null) _ctrl.applyAnchor(result);
   }
 
   Future<void> _onSelectImage() async {
-    FormatusImage? imageAtCursor = widget.controller.imageAtCursor;
-    FormatusImage? result = await widget.onSelectImage!(
-      context,
-      imageAtCursor ?? FormatusImage(),
+    if (widget.onSelectImage == null) return;
+    final FormatusImage? result = await _trackOverlay(
+      widget.onSelectImage!(context, _ctrl.imageAtCursor ?? FormatusImage()),
     );
-    debugPrint('Image = $result');
-    widget.controller.imageAtCursor = result;
+    if (result != null) _ctrl.applyImage(result);
   }
 
   ///
@@ -276,6 +294,8 @@ class FormatusBarState extends State<FormatusBarImpl>
       await _onEditAnchor();
     } else if (formatus == Formatus.color) {
       return _selectAndRememberColor();
+    } else if (formatus == Formatus.emoji) {
+      return _selectAndInsertEmoji();
     } else if (formatus == Formatus.image) {
       await _onSelectImage();
     } else if (formatus.isSection || formatus.isList) {
@@ -296,47 +316,85 @@ class FormatusBarState extends State<FormatusBarImpl>
     }
   }
 
-  void _selectAndRememberColor() async {
-    final TextSelection currentSelection = _ctrl.selection;
-    Color? color = await _trackOverlay(_showColorDialog());
-    _ctrl.selectedColor = color ?? Colors.transparent;
-    if (color == Colors.transparent) {
-      _selectedFormats.remove(Formatus.color);
-    } else {
-      _selectedFormats.add(Formatus.color);
-    }
-    _ctrl.updateInlineFormat(Formatus.color);
-    if (mounted) {
-      _ctrl.selection = currentSelection;
-      setState(() {});
-    }
+  void _selectAndInsertEmoji() async {
+    if (widget.onSelectEmoji == null) return;
+    final String? emoji = await _trackOverlay(widget.onSelectEmoji!(context));
+    if (emoji != null) _ctrl.replaceText(emoji);
   }
+
+  /// Uses external picker if provided, otherwise the internal one
+  void _selectAndRememberColor() async {
+    final ColorSelector colorSelector =
+        widget.onSelectColor ?? (context, current) => _showColorDialog();
+    Color? color = await _trackOverlay(colorSelector(context, _selectedColor));
+    _ctrl.applySelectedColor(color);
+  }
+
+  Map<ShortcutActivator, VoidCallback> get _shortcutBindings => {
+    // Bold: Ctrl+B / Cmd+B
+    const SingleActivator(
+      LogicalKeyboardKey.keyB,
+      control: true,
+      meta: true,
+    ): () =>
+        _onToggleAction(Formatus.bold),
+
+    // Italic: Ctrl+I / Cmd+I
+    const SingleActivator(
+      LogicalKeyboardKey.keyI,
+      control: true,
+      meta: true,
+    ): () =>
+        _onToggleAction(Formatus.italic),
+
+    // Underline: Ctrl+U / Cmd+U
+    const SingleActivator(
+      LogicalKeyboardKey.keyU,
+      control: true,
+      meta: true,
+    ): () =>
+        _onToggleAction(Formatus.underline),
+
+    // Optional: Add Strikethrough if your model supports it
+    const SingleActivator(
+      LogicalKeyboardKey.keyS,
+      control: true,
+      shift: true,
+    ): () =>
+        _onToggleAction(Formatus.strikeThrough),
+  };
 
   Future<Color?> _showColorDialog() => showAdaptiveDialog<Color>(
     context: context,
     builder: (BuildContext context) => Dialog(
-      child: SingleChildScrollView(
-        padding: EdgeInsets.all(8.0),
-        child: Wrap(
-          runSpacing: 8.0,
-          spacing: 8.0,
-          children: [
-            for (Color color in formatusColors)
-              InkWell(
-                onTap: () => Navigator.pop(context, color),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 300),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(8.0),
+          child: Wrap(
+            runSpacing: 8.0,
+            spacing: 8.0,
+            children: [
+              for (Color color in formatusColors)
+                InkWell(
+                  onTap: () => Navigator.pop(context, color),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: color == Colors.transparent
+                          ? Border.all(color: Colors.grey)
+                          : null,
+                      color: color == Colors.transparent ? Colors.white : color,
+                      shape: BoxShape.circle,
+                    ),
+                    height: kMinInteractiveDimension,
+                    width: kMinInteractiveDimension,
+                    child: (color == Colors.transparent)
+                        ? Center(child: Text('X'))
+                        : null,
                   ),
-                  height: kMinInteractiveDimension,
-                  width: kMinInteractiveDimension,
-                  child: (color == Colors.transparent)
-                      ? Center(child: Text('X'))
-                      : null,
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     ),
@@ -373,13 +431,21 @@ class BarThemeConfig {
   final double iconSize;
   final double arrowSize;
   final VisualDensity density;
+  late final TargetPlatform platform;
+  late final String platformCtrlKey;
 
   BarThemeConfig._internal({
     required this.height,
     required this.iconSize,
     required this.arrowSize,
     required this.density,
-  });
+  }) {
+    platform = defaultTargetPlatform;
+    platformCtrlKey =
+        (platform == TargetPlatform.iOS || platform == TargetPlatform.macOS)
+        ? '⌘'
+        : 'Ctrl';
+  }
 
   factory BarThemeConfig() {
     if (_instance == null) {
@@ -416,6 +482,21 @@ class BarThemeConfig {
           ),
         ),
       );
+
+  /// Internal mapping for default tooltips
+  String? getDefaultTooltip(Formatus action) => switch (action) {
+    Formatus.anchor => 'Insert or edit Link',
+    Formatus.bold => 'Bold ($platformCtrlKey+B)',
+    Formatus.collapseInlines => 'Inline Formats',
+    Formatus.collapseLists => 'List Formats',
+    Formatus.color => 'Text Color',
+    Formatus.emoji => 'Insert Emoji',
+    Formatus.image => 'Insert Image',
+    Formatus.italic => 'Italic ($platformCtrlKey+I)',
+    Formatus.strikeThrough => 'Strikethrough ($platformCtrlKey+Shift+S)',
+    Formatus.underline => 'Underline ($platformCtrlKey+U)',
+    _ => null,
+  };
 }
 
 ///
@@ -426,6 +507,7 @@ class FormatusActionButton extends StatelessWidget {
   final bool isSelected;
   final ValueChanged<Formatus> onPressed;
   final Color textColor;
+  final TooltipBuilder? tooltipBuilder;
 
   const FormatusActionButton({
     super.key,
@@ -433,22 +515,35 @@ class FormatusActionButton extends StatelessWidget {
     this.isSelected = false,
     required this.onPressed,
     this.textColor = Colors.transparent,
+    this.tooltipBuilder,
   });
 
   @override
-  Widget build(BuildContext context) => (action == Formatus.gap)
-      ? SizedBox(height: 8, width: 8)
-      : IconButton(
-          color:
-              ((action == Formatus.color) && (textColor != Colors.transparent))
-              ? textColor
-              : null,
-          icon: action.icon!,
-          isSelected: isSelected,
-          key: ValueKey<String>(action.name),
-          onPressed: () => onPressed(action),
-          style: BarThemeConfig.instance.getButtonStyle(isSelected: isSelected),
-        );
+  Widget build(BuildContext context) {
+    if (action == Formatus.gap) return SizedBox(height: 8, width: 8);
+    final String? tooltipMessage =
+        tooltipBuilder?.call(context, action) ??
+        BarThemeConfig.instance.getDefaultTooltip(action);
+
+    return (tooltipMessage == null)
+        ? _buildButton()
+        : Tooltip(
+            message: tooltipMessage,
+            waitDuration: const Duration(milliseconds: 600),
+            child: _buildButton(),
+          );
+  }
+
+  Widget _buildButton() => IconButton(
+    color: ((action == Formatus.color) && (textColor != Colors.transparent))
+        ? textColor
+        : null,
+    icon: action.icon!,
+    isSelected: isSelected,
+    key: ValueKey<String>(action.name),
+    onPressed: () => onPressed(action),
+    style: BarThemeConfig.instance.getButtonStyle(isSelected: isSelected),
+  );
 }
 
 ///
@@ -466,6 +561,7 @@ class FormatusGroupButton extends StatelessWidget {
   final Formatus group;
   final ValueChanged<Formatus> onPressed;
   final Future<T?> Function<T>(Future<T?> future) onTrackOverlay;
+  final TooltipBuilder? tooltipBuilder;
 
   const FormatusGroupButton({
     super.key,
@@ -474,6 +570,7 @@ class FormatusGroupButton extends StatelessWidget {
     required this.actions,
     required this.onPressed,
     required this.onTrackOverlay,
+    this.tooltipBuilder,
   });
 
   @override
@@ -496,11 +593,12 @@ class FormatusGroupButton extends StatelessWidget {
             Navigator.of(context).pop();
             onPressed(action);
           },
+          tooltipBuilder: tooltipBuilder,
         ),
       );
     }
 
-    return IconButton(
+    Widget button = IconButton(
       icon: _buildGroupIcon((count == 1) ? activeAction! : group, count),
       onPressed: () => _showIconMenu(context, buttons),
       style: BarThemeConfig.instance.getButtonStyle(
@@ -508,6 +606,14 @@ class FormatusGroupButton extends StatelessWidget {
         isSelected: (count > 0),
       ),
     );
+
+    //--- localize tooltip if there is a callback supplied
+    final String? tooltipMessage =
+        tooltipBuilder?.call(context, group) ??
+        BarThemeConfig.instance.getDefaultTooltip(group);
+    return (tooltipMessage == null)
+        ? button
+        : Tooltip(message: tooltipMessage, child: button);
   }
 
   Widget _buildGroupIcon(Formatus formatus, int count) => Row(
