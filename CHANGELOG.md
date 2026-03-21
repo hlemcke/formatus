@@ -1,3 +1,7 @@
+## 2.1.0+1
+
+* fixed bug if an unformatted text is provided initially
+
 ## 2.1.0
 
 * added `EmojiSelector` to supply any emoji chooser

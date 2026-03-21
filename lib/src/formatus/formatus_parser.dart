@@ -9,10 +9,15 @@ class FormatusParser {
   Formatus _listType = Formatus.noList;
 
   FormatusParser({required String formatted}) {
-    _formatted = _cleanUpFormatted(formatted);
+    formatted = _cleanUpFormatted(formatted);
     if (formatted.isEmpty) {
       FormatusNode node = FormatusNode(formats: [Formatus.paragraph], text: '');
       _nodes.add(node);
+      _formatted = '';
+    } else if (!formatted.startsWith('<')) {
+      _formatted = '<p>$formatted</p>';
+    } else {
+      _formatted = formatted;
     }
   }
 
