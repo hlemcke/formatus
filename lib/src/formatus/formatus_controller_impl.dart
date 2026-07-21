@@ -438,11 +438,14 @@ class DeltaText {
     }
 
     //--- Computations
-    _headLength = (prevSelection.start < nextSelection.start)
+    _headLength = (nextSelection.start < 0)
+        ? 0
+        : (prevSelection.start < nextSelection.start)
         ? prevSelection.start
         : nextSelection.start;
     int nextLen = nextText.length;
-    int prevTailLen = _prevLength - prevSelection.end;
+    int prevTailLen =
+        _prevLength - (prevSelection.end < 0 ? 0 : prevSelection.end);
     int nextTailLen = nextLen - nextSelection.end;
     _tailLength = (prevTailLen < nextTailLen) ? prevTailLen : nextTailLen;
     _tailOffset = _prevLength - _tailLength;

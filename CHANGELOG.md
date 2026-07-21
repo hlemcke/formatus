@@ -1,3 +1,8 @@
+## 2.1.0+2
+
+* fixed bug on empty Flutter `Selection` (start = end = -1)
+* fixed test case parsing deprecated color tag
+
 ## 2.1.0+1
 
 * fixed bug if an unformatted text is provided initially

@@ -54,7 +54,8 @@ class FormatusParser {
       .replaceAll('\r', '')
       .replaceAll('\n', '')
       .replaceAll('\t', ' ')
-      .replaceAll('  ', ' ');
+      .replaceAll('  ', ' ')
+      .trim();
 
   /// Parses an opening html section element, all children and its closing.
   ///
@@ -170,7 +171,9 @@ class FormatusParser {
     if (k > 0) {
       if (tag.formatus == Formatus.color) {
         k = content.indexOf('#');
-        String hexColor = content.substring(k + 1, content.length - 1);
+        if (k < 0) k = content.indexOf('0x');
+        if (k < 0) k = 0;
+        String hexColor = content.substring(k, content.length);
         tag.color = colorFromHex(hexColor);
       } else {
         tag.attribute = content.substring(k + 1);

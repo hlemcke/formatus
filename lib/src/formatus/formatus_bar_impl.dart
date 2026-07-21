@@ -189,8 +189,9 @@ class FormatusBarState extends State<FormatusBarImpl>
 
   @override
   Widget build(BuildContext context) => SizeTransition(
+    alignment: Alignment(0, -1),
+    axis: Axis.vertical,
     sizeFactor: _heightFactor,
-    axisAlignment: -1.0,
     child: FadeTransition(
       opacity: _heightFactor,
       child: CallbackShortcuts(
