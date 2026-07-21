@@ -1,7 +1,8 @@
-## 2.1.0+2
+## 2.1.1
 
 * fixed bug on empty Flutter `Selection` (start = end = -1)
 * fixed test case parsing deprecated color tag
+* release adapted to semantic versioning
 
 ## 2.1.0+1
 

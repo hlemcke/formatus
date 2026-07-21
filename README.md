@@ -18,7 +18,7 @@ Add the latest version of *Formatus* to the `pubspec.yaml` file:
 
 ```yaml
 flutter:
-  formatus: ^2.1.0+2
+  formatus: ^2.1.1
 ```
 
 Follow these steps:
