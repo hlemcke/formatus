@@ -3,12 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:formatus/formatus.dart';
 import 'package:formatus/src/formatus/formatus_controller_impl.dart';
 import 'package:formatus/src/formatus/formatus_document.dart';
+import 'package:formatus/src/formatus/formatus_node.dart';
+
+import 'test_helper.dart';
 
 void main() {
-  //
   group('Line-Break - Insertions - Sections only', () {
-    //---
-    test('Insert Line-Break at start of sections', () {
+    test('Insert Line-Break at start of single section', () {
       //--- given
       String formatted = '<h1>abc</h1>';
       FormatusDocument doc = FormatusDocument(formatted: formatted);
@@ -20,16 +21,17 @@ void main() {
         nextSelection: const TextSelection(baseOffset: 1, extentOffset: 1),
       );
       expect(deltaText.type, DeltaTextType.insert);
+      expect(deltaText.textAdded, '\n');
 
       //--- when
       doc.updateText(deltaText, {Formatus.header1});
 
       //--- then
-      expect(doc.textNodes.length, 3);
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 1);
       expect(doc.results.plainText, nextText);
+      expect(doc.results.formatted, '<h1></h1><p>abc</p>');
     });
-
-    //---
     test('Append Line-Break to End', () {
       //--- given
       String formatted = '<h1>abc</h1>';
@@ -44,15 +46,16 @@ void main() {
       expect(deltaText.type, DeltaTextType.insert);
 
       //--- when
+      TreeHelper.printAll(doc, 'given');
       doc.updateText(deltaText, {Formatus.header1});
+      TreeHelper.printAll(doc, 'appended LF');
 
       //--- then
-      expect(doc.textNodes.length, 3);
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 2);
       expect(doc.results.plainText, nextText);
     });
-
-    // Different [DeltaText]. Cursor at end of first section
-    test('Insert Line-Break at end of a section', () {
+    test('Insert Line-Break at end of first section', () {
       //--- given
       String formatted = '<h1>abc</h1><p>def</p>';
       FormatusDocument doc = FormatusDocument(formatted: formatted);
@@ -64,18 +67,18 @@ void main() {
         nextSelection: const TextSelection(baseOffset: 4, extentOffset: 4),
       );
       expect(deltaText.type, DeltaTextType.insert);
+      expect(deltaText.textAdded, '\n');
 
       //--- when
       doc.updateText(deltaText, {Formatus.header1});
 
       //--- then
-      expect(doc.textNodes.length, 5);
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 3);
       expect(doc.results.plainText, nextText);
-      expect(doc.results.formattedText, '<h1>abc</h1><p></p><p>def</p>');
+      expect(doc.results.formatted, '<h1>abc</h1><p></p><p>def</p>');
     });
-
-    //--- Different [DeltaText]. Cursor at start of second section
-    test('Insert Line-Break at start of a section', () {
+    test('Insert Line-Break at start of second section', () {
       //--- given
       String formatted = '<h1>abc</h1><p>def</p>';
       FormatusDocument doc = FormatusDocument(formatted: formatted);
@@ -92,14 +95,13 @@ void main() {
       doc.updateText(deltaText, {Formatus.header1});
 
       //--- then
-      expect(doc.textNodes.length, 5);
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 3);
       expect(doc.results.plainText, nextText);
       expect(doc.results.plainText, nextText);
-      expect(doc.results.formattedText, '<h1>abc</h1><p></p><p>def</p>');
+      expect(doc.results.formatted, '<h1>abc</h1><p></p><p>def</p>');
     });
-
-    //---
-    test('Insert Line-Break within a section', () {
+    test('Insert Line-Break within first section', () {
       //--- given
       String formatted = '<h1>abc</h1><p>def</p>';
       FormatusDocument doc = FormatusDocument(formatted: formatted);
@@ -111,18 +113,20 @@ void main() {
         nextSelection: const TextSelection(baseOffset: 3, extentOffset: 3),
       );
       expect(deltaText.type, DeltaTextType.insert);
+      expect(deltaText.textAdded, '\n');
 
       //--- when
+      TreeHelper.printAll(doc, 'given');
       doc.updateText(deltaText, {Formatus.header1});
+      TreeHelper.printAll(doc, 'updated');
 
       //--- then
-      expect(doc.textNodes.length, 5);
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 3);
       expect(doc.results.plainText, nextText);
-      expect(doc.results.formattedText, '<h1>ab</h1><h1>c</h1><p>def</p>');
+      expect(doc.results.formatted, '<h1>ab</h1><p>c</p><p>def</p>');
     });
   });
-
-  //
   group('Line-Break - Insertions - Inlines only', () {
     //---
     test('Insert Line-Break at start of first inline in first section', () {
@@ -142,9 +146,10 @@ void main() {
       doc.updateText(deltaText, {Formatus.header1});
 
       //--- then
-      expect(doc.textNodes.length, 4);
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 2);
       expect(doc.results.plainText, nextText);
-      expect(doc.results.formattedText, '<p></p><h1><b>abc</b> def</h1>');
+      expect(doc.results.formatted, '<h1><b></b></h1><p><b>abc</b> def</p>');
     });
 
     //---
@@ -165,9 +170,10 @@ void main() {
       doc.updateText(deltaText, {Formatus.header1});
 
       //--- then
-      expect(doc.textNodes.length, 3);
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 3);
       expect(doc.results.plainText, nextText);
-      expect(doc.results.formattedText, '<h1><b>abc</b></h1><h1> def</h1>');
+      expect(doc.results.formatted, '<h1><b>abc</b></h1><p> def</p>');
     });
 
     ///
@@ -188,16 +194,12 @@ void main() {
       doc.updateText(deltaText, {Formatus.header1});
 
       //--- then
-      expect(doc.textNodes.length, 4);
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 3);
       expect(doc.results.plainText, nextText);
-      expect(
-        doc.results.formattedText,
-        '<h1><b>ab</b></h1><h1><b>c</b> def</h1>',
-      );
+      expect(doc.results.formatted, '<h1><b>ab</b></h1><p><b>c</b> def</p>');
     });
   });
-
-  //---
   group('Line-Break - Deletions', () {
     test('Delete line-break between sections', () {
       //--- given
@@ -213,16 +215,17 @@ void main() {
       expect(deltaText.type, DeltaTextType.delete);
 
       //--- when
+      TreeHelper.printAll(doc, 'given');
       doc.updateText(deltaText, {Formatus.header1});
+      TreeHelper.printAll(doc, 'deleted');
 
       //--- then
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
       expect(doc.results.plainText, nextText);
-      expect(doc.results.formattedText, '<h1>abcdef</h1>');
-      expect(doc.textNodes.length, 1);
+      expect(doc.results.formatted, '<h1>abcdef</h1>');
+      expect(textNodes.length, 1);
       expect(doc.results.plainText, nextText);
     });
-
-    //---
     test('Backspace line-break between sections', () {
       //--- given
       String formatted = '<h1>abc</h1><p>def</p>';
@@ -240,12 +243,11 @@ void main() {
       doc.updateText(deltaText, {Formatus.header1});
 
       //--- then
-      expect(doc.textNodes.length, 1);
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 1);
       expect(doc.results.plainText, nextText);
-      expect(doc.results.formattedText, '<h1>abcdef</h1>');
+      expect(doc.results.formatted, '<h1>abcdef</h1>');
     });
-
-    //
     test('Delete text range containing linefeed', () {
       //--- given
       String formatted = '<h1>abc</h1><p>def</p>';
@@ -260,12 +262,15 @@ void main() {
       expect(deltaText.type, DeltaTextType.delete);
 
       //--- when
+      TreeHelper.printAll(doc, 'given');
       doc.updateText(deltaText, {Formatus.header1});
+      TreeHelper.printAll(doc, 'updated');
 
       //--- then
-      expect(doc.textNodes.length, 1);
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 1);
       expect(doc.results.plainText, nextText);
-      expect(doc.results.formattedText, '<h1>abef</h1>');
+      expect(doc.results.formatted, '<h1>abef</h1>');
     });
   });
 }

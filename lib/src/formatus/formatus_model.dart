@@ -4,17 +4,39 @@ import 'package:flutter/material.dart';
 
 import 'formatus_document.dart';
 
+/// Renders an anchor image as a single character
+const String anchorChar = '\u2693';
+
+/// Unicode char to represent an image (renders a square)
+/// Alternative: '\uFFFC';
+const String imagePlaceholderChar = '\u25A3';
+
+/// Invisible space char
+const String invisibleSpaceChar = '\u200b';
+
+/// Default font size (14.0) used to scale headers
+const double kDefaultFontSize = 14.0;
+
+/// HTML string representing the _smaller-than_ character
 const String lessThan = '&lt;';
 
-const double kDefaultFontSize = 14.0;
+/// Unicode char to represent a link (infinity symbol)
+const String linkPlaceholderChar = '\u221E';
+
+/// Not a valid char. Used to separate words invisibly
+const String noneChar = '\uFFFF';
+
+/// Prefix used for list-items inside &lt;ul>
+const String unorderedListPrefix = '• ';
 
 ///
 /// Formats for:
 ///
-/// * Sections
-/// * Lists
-/// * Sizes
-/// * Inlines
+/// * Sections → H1, H2, H3, P
+/// * Lists → ordered (OL) or unordered (UL) each with list-items (LI)
+/// * Sizes → small, standard, big
+/// * Formatting Inlines → bold (B), italic (I), strike-through (S), underline (U)
+/// * Special Inlines → anchor (A), image (IMG)
 ///
 /// A _collapsible_ action collects formatting actions.
 /// It is identified by its key starting with `-`!
@@ -162,11 +184,9 @@ enum Formatus {
   /// Empty format used for placeholders to ensure null safety
   placeHolder('?', FormatusType.none, null, null),
 
-  /// Single root element in a [FormatusDocument]
+  /// Single root element represented by [FormatusDocument]
   ///
-  /// This element can have attributes:
-  /// * align = [[left, center, right]]
-  /// * color from [FormatusColor)
+  /// TODO implement attribute align = [[left, center, right]]
   ///
   root('body', FormatusType.root, null, TextStyle(fontSize: kDefaultFontSize)),
 
@@ -203,7 +223,7 @@ enum Formatus {
   ),
 
   /// plain text node -> format derived from parent nodes
-  text('?', FormatusType.inline, null, null),
+  text('""', FormatusType.inline, null, null),
 
   /// Inline format to underline text
   underline(
@@ -212,6 +232,9 @@ enum Formatus {
     Icon(Icons.format_underline),
     TextStyle(decoration: TextDecoration.underline),
   ),
+
+  /// Unknown tag used as placeholder
+  unknown('?', .none, Icon(Icons.question_mark_outlined), null),
 
   /// Section element of an unordered list entry.
   /// In html this would be an `li` element of the enclosing `ul`
@@ -231,6 +254,8 @@ enum Formatus {
 
   bool get isCollapsible => key.startsWith('-');
 
+  bool get isHeader => <Formatus>[.header1, .header2, .header3].contains(this);
+
   bool get isInline => type == FormatusType.inline;
 
   bool get isList => type == FormatusType.list;
@@ -249,7 +274,7 @@ enum Formatus {
       : 1.0; // <p>
 
   @override
-  String toString() => '<$key>';
+  String toString() => (this == text) ? '' : '<$key>';
 
   static Formatus find(String text) {
     if (text.isEmpty) return Formatus.text;
@@ -260,7 +285,7 @@ enum Formatus {
     for (Formatus item in Formatus.values) {
       if (text == item.name) return item;
     }
-    return Formatus.text;
+    return Formatus.unknown;
   }
 }
 
@@ -376,12 +401,13 @@ Color colorFromHex(String hex) {
   return Color(int.parse(hex, radix: 16));
 }
 
-String hexFromColor(Color color) {
+/// Returns Flutter `color` (ARGB) as an HTML hex string `#RGBA`
+String colorToHex(Color color) {
   String a = (color.a * 255).round().toRadixString(16).padLeft(2, '0');
   String r = (color.r * 255).round().toRadixString(16).padLeft(2, '0');
   String g = (color.g * 255).round().toRadixString(16).padLeft(2, '0');
   String b = (color.b * 255).round().toRadixString(16).padLeft(2, '0');
-  return '$a$r$g$b';
+  return '#$r$g$b$a';
 }
 
 ///

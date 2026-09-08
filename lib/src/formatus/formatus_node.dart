@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import 'formatus_model.dart';
 
 ///
-/// A [FormatusNode] contains a sequence of characters with a different format
-/// than its predecessor or successor.
+/// A [FormatusNode] is one node in the tree. It contains the [Formatus] tag
+/// which must be different from its predecessor or successor.
+/// It also contains an optional sequence of characters and optional attributes.
 ///
 class FormatusNode {
   /// Accessible rich internet application standard
@@ -12,176 +13,347 @@ class FormatusNode {
 
   ///
   /// Optional attribute
-  /// * anchor -> href
-  /// * image -> src
+  /// * anchor → href
+  /// * image → src
   String attribute;
+
+  /// Ordered list of children
+  List<FormatusNode> children = [];
 
   /// Color of this node. Transparent means no color.
   Color color;
 
-  /// Formats of this node. First format is section format and always exist.
-  List<Formatus> formats;
+  /// Current number for list-item if this is an "ol"-node
+  int orderedListNumber = 0;
 
-  /// Text part of this node
+  /// References its parent
+  late FormatusNode parent;
+
+  /// Formats of this node. First format is section format and always exist.
+  Formatus tag;
+
+  /// Text if this is a text-node
   String text;
+
+  /// If cursor selection starts inside the text then this is the index.
+  int textIndex0 = -1;
+
+  /// If cursor selection ends inside the text then this is the index.
+  int textIndex1 = -1;
 
   ///
   /// Constructor for a new node
   ///
   FormatusNode({
-    required this.formats,
-    required this.text,
+    required this.tag,
+    this.text = '',
     this.ariaLabel = '',
     this.attribute = '',
     this.color = Colors.transparent,
-  });
+  }) {
+    parent = this;
+  }
+
+  /// Creates an empty paragraph node
+  factory FormatusNode.para() => FormatusNode(tag: .paragraph);
+
+  /// Creates a root node with child paragraph with child text
+  factory FormatusNode.root() => FormatusNode(tag: .root);
+
+  /// Creates an empty text node
+  factory FormatusNode.text() => FormatusNode(tag: .text);
 
   /// Automatically inserted between sections
   static final FormatusNode lineBreak = FormatusNode(
-    formats: [Formatus.lineFeed],
+    tag: .lineFeed,
     text: '\n',
   );
 
   /// Single empty node to be used as placeholder to ensure null safety
   static final FormatusNode placeHolder = FormatusNode(
-    formats: [Formatus.placeHolder],
+    tag: .placeHolder,
     text: '',
   );
 
-  /// Appends [formatus] to [formats] if `apply is true`.
-  /// Else removes it. Does nothing if node is either anchor or image.
-  void applyFormat(bool apply, Formatus formatus, Color color) {
-    if (isAnchor || isImage) return;
-    if (apply) {
-      if (formatus.isSize) {
-        int index = indexOfSizeFormat;
-        if (index >= 0) {
-          formats[index] = formatus;
-          return;
-        }
-      }
-      if (!formats.contains(formatus)) {
-        formats.add(formatus);
-      }
-      if (formatus == Formatus.color) {
-        if (color == Colors.transparent) {
-          this.color = Colors.transparent;
-          formats.remove(Formatus.color);
-        } else {
-          this.color = color;
-        }
-      }
-    } else {
-      formats.remove(formatus);
-      if (formatus == Formatus.color) {
-        color = Colors.transparent;
-      }
-    }
+  /// Return child at index
+  FormatusNode operator [](int index) => children[index];
+
+  /// Set child at index
+  void operator []=(int index, FormatusNode node) => children[index] = node;
+
+  /// Append child
+  void appendChild(FormatusNode child) {
+    children.add(child);
+    child.parent = this;
   }
 
-  int get indexOfSizeFormat => formats.indexWhere((f) => f.isSize);
+  int get childCount => children.length;
 
-  /// Returns a deep clone of this one
-  FormatusNode clone() => FormatusNode(formats: formats.toList(), text: text)
+  /// Clears all children
+  void clearChildren() => children.clear();
+
+  /// Copies this node excluding children, parent and text
+  FormatusNode get copy => FormatusNode(tag: tag)
     ..ariaLabel = ariaLabel
     ..attribute = attribute
-    ..color = color;
+    ..color = color
+    ..orderedListNumber = orderedListNumber;
 
-  /// Returns text with all `<` replaced by html less than
-  String get escapedText => text.replaceAll('<', lessThan);
+  /// Finds color for this node by walking the tree up
+  Color get findColor => isRoot || identical(parent, this)
+      ? Colors.transparent
+      : color == Colors.transparent
+      ? parent.findColor
+      : color;
 
-  /// Returns `true` if last format requires an attribute
+  /// Returns format-node above this one or `null` if not found
+  FormatusNode? findFormatNode(Formatus format) => isRoot
+      ? null
+      : tag == format
+      ? this
+      : parent.findFormatNode(format);
+
+  /// Set of tags from root (exclusive) to this node (exclusive)
+  Set<Formatus> get formats => (tag == .root) || (parent == this)
+      ? {}
+      : (tag == .text)
+      ? parent.formats
+      : {...parent.formats, tag};
+
+  /// Returns `true` if this node contains an attribute
   bool get hasAttribute => attribute.isNotEmpty;
 
   /// Returns `true` if this node has a color
-  bool get hasColor => formats.contains(Formatus.color);
+  bool get hasColor => color != Colors.transparent;
 
-  /// Returns `true` if this nodes text is formatted as subscript
-  bool get hasSubscript => formats.contains(Formatus.subscript);
+  /// Gets index in parents children
+  int get indexInParent => parent.children.indexOf(this);
 
-  /// Returns `true` if this nodes text is formatted as superscript
-  bool get hasSuperscript => formats.contains(Formatus.superscript);
+  /// Inserts `child` into children at `index`
+  void insertChildAt(FormatusNode child, int index) {
+    child.parent = this;
+    (index <= 0)
+        ? children.insert(0, child)
+        : (index >= children.length)
+        ? children.add(child)
+        : children.insert(index, child);
+  }
 
-  /// Returns `true` if last format is anchor
-  bool get isAnchor => formats.last == Formatus.anchor;
+  bool get isAnchor => tag == .anchor;
 
-  /// Returns `true` if `otherFormats` or `otherColor` is different
-  bool isDifferent(Set<Formatus> otherFormats, Color otherColor) =>
-      (formats.length != otherFormats.length) ||
-      !formats.toSet().containsAll(otherFormats) ||
-      !otherFormats.containsAll(formats.toSet()) ||
-      color != otherColor;
+  bool get isEmpty => children.isEmpty;
 
-  /// Returns `true` if last format is image
-  bool get isImage => formats.last == Formatus.image;
+  bool get isHeader => tag.isHeader;
 
-  /// Returns `true` if this is a linefeed between two sections
-  bool get isLineFeed => formats[0] == Formatus.lineFeed;
+  bool get isImage => tag == .image;
 
-  /// Returns `true` for all nodes except linefeed
-  bool get isNotLineFeed => !isLineFeed;
+  /// Returns `true` if this node is a link, an image or just text
+  bool get isLeaf => isText || isAnchor || isImage;
 
-  /// Returns `true` if this is a list node
-  bool get isList => formats[0].isList;
+  bool get isRoot => tag == .root;
 
-  /// Returns `true` if `other` has same formats, attribute and color
-  bool isSimilar(FormatusNode other) =>
-      !isDifferent(other.formats.toSet(), other.color) &&
-      (attribute == other.attribute);
+  /// Returns `true` if this node is a header (1..3) or a paragraph
+  bool get isSection => tag.isSection;
+
+  /// Returns `true` if this node is a section or part of a list structure
+  bool get isStructural =>
+      isSection ||
+      <Formatus>[.listItem, .orderedList, .unorderedList].contains(tag);
+
+  bool get isText => tag == .text;
 
   /// Length of text
   int get length => text.length;
 
-  /// Returns section format
-  Formatus get section => formats[0];
+  /// Returns `true` if this node has the same formats in no specific order
+  /// and the same color
+  bool matchesFormatsAndColor(Set<Formatus> formats, Color color) {
+    final currentFormats = this.formats;
+    return currentFormats.length == formats.length &&
+        currentFormats.containsAll(formats) &&
+        findColor == color;
+  }
 
-  set section(Formatus formatus) => formats[0] = formatus;
+  /// List of nodes starting with section below root until this node (excluded)
+  List<FormatusNode> get path => (tag == .root)
+      ? []
+      : (tag == .text)
+      ? parent.path
+      : [...parent.path, this];
 
-  void mixFormats(
-    Set<Formatus> selectedFormats, {
-    Color selectedColor = Colors.transparent,
-  }) {
-    Set<Formatus> given = selectedFormats.toSet();
-    for (Formatus formatus in formats) {
-      if (!given.remove(formatus)) {
-        formats.remove(formatus);
-      }
+  void replaceChild({required FormatusNode prev, required FormatusNode next}) {
+    int index = children.indexOf(prev);
+    if (index >= 0) {
+      children.removeAt(index);
+      children.insert(index, next);
+      next.parent = this;
     }
-    formats.addAll(given.toList());
-    color = formats.contains(Formatus.color)
-        ? selectedColor
-        : Colors.transparent;
+  }
+
+  /// Get section of this node by moving up the tree
+  FormatusNode get section => isSection ? this : parent.section;
+
+  /// Split this node by moving either its `head` (0 to `textIndex0`)
+  /// or its `tail` (`textIndex1` to end) to a new node.
+  /// Returns the new node and inserts it depending on `insert`
+  FormatusNode split(SplitPosition where, {SplitInsert insert = .never}) {
+    FormatusNode splitNode = copy;
+    int parentIndex = -1;
+    if (where == .head) {
+      int begin = textIndex0.clamp(0, length);
+      splitNode.text = text.substring(0, begin);
+      text = text.substring(begin);
+      textIndex1 = (textIndex1 - begin).clamp(0, length);
+      textIndex0 = 0;
+      parentIndex = indexInParent;
+    } else {
+      int end = textIndex1.clamp(0, length);
+      splitNode.text = text.substring(end);
+      text = text.substring(0, end);
+      textIndex1 = length;
+      parentIndex = indexInParent + 1;
+    }
+    if ((insert == .always) ||
+        ((insert == .ifNotEmpty) && splitNode.text.isNotEmpty)) {
+      parent.insertChildAt(splitNode, parentIndex);
+    }
+    return splitNode;
+  }
+
+  /// Get list-item or section by moving up the tree
+  FormatusNode get topNode =>
+      isSection || tag == .listItem ? this : parent.topNode;
+
+  /// Get closing tag. Image is already self-closed
+  String get toClosing => tag == .image ? '' : '</${tag.key}>';
+
+  String get toOpening {
+    if (tag == .text) return '';
+    String open = '<${tag.key}';
+    if (tag == .anchor) return '$open href="$attribute">$text';
+    if (tag == .color) open += ' style="color: ${colorToHex(color)};"';
+    if (tag == .image) {
+      String aria = ariaLabel.isEmpty ? '' : ' aria-label="$ariaLabel"';
+      return '$open src="$attribute"$aria/>';
+    }
+    return '$open>';
   }
 
   ///
   @override
   String toString() {
-    String str = formats.map((f) => f.key).toList().join(' - ');
-    str += hasColor ? ' "style="color: #${hexFromColor(color)};">' : '';
-    str += hasAttribute ? ' $attribute' : '';
-    return '$str "$text"';
+    String str = toOpening;
+    str += textIndex0 >= 0 ? ' [$textIndex0' : '';
+    str += (textIndex1 > 0 && textIndex1 < length) ? ',$textIndex1]' : '';
+    str += text.isEmpty ? '' : '→"$text"';
+    return str;
   }
 }
 
 ///
-/// Result from [FormatusDocument.computeMeta()]
+/// Base state of a Formatus point in time.
 ///
-class NodeMeta {
-  /// Length of text in node
-  int get length => node.length;
+/// TODO implement undo / redo based on this class
+///
+/// * `formatted` → string for persistency
+/// * `range` → start and end of selected text
+///
+class FormatusBaseState {
+  /// Formatted text for persistency
+  String formatted = '';
 
-  FormatusNode node = FormatusNode.placeHolder;
+  /// Cursor position. Collapsed or a range
+  TextSelection range = TextSelection.collapsed(offset: 0);
 
-  /// Index into [FormatusDocument.textNodes]
-  int nodeIndex = -1;
+  /// Returns `true` if cursor position is collapsed
+  bool get isCollapsed => range.isCollapsed;
+}
 
-  /// Nodes text starts at this offset:
-  /// 0 <= textStart <= previousText.length - node.text.length
-  int textBegin = -1;
+///
+/// Input from [FormatusBar] and [TextField]
+///
+/// * `color` → selected by user in [FormatusBar]
+/// * `formats` → selected by user in [FormatusBar]
+/// * 'plainText` → input for Flutter [TextField]
+///
+class FormatusInput extends FormatusBaseState {
+  /// Color of [FormatusBar]
+  Color color = Colors.transparent;
 
-  /// Offset into nodes `text`: 0 <= textOffset <= node.text.length
-  int textOffset = -1;
+  /// Formats
+  Set<Formatus> formats = {};
 
-  @override
-  String toString() => 'NodeMeta[$nodeIndex] $textBegin + $textOffset -> $node';
+  /// Plain text of [TextEditingController]
+  String plainText = '';
+}
+
+///
+/// Output used to compute colors, formats, selection
+///
+/// * `root` → like &lt;body> of HTML content
+/// * `textSpan4Editor` → rendered input for Flutter [TextField]
+/// * `textSpan4Viewer` → rendered input for [FormatusViewer]
+///
+class FormatusOutput extends FormatusInput {
+  /// Root node of tree computed from [FormatusBaseState.formatted]
+  FormatusNode root = FormatusNode(tag: .placeHolder);
+
+  /// Segments laid out exactly as `plainText`
+  List<FormatusSegment> segments = [];
+
+  /// [TextSpan] for [TextField]. Children are sections separated by `\n`
+  TextSpan textSpan4Editor = TextSpan(text: '');
+
+  /// [TextSpan] for [FormatusViewer]. Children are sections separated by `\n`
+  TextSpan textSpan4Viewer = TextSpan(text: '');
+}
+
+///
+/// One addressable unit in document order, laid out exactly as
+/// [FormatusInput.plainText] as computed by [FormatusResults].
+/// Used by [findNodeAtCursor] and [collectNodesWithTextInRange] so both use
+/// the identical position model.
+///
+class FormatusSegment {
+  final FormatusNode? leaf; // text / anchor / image node
+  final FormatusNode? prefixOwner; // list-item node, for its prefix span
+  final int start;
+  final int end; // exclusive; == start for a separator
+
+  const FormatusSegment.leaf(this.leaf, this.start, this.end)
+    : prefixOwner = null;
+
+  const FormatusSegment.prefix(this.prefixOwner, this.start, this.end)
+    : leaf = null;
+
+  const FormatusSegment.separator(int pos)
+    : leaf = null,
+      prefixOwner = null,
+      start = pos,
+      end = pos;
+}
+
+/// Specifies insert of a split node
+enum SplitInsert {
+  /// Insert split node in parent even if it has no text
+  always,
+
+  /// Insert split node in parent if it contains text
+  ifNotEmpty,
+
+  /// Only return split node
+  never,
+}
+
+/// Specifies split position of a node
+enum SplitPosition {
+  /// Creates a new node from current text substring ending at `textIndex0`
+  /// and inserts it before the current one.
+  /// Current node text is reduced to its trailing part.
+  head,
+
+  /// Creates a new node from current text substring starting at `textIndex1`
+  /// and inserts the new node behind the current one
+  /// Current node text is reduced to its leading part.
+  tail,
 }

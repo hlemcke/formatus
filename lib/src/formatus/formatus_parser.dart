@@ -3,47 +3,23 @@ import 'package:flutter/material.dart';
 import 'formatus_model.dart';
 import 'formatus_node.dart';
 
+///
 class FormatusParser {
-  late final String _formatted;
-  final List<FormatusNode> _nodes = [];
-  Formatus _listType = Formatus.noList;
+  /// Gets root node of parsing result
+  FormatusNode get root => _root;
+  FormatusNode _root = FormatusNode.root();
 
+  /// Parses 'html' into a tree of [FormatusNode].
+  /// Provides getter with _root_ node of the tree.
   FormatusParser({required String formatted}) {
     formatted = _cleanUpFormatted(formatted);
-    if (formatted.isEmpty) {
-      FormatusNode node = FormatusNode(formats: [Formatus.paragraph], text: '');
-      _nodes.add(node);
-      _formatted = '';
-    } else if (!formatted.startsWith('<')) {
-      _formatted = '<p>$formatted</p>';
-    } else {
-      _formatted = formatted;
+    if (!formatted.startsWith('<')) {
+      formatted = '<p>$formatted </p>';
     }
+    _root = _parseHtml(formatted);
   }
 
-  ///
-  /// Parses `formatted` text from constructor into list of [FormatusNode]
-  ///
-  List<FormatusNode> parse() {
-    if (_nodes.isNotEmpty) return _nodes;
-    int offset = 0;
-    while (offset < _formatted.length) {
-      //--- Insert line-break between sections
-      if (_nodes.isNotEmpty && _nodes.last.isNotLineFeed) {
-        _nodes.add(FormatusNode.lineBreak);
-      }
-      //--- skip any characters between sections
-      offset = _formatted.indexOf('<', offset);
-      if (offset < 0) break;
-      offset = _parseSection(offset);
-    }
-    if (_nodes.last.isLineFeed) {
-      _nodes.removeLast();
-    }
-    return _nodes;
-  }
-
-  /// Cleanup given text by:
+  /// Cleanup given text:
   ///
   /// * remove cr
   /// * remove lf
@@ -57,151 +33,176 @@ class FormatusParser {
       .replaceAll('  ', ' ')
       .trim();
 
-  /// Parses an opening html section element, all children and its closing.
   ///
-  /// Returns offset into `htmlBody` to the first character following the
-  /// closing element.
-  ///
-  int _parseSection(int offset) {
-    List<Formatus> formats = [];
-    while (offset < _formatted.length) {
-      _ParsedTag? tag = _parseTag(offset);
-      if (tag == null) return _formatted.length;
+  Map<String, String> _parseAttributes(String content) {
+    final attrs = <String, String>{};
+    int i = 0;
+    while (i < content.length) {
+      if (content[i] == ' ') {
+        i++;
+        continue;
+      }
+      int j = content.indexOf('=', i);
+      if (j < 0) return attrs;
+      String tagName = content.substring(i, j);
+      i = j + 2;
+      j = content.indexOf('"', i);
+      String tagValue = content.substring(i, j);
+      attrs[tagName] = tagValue;
+    }
+    return attrs;
+  }
 
-      //--- Handle opening and closing only if tag is known
-      if (tag.isKnown) {
-        if (tag.isClosing) {
-          _handleClosingTag(tag, formats);
-          if (formats.isEmpty) return tag.offset;
-        } else {
-          _handleOpeningTag(tag, formats);
+  ///
+  Color _parseColor(String? style) {
+    if (style == null) return Colors.transparent;
+    if (!style.startsWith('color:')) return Colors.transparent;
+    int idx = style.indexOf('#');
+    if (idx < 0) return Colors.transparent;
+    String value = style.substring(idx);
+
+    final a = int.parse(value.substring(7, 9), radix: 16);
+    final r = int.parse(value.substring(1, 3), radix: 16);
+    final g = int.parse(value.substring(3, 5), radix: 16);
+    final b = int.parse(value.substring(5, 7), radix: 16);
+    return Color.fromARGB(a, r, g, b);
+  }
+
+  ///
+  FormatusNode _parseHtml(String html) {
+    final root = FormatusNode.root();
+    final stack = <FormatusNode>[root];
+
+    final buffer = StringBuffer();
+    int i = 0;
+
+    void flushText() {
+      if (buffer.isEmpty) return;
+      final text = buffer.toString();
+      buffer.clear();
+
+      // Discard text/whitespace found outside of block tags at the root level
+      if (stack.last == root) return;
+
+      final parent = stack.last;
+      parent.appendChild(FormatusNode(tag: Formatus.text, text: text));
+    }
+
+    while (i < html.length) {
+      final ch = html[i];
+
+      if (ch == '<') {
+        flushText();
+
+        final end = html.indexOf('>', i + 1);
+        if (end == -1) break;
+        final tagContent = html.substring(i + 1, end).trim();
+        i = end + 1;
+
+        final parsedTag = _parseTag(tagContent);
+
+        //--- Unknown tag: skip completely, no node, no stack change.
+        //--- Its inner text still flushes into the current parent as usual.
+        if (parsedTag == null) continue;
+
+        //--- Closing tag
+        if (parsedTag.isClosing) {
+          final tag = parsedTag.formatus;
+          while (stack.length > 1 && stack.last.tag != tag) {
+            stack.removeLast();
+          }
+          if (stack.length > 1) stack.removeLast();
+          continue;
         }
-      }
-      offset = tag.offset;
-      offset = _extractTextNode(tag, formats, offset);
-    }
-    return _formatted.length;
-  }
 
-  int _extractTextNode(_ParsedTag tag, List<Formatus> formats, int offset) {
-    int end = _formatted.indexOf('<', offset);
-    if (end > offset) {
-      String text = _formatted.substring(offset, end).replaceAll(lessThan, '<');
+        final parent = stack.last;
 
-      //--- Unknown tag => append text to previous node
-      if (tag.isNotKnown) {
-        //--- Formatted starts with unknown tag => wrap with <p>
-        if (_nodes.isEmpty) {
-          _nodes.add(FormatusNode(formats: [Formatus.paragraph], text: ''));
-          formats.add(Formatus.paragraph);
+        // <br> → lineFeed
+        if (parsedTag.formatus == Formatus.lineFeed) {
+          parent.appendChild(FormatusNode.lineBreak);
+          continue;
         }
-        _nodes.last.text += text;
-        return end;
-      }
 
-      //--- Known tag => create new node
-      FormatusNode node = FormatusNode(formats: formats.toList(), text: text);
-      node.attribute = tag.attribute;
-      node.color = tag.color;
-      _nodes.add(node);
-      return end;
-    }
-    return offset;
-  }
+        // Create node
+        final node = FormatusNode(
+          tag: parsedTag.formatus,
+          text: '',
+          attribute: parsedTag.attribute,
+          color: parsedTag.color,
+          ariaLabel: parsedTag.ariaLabel,
+        );
 
-  void _handleClosingTag(_ParsedTag tag, List<Formatus> formats) {
-    if ((formats.length == 1) &&
-        (_nodes.isEmpty || (_nodes.last.section != formats[0]))) {
-      _nodes.add(FormatusNode(formats: formats.toList(), text: ''));
-    }
+        parent.appendChild(node);
 
-    if (tag.formatus.isList) {
-      _listType = Formatus.noList;
-    }
-
-    if (formats.isNotEmpty) formats.removeLast();
-  }
-
-  void _handleOpeningTag(_ParsedTag tag, List<Formatus> formats) {
-    //--- Delay adding ol or ul until li found
-    if (tag.formatus.isList) {
-      _listType = tag.formatus;
-    } else if (tag.formatus == Formatus.listItem) {
-      if (formats.isEmpty) {
-        formats.add(_listType);
-      }
-    } else {
-      formats.add(tag.formatus);
-    }
-  }
-
-  ///
-  /// Parses a single tag starting with "<" until ">".
-  ///
-  /// The returned [_ParsedTag] contains the new node and the
-  /// offset to first character following the closing ">".
-  ///
-  _ParsedTag? _parseTag(int offset) {
-    int i = _formatted.indexOf('<', offset);
-    if (i < 0) return null;
-    int j = _formatted.indexOf('>', i + 1);
-    if (j < 0) {
-      throw FormatException('Missing ">" in tag ${_formatted.substring(i)}');
-    }
-    _ParsedTag tag = _ParsedTag();
-
-    //--- Handle tag content
-    tag.offset = j + 1;
-    String content = _formatted.substring(i + 1, j).trim();
-    if (content.startsWith('/')) {
-      tag.isClosing = true;
-      tag.formatus = Formatus.find(content.substring(1));
-    } else {
-      _parseOpeningTag(tag, content);
-    }
-    return tag;
-  }
-
-  void _parseOpeningTag(_ParsedTag tag, String content) {
-    int k = content.indexOf(' ');
-    String tagName = (k < 0) ? content : content.substring(0, k);
-    tag.formatus = Formatus.find(tagName);
-
-    //--- tag has attribute, color or deprecated color
-    if (k > 0) {
-      if (tag.formatus == Formatus.color) {
-        k = content.indexOf('#');
-        if (k < 0) k = content.indexOf('0x');
-        if (k < 0) k = 0;
-        String hexColor = content.substring(k, content.length);
-        tag.color = colorFromHex(hexColor);
+        // Push to stack if not self-closing
+        if (!parsedTag.isSelfClosing && parsedTag.formatus != Formatus.image) {
+          stack.add(node);
+        }
       } else {
-        tag.attribute = content.substring(k + 1);
+        buffer.write(ch);
+        i++;
       }
     }
+
+    flushText();
+    return root;
+  }
+
+  /// Parses the raw content between `<` and `>` (without the brackets).
+  /// Returns `null` if the tag name is unknown -> caller must skip it
+  /// entirely without creating a node or touching the stack.
+  _ParsedTag? _parseTag(String tagContent) {
+    bool isClosing = tagContent.startsWith('/');
+    if (isClosing) {
+      tagContent = tagContent.substring(1).trim();
+    }
+
+    bool isSelfClosing = tagContent.endsWith('/');
+    if (isSelfClosing) {
+      tagContent = tagContent.substring(0, tagContent.length - 1).trim();
+    }
+
+    final parts = tagContent.split(RegExp(r'\s+'));
+    final name = parts.first;
+    final Formatus formatus = Formatus.find(name);
+
+    //--- Unknown tag -> overread it entirely, keep its content
+    if (formatus == Formatus.unknown) return null;
+
+    final Map<String, String> attrs = _parseAttributes(
+      tagContent.substring(name.length),
+    );
+
+    return _ParsedTag(
+        formatus: formatus,
+        isClosing: isClosing,
+        isSelfClosing: isSelfClosing,
+        attribute: formatus == Formatus.anchor
+            ? (attrs['href'] ?? '')
+            : formatus == Formatus.image
+            ? (attrs['src'] ?? '')
+            : '',
+      )
+      ..color = _parseColor(attrs['style'])
+      ..ariaLabel = attrs['aria-label'] ?? '';
   }
 }
 
 ///
-/// Result of parsing a single tag
 ///
 class _ParsedTag {
-  String attribute = '';
+  String ariaLabel = '';
   Color color = Colors.transparent;
-  Formatus formatus = Formatus.placeHolder;
-  bool isClosing = false;
+  Formatus formatus;
+  bool isClosing;
+  bool isSelfClosing;
 
-  /// Index into _formatted_ to first char behind ">"
-  int offset = -1;
+  String attribute;
 
-  _ParsedTag();
-
-  bool get isKnown => formatus != Formatus.text;
-
-  bool get isNotKnown => formatus == Formatus.text;
-
-  @override
-  String toString() =>
-      '<${isClosing ? "/" : ""}${formatus.key}'
-      '${attribute.isEmpty ? "" : " $attribute"}> offset=$offset';
+  _ParsedTag({
+    required this.formatus,
+    this.isClosing = false,
+    this.isSelfClosing = false,
+    this.attribute = '',
+  });
 }

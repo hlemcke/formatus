@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:formatus/formatus.dart';
 import 'package:formatus/src/formatus/formatus_controller_impl.dart';
 import 'package:formatus/src/formatus/formatus_document.dart';
+import 'package:formatus/src/formatus/formatus_node.dart';
 
 void main() {
   group('Parsing Ordered List tests', () {
@@ -10,20 +11,22 @@ void main() {
     test('Parsing ordered list with 2 items enclosed in paragraphs', () {
       //--- given
       String formatted = '''
-<p>Ordered list</p>
+<p>Ordered list
 <ol><li>First element</li><li>Second one</li></ol>
-<p>... more text</p>
+... more text</p>
 ''';
 
       //--- when
       FormatusDocument doc = FormatusDocument(formatted: formatted);
+      TreeHelper.printAll(doc, 'updated');
 
       //--- then
-      expect(doc.textNodes.length, 7);
-      expect(doc.results.formattedText, formatted.replaceAll('\n', ''));
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 6);
+      expect(doc.results.formatted, formatted.replaceAll('\n', ''));
       expect(
         doc.results.plainText,
-        'Ordered list\n First element\n Second one\n... more text',
+        'Ordered list\n1. First element\n2. Second one\n... more text',
       );
     });
 
@@ -31,72 +34,117 @@ void main() {
     test('Parsing ordered list with inline formats followed by P', () {
       //--- given
       final Color orange = Color(0xffff9800);
-      final String orangeDiv = '<div style="color: #ffff9800;">';
+      final String orangeDiv = '<div style="color: #ff9800ff;">';
       String formatted =
           '''
-<ol><li><b>First element</b></li>
+<p><ol><li><b>First element</b></li>
 <li>Second ${orangeDiv}one</div></li>
-<li><u><i>Item</i> three</u></li></ol>
+<li><u><i>Item</i> three</u></li></ol></p>
 <p>Trailing paragraph</p>
 ''';
 
       //--- when
       FormatusDocument doc = FormatusDocument(formatted: formatted);
+      TreeHelper.printAll(doc, 'parsed');
 
       //--- then
-      expect(doc.textNodes.length, 9);
-      expect(doc.results.formattedText, formatted.replaceAll('\n', ''));
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 9);
+      expect(doc.results.formatted, formatted.replaceAll('\n', ''));
       expect(
         doc.results.plainText,
-        ' First element\n Second one\n Item three\nTrailing paragraph',
+        '\n1. First element\n2. Second one\n3. Item three\n\nTrailing paragraph',
       );
-      expect(doc.textNodes[0].formats, [Formatus.orderedList, Formatus.bold]);
-      expect(doc.textNodes[1].isLineFeed, true);
-      expect(doc.textNodes[2].formats, [Formatus.orderedList]);
-      expect(doc.textNodes[2].text, 'Second ');
-      expect(doc.textNodes[3].formats, [Formatus.orderedList, Formatus.color]);
-      expect(doc.textNodes[3].text, 'one');
-      expect(doc.textNodes[3].color, orange);
+      expect(textNodes[0].formats, <Formatus>{
+        .paragraph,
+        .orderedList,
+        .listItem,
+      });
+      expect(textNodes[0].text, '1. ');
+      expect(textNodes[1].formats, <Formatus>{
+        .paragraph,
+        .orderedList,
+        .listItem,
+        .bold,
+      });
+      expect(textNodes[1].text, 'First element');
+      expect(textNodes[2].text, '2. ');
+      expect(textNodes[3].text, 'Second ');
+      expect(textNodes[4].tag, Formatus.text);
+      expect(textNodes[4].findColor, orange);
+      expect(textNodes[4].text, 'one');
+      expect(textNodes[5].text, '3. ');
+      expect(textNodes[6].text, 'Item');
+    });
+  });
+
+  group('Cursor Positioning', () {
+    test('Move cursor through list', () {
+      //--- given
+      String formatted =
+          '<p>Ordered<ol><li>First</li><li>Second</li></ol>Tail</p>';
+      FormatusDocument doc = FormatusDocument(formatted: formatted);
+      Map<int, String> texts = {
+        8: 'Ordered',
+        17: 'First',
+        27: 'Second',
+        32: 'Tail',
+      };
+      List<int> breakPoints = texts.keys.toList();
+      breakPoints.sort();
+      print('breaks at = $breakPoints');
+      TreeHelper.printAll(doc, 'move cursor through list');
+
+      //--- when / then
+      expect(TreeHelper.printPlainText(doc), 'Ordered¶1. First¶2. Second¶Tail');
+      for (int curPos = -1; curPos < doc.results.plainText.length; curPos++) {
+        int key = breakPoints.firstWhere((o) => curPos < o);
+        FormatusNode node = doc.findNodeAtCursor(curPos);
+        expect(
+          node.text,
+          texts[key],
+          reason: '$curPos -> $key -> ${texts[key]} but is: ${node.text}',
+        );
+      }
     });
   });
 
   group('Line breaks in Ordered List', () {
-    //---
-    test('Inserting linebreak at start of list-item', () {
+    test('Insert linebreak at start of first list-item', () {
       //--- given
       String formatted = '''
-<p>Ordered</p>
-<ol><li>First</li><li>Second</li></ol>
-''';
-      String prevText = 'Ordered\n First\n Second';
+<p>Ordered<ol><li>First</li><li>Second</li></ol></p>''';
+      String prevText = 'Ordered\n1. First\n2. Second\n';
 
       //--- when
       FormatusDocument doc = FormatusDocument(formatted: formatted);
 
       //--- then
-      expect(doc.textNodes.length, 5);
-      expect(doc.results.formattedText, formatted.replaceAll('\n', ''));
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 5);
+      expect(doc.results.formatted, formatted.replaceAll('\n', ''));
       expect(doc.results.plainText, prevText);
 
       //--- given
-      String nextText = 'Ordered\n \nFirst\n Second';
+      String nextText = 'Ordered\n\n1. First\n2. Second\n';
       DeltaText deltaText = DeltaText(
         prevText: doc.results.plainText,
-        prevSelection: const TextSelection(baseOffset: 9, extentOffset: 9),
+        prevSelection: const TextSelection(baseOffset: 8, extentOffset: 8),
         nextText: nextText,
-        nextSelection: const TextSelection(baseOffset: 10, extentOffset: 10),
+        nextSelection: const TextSelection(baseOffset: 9, extentOffset: 9),
       );
 
       //--- when
       doc.updateText(deltaText, {Formatus.orderedList});
+      TreeHelper.printAll(doc, 'text updated');
 
       //--- then
       expect(deltaText.type, DeltaTextType.insert);
-      expect(doc.results.textSpan.children?.length, 7);
-      expect(doc.results.plainText, 'Ordered\n \n First\n Second');
+      expect(doc.results.textSpan4Editor.children?.length, 1);
+      expect(doc.results.plainText, 'Ordered\n1. \n2. First\n3. Second\n');
       expect(
-        doc.results.formattedText,
-        '<p>Ordered</p><ol><li></li><li>First</li><li>Second</li></ol>',
+        doc.results.formatted,
+        '<p>Ordered<ol><li></li><li>First</li><li>Second</li></ol></p>',
       );
     });
   });

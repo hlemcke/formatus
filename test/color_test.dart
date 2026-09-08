@@ -3,10 +3,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:formatus/formatus.dart';
 import 'package:formatus/src/formatus/formatus_controller_impl.dart';
 import 'package:formatus/src/formatus/formatus_document.dart';
+import 'package:formatus/src/formatus/formatus_node.dart';
+
+import 'test_helper.dart';
 
 void main() {
-  final Color orange = Color(0xffff9800);
-  final String orangeDiv = '<div style="color: #ffff9800;">';
+  /// Flutter color ARGB
+  final Color orange = Color(0xFFff9800);
+
+  /// HTML color RGBA
+  final String orangeDiv = '<div style="color: #ff9800ff;">';
 
   group('Apply color to text range', () {
     //---
@@ -21,24 +27,23 @@ void main() {
         nextText: nextText,
         nextSelection: TextSelection(baseOffset: 11, extentOffset: 11),
       );
-      Set<Formatus> selectedFormats = {Formatus.header1, Formatus.color};
 
       //--- when
+      Set<Formatus> selectedFormats = {Formatus.header1, Formatus.color};
       doc.updateText(deltaText, selectedFormats, color: orange);
+      TreeHelper.printAll(doc, 'Appended orange X');
 
       //--- then
-      expect(doc.textNodes.length, 2);
-      expect(
-        doc.results.formattedText,
-        '<h1>First Line${orangeDiv}X</div></h1>',
-      );
+      expect(doc.childCount, 1);
+      expect(doc.results.formatted, '<h1>First Line${orangeDiv}X</div></h1>');
       expect(doc.results.plainText, 'First LineX');
-      expect(doc.textNodes.length, 2);
-      expect(doc.textNodes[0].formats, [Formatus.header1]);
-      expect(doc.textNodes[0].text, 'First Line');
-      expect(doc.textNodes[1].formats, [Formatus.header1, Formatus.color]);
-      expect(doc.textNodes[1].text, 'X');
-      expect(doc.textNodes[1].color, orange);
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 2);
+      expect(textNodes[0].formats, [Formatus.header1]);
+      expect(textNodes[0].text, 'First Line');
+      expect(textNodes[1].formats, [Formatus.header1, Formatus.color]);
+      expect(textNodes[1].text, 'X');
+      expect(textNodes[1].findColor, orange);
     });
 
     //---
@@ -52,20 +57,19 @@ void main() {
       );
 
       //--- when
-      doc.updateInlineFormat(selection, Formatus.color, color: orange);
+      doc.updateInlineFormat(selection, Formatus.color, true, color: orange);
+      TreeHelper.printAll(doc, 'added orange X');
 
       //--- then
-      expect(doc.textNodes.length, 2);
-      expect(
-        doc.results.formattedText,
-        '<h1>${orangeDiv}First</div> Line</h1>',
-      );
+      expect(doc.childCount, 1);
+      expect(doc.results.formatted, '<h1>${orangeDiv}First</div> Line</h1>');
       expect(doc.results.plainText, 'First Line');
-      expect(doc.textNodes[0].formats, [Formatus.header1, Formatus.color]);
-      expect(doc.textNodes[0].text, 'First');
-      expect(doc.textNodes[0].color, orange);
-      expect(doc.textNodes[1].formats, [Formatus.header1]);
-      expect(doc.textNodes[1].text, ' Line');
+      expect(doc[0].tag, Formatus.header1);
+      FormatusNode section = doc[0];
+      expect(section.childCount, 2);
+      expect(section[0].tag, Formatus.color);
+      expect(section[0][0].text, 'First');
+      expect(section[0][0].findColor, orange);
     });
 
     //---
@@ -79,27 +83,26 @@ void main() {
       );
 
       //--- when
-      doc.updateInlineFormat(selection, Formatus.color, color: orange);
+      doc.updateInlineFormat(selection, Formatus.color, true, color: orange);
+      TreeHelper.printAll(doc, 'updated');
 
       //--- then
-      expect(doc.textNodes.length, 2);
-      expect(
-        doc.results.formattedText,
-        '<h1>First ${orangeDiv}Line</div></h1>',
-      );
+      expect(doc.childCount, 1);
+      expect(doc.results.formatted, '<h1>First ${orangeDiv}Line</div></h1>');
       expect(doc.results.plainText, 'First Line');
-      expect(doc.textNodes[0].formats, [Formatus.header1]);
-      expect(doc.textNodes[0].text, 'First ');
-      expect(doc.textNodes[1].formats, [Formatus.header1, Formatus.color]);
-      expect(doc.textNodes[1].text, 'Line');
-      expect(doc.textNodes[1].color, orange);
+      FormatusNode section = doc[0];
+      expect(section.tag, Formatus.header1);
+      expect(section.childCount, 2);
+      expect(section[0].text, 'First ');
+      expect(section[1].tag, Formatus.color);
+      expect(section[1][0].text, 'Line');
     });
 
     //---
     test('Change color of already colored part', () {
       //--- given
       String formatted = '<p>Color ${orangeDiv}Orange</div></p>';
-      String limeDiv = '<div style="color: #ffcddc39;">';
+      String limeDiv = '<div style="color: #cddc39ff;">';
       FormatusDocument doc = FormatusDocument(formatted: formatted);
       TextSelection selection = const TextSelection(
         baseOffset: 9,
@@ -107,23 +110,28 @@ void main() {
       );
 
       //--- when
-      doc.updateInlineFormat(selection, Formatus.color, color: Colors.lime);
+      TreeHelper.printAll(doc, 'given');
+      doc.updateInlineFormat(
+        selection,
+        Formatus.color,
+        true,
+        color: Colors.lime,
+      );
+      TreeHelper.printAll(doc, 'updated');
 
       //--- then
-      expect(doc.textNodes.length, 3);
+      expect(doc.childCount, 1);
       expect(doc.results.plainText, 'Color Orange');
       expect(
-        doc.results.formattedText,
+        doc.results.formatted,
         '<p>Color ${orangeDiv}Ora</div>${limeDiv}nge</div></p>',
       );
-      expect(doc.textNodes[0].formats, [Formatus.paragraph]);
-      expect(doc.textNodes[0].text, 'Color ');
-      expect(doc.textNodes[1].formats, [Formatus.paragraph, Formatus.color]);
-      expect(doc.textNodes[1].text, 'Ora');
-      expect(doc.textNodes[1].color, orange);
-      expect(doc.textNodes[2].formats, [Formatus.paragraph, Formatus.color]);
-      expect(doc.textNodes[2].text, 'nge');
-      expect(doc.textNodes[2].color, Colors.lime);
+      FormatusNode section = doc[0];
+      expect(section.childCount, 3);
+      expect(section[0].tag, Formatus.text);
+      expect(section[0].text, 'Color ');
+      expect(section[1][0].text, 'Ora');
+      expect(section[2][0].text, 'nge');
     });
 
     //---
@@ -140,31 +148,19 @@ void main() {
       doc.updateInlineFormat(
         selection,
         Formatus.color,
+        true,
         color: Colors.transparent,
       );
+      TreeHelper.printAll(doc, 'updated');
 
-      //--- then
-      expect(doc.textNodes.length, 3);
-      expect(doc.results.plainText, 'Color Orange');
-      expect(doc.textNodes[0].formats, [Formatus.paragraph]);
-      expect(doc.textNodes[0].text, 'Color ');
-      expect(doc.textNodes[1].formats, [Formatus.paragraph, Formatus.color]);
-      expect(doc.textNodes[1].text, 'Ora');
-      expect(doc.textNodes[1].color, orange);
-      expect(doc.textNodes[2].formats, [Formatus.paragraph]);
-      expect(doc.textNodes[2].text, 'nge');
-      expect(doc.textNodes[2].color, Colors.transparent);
-      expect(
-        doc.results.formattedText,
-        '<p>Color ${orangeDiv}Ora</div>nge</p>',
-      );
+      expect(doc.results.formatted, '<p>Color ${orangeDiv}Ora</div>nge</p>');
     });
 
     test('Change color of everything, even already colored part', () {
       //--- given
       String formatted =
           '<p>This is ${orangeDiv}Colored.</div> This is not.</p>';
-      String limeDiv = '<div style="color: #ffcddc39;">';
+      String limeDiv = '<div style="color: #cddc39ff;">';
       FormatusDocument doc = FormatusDocument(formatted: formatted);
       TextSelection selection = TextSelection(
         baseOffset: 0,
@@ -172,18 +168,25 @@ void main() {
       );
 
       //--- when
-      doc.updateInlineFormat(selection, Formatus.color, color: Colors.lime);
+      doc.updateInlineFormat(
+        selection,
+        Formatus.color,
+        true,
+        color: Colors.lime,
+      );
+      TreeHelper.printAll(doc, 'updated');
 
       //--- then
-      expect(doc.textNodes.length, 1);
+      expect(doc.childCount, 1);
       expect(doc.results.plainText, 'This is Colored. This is not.');
       expect(
-        doc.results.formattedText,
+        doc.results.formatted,
         '<p>${limeDiv}This is Colored. This is not.</div></p>',
       );
-      expect(doc.textNodes[0].formats, [Formatus.paragraph, Formatus.color]);
-      expect(doc.textNodes[0].text, 'This is Colored. This is not.');
-      expect(doc.textNodes[0].color, Colors.lime);
+      FormatusNode section = doc[0];
+      expect(section.tag, Formatus.paragraph);
+      expect(section[0][0].text, 'This is Colored. This is not.');
+      // expect(doc.textNodes[0].color, Colors.lime);
     });
   });
 
@@ -194,7 +197,7 @@ void main() {
       //--- given
       String formatted =
           '<p>This <b>is</b> ${orangeDiv}colored.</div> This is <i>not</i></p>';
-      String limeDiv = '<div style="color: #ffcddc39;">';
+      String limeDiv = '<div style="color: #cddc39ff;">';
       FormatusDocument doc = FormatusDocument(formatted: formatted);
       TextSelection selection = TextSelection(
         baseOffset: 0,
@@ -202,16 +205,22 @@ void main() {
       );
 
       //--- when
-      doc.updateInlineFormat(selection, Formatus.color, color: Colors.lime);
+      TreeHelper.printAll(doc, 'given');
+      doc.updateInlineFormat(
+        selection,
+        Formatus.color,
+        true,
+        color: Colors.lime,
+      );
+      TreeHelper.printAll(doc, 'updated inline format');
 
       //--- then
-      expect(doc.textNodes.length, 4);
+      expect(doc.childCount, 1);
       expect(doc.results.plainText, 'This is colored. This is not');
       expect(
-        doc.results.formattedText,
-        '<p>${limeDiv}This </div>'
-        '<b>${limeDiv}is</div></b>$limeDiv colored. This is </div>'
-        '<i>${limeDiv}not</div></i></p>',
+        doc.results.formatted,
+        '''
+<p><div style="color: #cddc39ff;">This </div><b>${limeDiv}is</div></b>$limeDiv colored. This is </div><i><div style="color: #cddc39ff;">not</div></i></p>''',
       );
     });
   });

@@ -4,6 +4,8 @@ import 'package:formatus/formatus.dart';
 import 'package:formatus/src/formatus/formatus_controller_impl.dart';
 import 'package:formatus/src/formatus/formatus_document.dart';
 
+import 'test_helper.dart';
+
 void main() {
   group('Document - update text in selected range', () {
     test('update all in single section', () {
@@ -26,14 +28,17 @@ void main() {
       );
 
       //--- when
+      TreeHelper.printAll(doc, 'given');
       doc.updateText(deltaText, {Formatus.header1});
+      TreeHelper.printAll(doc, 'updated');
 
       //--- then
       expect(deltaText.isAll, true);
       expect(deltaText.type, DeltaTextType.update);
-      expect(doc.textNodes.length, 1);
-      expect(doc.textNodes[0].formats, [Formatus.header1]);
-      expect(doc.textNodes[0].text, newText);
+      final textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 1);
+      expect(doc[0].tag, Formatus.header1);
+      expect(textNodes[0].text, newText);
     });
 
     //---
@@ -58,13 +63,15 @@ void main() {
 
       //--- when
       doc.updateText(deltaText, {Formatus.paragraph});
+      TreeHelper.printAll(doc, 'updated');
 
       //--- then
       expect(deltaText.isAll, true);
       expect(deltaText.type, DeltaTextType.update);
-      expect(doc.textNodes.length, 1);
-      expect(doc.textNodes[0].formats, [Formatus.header1]);
-      expect(doc.textNodes[0].text, newText);
+      final textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 1);
+      expect(textNodes[0].formats, {Formatus.paragraph});
+      expect(textNodes[0].text, newText);
     });
   });
 }

@@ -305,10 +305,10 @@ class FormatusBarState extends State<FormatusBarImpl>
       _ctrl.updateSectionFormat(formatus);
     } else if (_selectedFormats.contains(formatus)) {
       _selectedFormats.remove(formatus);
-      _ctrl.updateInlineFormat(formatus);
+      _ctrl.updateInlineFormat(formatus, false);
     } else {
       _selectedFormats.add(formatus);
-      _ctrl.updateInlineFormat(formatus);
+      _ctrl.updateInlineFormat(formatus, true);
     }
     if (mounted) {
       widget.textFieldFocus?.requestFocus();

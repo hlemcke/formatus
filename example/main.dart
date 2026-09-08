@@ -8,25 +8,22 @@ void main() {
 
 const String initialTemplateKey = 'Lists';
 const Map<String, String> textTemplates = {
-  'Empty': '',
+  'Empty': '<p></p>',
   'Short':
-      '<p><div style="color: #0xFF0000ff">Blue</> with <b>bold</> words</>',
-  'Long': '''
-<h1>Formatus Features</h1>
-<h2>Text with <b>bold</b>, <i>italic</i> and <u>underlined</u> words</h2>.
-<p>Third line <i>contains <s>nested</s> and</i> <u>under<b>line</b>d</u> text.</p>
-''',
-  'Lists': '''
-  <h2>ul</h2>
-  <ul><li>Apple</li><li>Kiwi</li></ul>
-  <h3>ol</h3>
-  <ol><li>First item</li><li>Second entry</li></ol>
-  ''',
-  'Anchor': '''
-  <h1>Anchors</h1>
-  <p>Anchor to <a href="https://icanhazdadjoke.com">dad jokes</a> is funny.</p>
-  <p>Another one to <a href="https://www.duckduckgo.com">Duck Duck Go</a> search</p>
-  ''',
+      '<p><div style="color: #0000ffFF">Blue</div> with <b>bold</b> words</p>',
+  'Long':
+      '<h1>Formatus Features</h1>'
+      '<h2>Text with <b>bold</b>, <i>italic</i> and <u>underlined</u> words</h2>'
+      '<p>Third line <i>contains <s>nested</s> and</i> <u>under<b>line</b>d</u> text.</p>',
+  'Lists':
+      '<h2>ul</h2>'
+      '<p>hier kommts<ul><li>Apple</li><li>Kiwi</li></ul></p>'
+      '<h3>ol</h3>'
+      '<p><ol><li>First item</li><li>Second entry</li></ol></p>',
+  'Anchor':
+      '<h1>Anchors</h1>'
+      '<p>Anchor to <a href="https://icanhazdadjoke.com">dad jokes</a> is funny.</p>'
+      '<p>Another one to <a href="https://www.duckduckgo.com">Duck Duck Go</a> search</p>',
   'Inlines': '<p><b><i><u>all</u> italic</i> bold</b> plain</p>',
 };
 

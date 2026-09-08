@@ -4,6 +4,8 @@ import 'package:formatus/formatus.dart';
 import 'package:formatus/src/formatus/formatus_controller_impl.dart';
 import 'package:formatus/src/formatus/formatus_document.dart';
 
+import 'test_helper.dart';
+
 void main() {
   ///
   group('Document - Delete single character', () {
@@ -12,21 +14,23 @@ void main() {
       //--- given
       String formatted = '<h1>formatus</h1><p>second</p>';
       FormatusDocument doc = FormatusDocument(formatted: formatted);
-      expect(doc.textNodes.length, 3);
+      expect(doc.childCount, 2);
       String prevText = doc.results.plainText;
       DeltaText deltaText = DeltaText(
-          prevText: prevText,
-          prevSelection: TextSelection(baseOffset: 0, extentOffset: 0),
-          nextText: prevText.substring(1),
-          nextSelection: TextSelection(baseOffset: 0, extentOffset: 0));
+        prevText: prevText,
+        prevSelection: TextSelection(baseOffset: 0, extentOffset: 0),
+        nextText: prevText.substring(1),
+        nextSelection: TextSelection(baseOffset: 0, extentOffset: 0),
+      );
 
       //--- when
       doc.updateText(deltaText, {Formatus.header1});
+      TreeHelper.printAll(doc, 'First char removed');
 
       //--- then
-      expect(doc.textNodes.length, 3);
+      expect(doc.childCount, 2);
       expect(doc.results.plainText, prevText.substring(1));
-      expect(doc.results.formattedText, '<h1>${formatted.substring(5)}');
+      expect(doc.results.formatted, '<h1>${formatted.substring(5)}');
     });
   });
 

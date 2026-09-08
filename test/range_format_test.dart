@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:formatus/formatus.dart';
 import 'package:formatus/src/formatus/formatus_document.dart';
+import 'package:formatus/src/formatus/formatus_node.dart';
 
 final Color orange = Color(0xffff9800);
-final String orangeDiv = '<div style="color: #ffff9800;">';
+final String orangeDiv = '<div style="color: #ff9800ff;">';
 
 void main() {
   group('Apply format to single node', () {
@@ -20,12 +21,13 @@ void main() {
       );
 
       //--- when
-      doc.updateInlineFormat(selection, Formatus.underline);
+      doc.updateInlineFormat(selection, .underline, true);
 
       //--- then
-      expect(doc.textNodes.length, 1);
-      expect(doc.textNodes[0].formats, [Formatus.header1]);
-      expect(doc.textNodes[0].text, 'Title Line');
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 1);
+      expect(textNodes[0].formats, [Formatus.header1]);
+      expect(textNodes[0].text, 'Title Line');
     });
 
     //---
@@ -39,14 +41,15 @@ void main() {
       );
 
       //--- when
-      doc.updateInlineFormat(selection, Formatus.bold);
+      doc.updateInlineFormat(selection, Formatus.bold, true);
 
       //--- then
-      expect(doc.textNodes.length, 2);
-      expect(doc.textNodes[0].text, 'Title');
-      expect(doc.textNodes[0].formats, [Formatus.header1, Formatus.bold]);
-      expect(doc.textNodes[1].text, ' Line');
-      expect(doc.textNodes[1].formats, [Formatus.header1]);
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 2);
+      expect(textNodes[0].text, 'Title');
+      expect(textNodes[0].formats, [Formatus.header1, Formatus.bold]);
+      expect(textNodes[1].text, ' Line');
+      expect(textNodes[1].formats, [Formatus.header1]);
     });
 
     //---
@@ -60,14 +63,15 @@ void main() {
       );
 
       //--- when
-      doc.updateInlineFormat(selection, Formatus.bold);
+      doc.updateInlineFormat(selection, Formatus.bold, true);
 
       //--- then
-      expect(doc.textNodes.length, 2);
-      expect(doc.textNodes[0].text, 'Title ');
-      expect(doc.textNodes[0].formats, [Formatus.header1]);
-      expect(doc.textNodes[1].text, 'Line');
-      expect(doc.textNodes[1].formats, [Formatus.header1, Formatus.bold]);
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 2);
+      expect(textNodes[0].text, 'Title ');
+      expect(textNodes[0].formats, [Formatus.header1]);
+      expect(textNodes[1].text, 'Line');
+      expect(textNodes[1].formats, [Formatus.header1, Formatus.bold]);
     });
 
     //---
@@ -81,16 +85,17 @@ void main() {
       );
 
       //--- when
-      doc.updateInlineFormat(selection, Formatus.bold);
+      doc.updateInlineFormat(selection, Formatus.bold, true);
 
       //--- then
-      expect(doc.textNodes.length, 3);
-      expect(doc.textNodes[0].text, 'Title ');
-      expect(doc.textNodes[0].formats, [Formatus.header1]);
-      expect(doc.textNodes[1].text, 'midd');
-      expect(doc.textNodes[1].formats, [Formatus.header1, Formatus.bold]);
-      expect(doc.textNodes[2].text, 'le Line');
-      expect(doc.textNodes[2].formats, [Formatus.header1]);
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 3);
+      expect(textNodes[0].text, 'Title ');
+      expect(textNodes[0].formats, [Formatus.header1]);
+      expect(textNodes[1].text, 'midd');
+      expect(textNodes[1].formats, [Formatus.header1, Formatus.bold]);
+      expect(textNodes[2].text, 'le Line');
+      expect(textNodes[2].formats, [Formatus.header1]);
     });
   });
 
@@ -106,12 +111,13 @@ void main() {
       );
 
       //--- when
-      doc.updateInlineFormat(selection, Formatus.bold);
+      doc.updateInlineFormat(selection, Formatus.bold, false);
 
       //--- then
-      expect(doc.textNodes.length, 1);
-      expect(doc.textNodes[0].formats, [Formatus.paragraph]);
-      expect(doc.textNodes[0].text, 'Some bold text');
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 1);
+      expect(textNodes[0].formats, [Formatus.paragraph]);
+      expect(textNodes[0].text, 'Some bold text');
     });
   });
 
@@ -127,18 +133,19 @@ void main() {
       );
 
       //--- when
-      doc.updateInlineFormat(selection, Formatus.italic);
+      doc.updateInlineFormat(selection, Formatus.italic, true);
 
       //--- then
-      expect(doc.textNodes.length, 2);
-      expect(doc.textNodes[0].formats, [
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 2);
+      expect(textNodes[0].formats, [
         Formatus.header1,
         Formatus.bold,
         Formatus.italic,
       ]);
-      expect(doc.textNodes[0].text, 'Title');
-      expect(doc.textNodes[1].formats, [Formatus.header1, Formatus.italic]);
-      expect(doc.textNodes[1].text, ' Line');
+      expect(textNodes[0].text, 'Title');
+      expect(textNodes[1].formats, [Formatus.header1, Formatus.italic]);
+      expect(textNodes[1].text, ' Line');
     });
     //---
     test('Change color of whole text having multiple inline formats', () {
@@ -151,43 +158,44 @@ void main() {
       );
 
       //--- when
-      doc.updateInlineFormat(selection, Formatus.color, color: orange);
+      doc.updateInlineFormat(selection, Formatus.color, true, color: orange);
 
       //--- then
-      expect(doc.textNodes.length, 4);
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 4);
       expect(
-        doc.results.formattedText,
+        doc.results.formatted,
         '<h1><b>${orangeDiv}Title </div></b><i>${orangeDiv}Line </div></i>'
         '<u>${orangeDiv}With </div></u>${orangeDiv}Color</div></h1>',
       );
       //"Title "
-      expect(doc.textNodes[0].formats, [
+      expect(textNodes[0].formats, [
         Formatus.header1,
         Formatus.bold,
         Formatus.color,
       ]);
-      expect(doc.textNodes[0].text, 'Title ');
-      expect(doc.textNodes[0].color, orange);
+      expect(textNodes[0].text, 'Title ');
+      expect(textNodes[0].findColor, orange);
       //"Line "
-      expect(doc.textNodes[1].formats, [
+      expect(textNodes[1].formats, [
         Formatus.header1,
         Formatus.italic,
         Formatus.color,
       ]);
-      expect(doc.textNodes[1].text, 'Line ');
-      expect(doc.textNodes[1].color, orange);
+      expect(textNodes[1].text, 'Line ');
+      expect(textNodes[1].findColor, orange);
       //"With "
-      expect(doc.textNodes[2].formats, [
+      expect(textNodes[2].formats, [
         Formatus.header1,
         Formatus.underline,
         Formatus.color,
       ]);
-      expect(doc.textNodes[2].text, 'With ');
-      expect(doc.textNodes[2].color, orange);
+      expect(textNodes[2].text, 'With ');
+      expect(textNodes[2].findColor, orange);
       //"Color"
-      expect(doc.textNodes[3].formats, [Formatus.header1, Formatus.color]);
-      expect(doc.textNodes[3].text, 'Color');
-      expect(doc.textNodes[3].color, orange);
+      expect(textNodes[3].formats, [Formatus.header1, Formatus.color]);
+      expect(textNodes[3].text, 'Color');
+      expect(textNodes[3].findColor, orange);
     });
     //---
     test('Change format of text containing a colored word', () {
@@ -200,20 +208,21 @@ void main() {
       );
 
       //--- when
-      doc.updateInlineFormat(selection, Formatus.italic);
+      doc.updateInlineFormat(selection, Formatus.italic, true);
 
       //--- then
-      expect(doc.textNodes.length, 2);
-      expect(doc.textNodes[0].formats, [
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 2);
+      expect(textNodes[0].formats, [
         Formatus.header1,
         Formatus.color,
         Formatus.italic,
       ]);
-      expect(doc.textNodes[0].text, 'Title ');
-      expect(doc.textNodes[0].color, orange);
+      expect(textNodes[0].text, 'Title ');
+      expect(textNodes[0].findColor, orange);
 
-      expect(doc.textNodes[1].formats, [Formatus.header1, Formatus.italic]);
-      expect(doc.textNodes[1].text, 'Line');
+      expect(textNodes[1].formats, [Formatus.header1, Formatus.italic]);
+      expect(textNodes[1].text, 'Line');
     });
 
     //---
@@ -231,20 +240,21 @@ void main() {
       doc.updateSectionFormat(selection, Formatus.header1);
 
       //--- then
-      expect(doc.textNodes.length, 4);
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 4);
       //"Title "
-      expect(doc.textNodes[0].formats, [Formatus.header1, Formatus.bold]);
-      expect(doc.textNodes[0].text, 'Title ');
+      expect(textNodes[0].formats, [Formatus.header1, Formatus.bold]);
+      expect(textNodes[0].text, 'Title ');
       //"Line "
-      expect(doc.textNodes[1].formats, [Formatus.header1, Formatus.italic]);
-      expect(doc.textNodes[1].text, 'Line ');
+      expect(textNodes[1].formats, [Formatus.header1, Formatus.italic]);
+      expect(textNodes[1].text, 'Line ');
       //"With "
-      expect(doc.textNodes[2].formats, [Formatus.header1, Formatus.underline]);
-      expect(doc.textNodes[2].text, 'With ');
+      expect(textNodes[2].formats, [Formatus.header1, Formatus.underline]);
+      expect(textNodes[2].text, 'With ');
       //"Color"
-      expect(doc.textNodes[3].formats, [Formatus.header1, Formatus.color]);
-      expect(doc.textNodes[3].text, 'Color');
-      expect(doc.textNodes[3].color, orange);
+      expect(textNodes[3].formats, [Formatus.header1, Formatus.color]);
+      expect(textNodes[3].text, 'Color');
+      expect(textNodes[3].findColor, orange);
     });
 
     //---
@@ -259,35 +269,36 @@ void main() {
       );
 
       //--- when
-      doc.updateInlineFormat(selection, Formatus.bold);
+      doc.updateInlineFormat(selection, Formatus.bold, true);
 
       //--- then
-      expect(doc.textNodes.length, 4);
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 4);
       //"Title "
-      expect(doc.textNodes[0].formats, [Formatus.paragraph, Formatus.bold]);
-      expect(doc.textNodes[0].text, 'Title ');
+      expect(textNodes[0].formats, [Formatus.paragraph, Formatus.bold]);
+      expect(textNodes[0].text, 'Title ');
       //"Line "
-      expect(doc.textNodes[1].formats, [
+      expect(textNodes[1].formats, [
         Formatus.paragraph,
         Formatus.italic,
         Formatus.bold,
       ]);
-      expect(doc.textNodes[1].text, 'Line ');
+      expect(textNodes[1].text, 'Line ');
       //"With "
-      expect(doc.textNodes[2].formats, [
+      expect(textNodes[2].formats, [
         Formatus.paragraph,
         Formatus.underline,
         Formatus.bold,
       ]);
-      expect(doc.textNodes[2].text, 'With ');
+      expect(textNodes[2].text, 'With ');
       //"Color"
-      expect(doc.textNodes[3].formats, [
+      expect(textNodes[3].formats, [
         Formatus.paragraph,
         Formatus.color,
         Formatus.bold,
       ]);
-      expect(doc.textNodes[3].text, 'Color');
-      expect(doc.textNodes[3].color, orange);
+      expect(textNodes[3].text, 'Color');
+      expect(textNodes[3].findColor, orange);
     });
 
     //---
@@ -302,35 +313,36 @@ void main() {
       );
 
       //--- when
-      doc.updateInlineFormat(selection, Formatus.italic);
+      doc.updateInlineFormat(selection, Formatus.italic, true);
 
       //--- then
-      expect(doc.textNodes.length, 4);
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 4);
       //"Title "
-      expect(doc.textNodes[0].formats, [
+      expect(textNodes[0].formats, [
         Formatus.paragraph,
         Formatus.bold,
         Formatus.italic,
       ]);
-      expect(doc.textNodes[0].text, 'Title ');
+      expect(textNodes[0].text, 'Title ');
       //"Line "
-      expect(doc.textNodes[1].formats, [Formatus.paragraph, Formatus.italic]);
-      expect(doc.textNodes[1].text, 'Line ');
+      expect(textNodes[1].formats, [Formatus.paragraph, Formatus.italic]);
+      expect(textNodes[1].text, 'Line ');
       //"With "
-      expect(doc.textNodes[2].formats, [
+      expect(textNodes[2].formats, [
         Formatus.paragraph,
         Formatus.underline,
         Formatus.italic,
       ]);
-      expect(doc.textNodes[2].text, 'With ');
+      expect(textNodes[2].text, 'With ');
       //"Color"
-      expect(doc.textNodes[3].formats, [
+      expect(textNodes[3].formats, [
         Formatus.paragraph,
         Formatus.color,
         Formatus.italic,
       ]);
-      expect(doc.textNodes[3].text, 'Color');
-      expect(doc.textNodes[3].color, orange);
+      expect(textNodes[3].text, 'Color');
+      expect(textNodes[3].findColor, orange);
     });
 
     //---
@@ -345,38 +357,36 @@ void main() {
       );
 
       //--- when
-      doc.updateInlineFormat(selection, Formatus.underline);
+      doc.updateInlineFormat(selection, Formatus.underline, true);
 
       //--- then
-      expect(doc.textNodes.length, 4);
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 4);
       //"Title "
-      expect(doc.textNodes[0].formats, [
+      expect(textNodes[0].formats, [
         Formatus.paragraph,
         Formatus.bold,
         Formatus.underline,
       ]);
-      expect(doc.textNodes[0].text, 'Title ');
+      expect(textNodes[0].text, 'Title ');
       //"Line "
-      expect(doc.textNodes[1].formats, [
+      expect(textNodes[1].formats, [
         Formatus.paragraph,
         Formatus.italic,
         Formatus.underline,
       ]);
-      expect(doc.textNodes[1].text, 'Line ');
+      expect(textNodes[1].text, 'Line ');
       //"With "
-      expect(doc.textNodes[2].formats, [
-        Formatus.paragraph,
-        Formatus.underline,
-      ]);
-      expect(doc.textNodes[2].text, 'With ');
+      expect(textNodes[2].formats, [Formatus.paragraph, Formatus.underline]);
+      expect(textNodes[2].text, 'With ');
       //"Color"
-      expect(doc.textNodes[3].formats, [
+      expect(textNodes[3].formats, [
         Formatus.paragraph,
         Formatus.color,
         Formatus.underline,
       ]);
-      expect(doc.textNodes[3].text, 'Color');
-      expect(doc.textNodes[3].color, orange);
+      expect(textNodes[3].text, 'Color');
+      expect(textNodes[3].findColor, orange);
     });
 
     //---
@@ -391,38 +401,39 @@ void main() {
       );
 
       //--- when
-      doc.updateInlineFormat(selection, Formatus.color, color: orange);
+      doc.updateInlineFormat(selection, Formatus.color, true, color: orange);
 
       //--- then
-      expect(doc.textNodes.length, 4);
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 4);
       //"Title "
-      expect(doc.textNodes[0].formats, [
+      expect(textNodes[0].formats, [
         Formatus.paragraph,
         Formatus.bold,
         Formatus.color,
       ]);
-      expect(doc.textNodes[0].text, 'Title ');
-      expect(doc.textNodes[0].color, orange);
+      expect(textNodes[0].text, 'Title ');
+      expect(textNodes[0].findColor, orange);
       //"Line "
-      expect(doc.textNodes[1].formats, [
+      expect(textNodes[1].formats, [
         Formatus.paragraph,
         Formatus.italic,
         Formatus.color,
       ]);
-      expect(doc.textNodes[1].text, 'Line ');
-      expect(doc.textNodes[1].color, orange);
+      expect(textNodes[1].text, 'Line ');
+      expect(textNodes[1].findColor, orange);
       //"With "
-      expect(doc.textNodes[2].formats, [
+      expect(textNodes[2].formats, [
         Formatus.paragraph,
         Formatus.underline,
         Formatus.color,
       ]);
-      expect(doc.textNodes[2].text, 'With ');
-      expect(doc.textNodes[2].color, orange);
+      expect(textNodes[2].text, 'With ');
+      expect(textNodes[2].findColor, orange);
       //"Color"
-      expect(doc.textNodes[3].formats, [Formatus.paragraph, Formatus.color]);
-      expect(doc.textNodes[3].text, 'Color');
-      expect(doc.textNodes[3].color, orange);
+      expect(textNodes[3].formats, [Formatus.paragraph, Formatus.color]);
+      expect(textNodes[3].text, 'Color');
+      expect(textNodes[3].findColor, orange);
     });
   });
 }

@@ -5,6 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:formatus/formatus.dart';
 import 'package:formatus/src/formatus/formatus_controller_impl.dart';
+import 'package:formatus/src/formatus/formatus_document.dart';
+import 'package:formatus/src/formatus/formatus_node.dart';
+
+import 'test_helper.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -24,20 +28,19 @@ void main() {
       controller.anchorAtCursor = anchor;
 
       //--- then
-      expect(controller.document.textNodes.length, 2);
+      FormatusDocument doc = controller.document;
+      TreeHelper.printAll(doc, 'Anchor appended');
+      expect(doc.childCount, 1);
       expect(
-        controller.document.results.formattedText,
+        doc.results.formatted,
         '<p>This is a <a href="www.abc.de">link</a></p>',
       );
-      expect(controller.document.results.plainText, 'This is a link');
-      expect(controller.document.textNodes.length, 2);
-      expect(controller.document.textNodes[0].formats, [Formatus.paragraph]);
-      expect(controller.document.textNodes[0].text, 'This is a ');
-      expect(controller.document.textNodes[1].formats, [
-        Formatus.paragraph,
-        Formatus.anchor,
-      ]);
-      expect(controller.document.textNodes[1].text, 'link');
+      expect(doc.results.plainText, 'This is a link');
+      expect(doc[0].tag, Formatus.paragraph);
+      FormatusNode section = doc[0];
+      expect(section[0].text, 'This is a ');
+      expect(section[1].tag, Formatus.anchor);
+      expect(section[1].text, 'link');
     });
 
     test('Insert anchor in the middle of text', () {
@@ -52,24 +55,23 @@ void main() {
       controller.anchorAtCursor = anchor;
 
       //--- when
-      controller.document.computeResults();
+      FormatusDocument doc = controller.document;
+      doc.computeResults();
 
       //--- then
-      expect(controller.document.textNodes.length, 3);
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 3, reason: 'textNodes=$textNodes');
       expect(
-        controller.document.results.formattedText,
+        controller.document.results.formatted,
         '<p>This <a href="www.abc.de">link </a>is cool!</p>',
       );
-      expect(controller.document.results.plainText, 'This link is cool!');
-      expect(controller.document.textNodes[0].formats, [Formatus.paragraph]);
-      expect(controller.document.textNodes[0].text, 'This ');
-      expect(controller.document.textNodes[1].formats, [
-        Formatus.paragraph,
-        Formatus.anchor,
-      ]);
-      expect(controller.document.textNodes[1].text, 'link ');
-      expect(controller.document.textNodes[2].formats, [Formatus.paragraph]);
-      expect(controller.document.textNodes[2].text, 'is cool!');
+      expect(doc.results.plainText, 'This link is cool!');
+      expect(textNodes[0].formats, [Formatus.paragraph]);
+      expect(textNodes[0].text, 'This ');
+      expect(textNodes[1].formats, [Formatus.paragraph, Formatus.anchor]);
+      expect(textNodes[1].text, 'link ');
+      expect(textNodes[2].formats, [Formatus.paragraph]);
+      expect(textNodes[2].text, 'is cool!');
     });
 
     test('Insert anchor at the start of text', () {
@@ -90,19 +92,18 @@ void main() {
       controller.document.computeResults();
 
       //--- then
-      expect(controller.document.textNodes.length, 2);
+      FormatusDocument doc = controller.document;
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 2);
       expect(
-        controller.document.results.formattedText,
+        doc.results.formatted,
         '<p><a href="www.abc.de">Links </a>are cool!</p>',
       );
-      expect(controller.document.results.plainText, 'Links are cool!');
-      expect(controller.document.textNodes[0].formats, [
-        Formatus.paragraph,
-        Formatus.anchor,
-      ]);
-      expect(controller.document.textNodes[0].text, 'Links ');
-      expect(controller.document.textNodes[1].formats, [Formatus.paragraph]);
-      expect(controller.document.textNodes[1].text, 'are cool!');
+      expect(doc.results.plainText, 'Links are cool!');
+      expect(textNodes[0].formats, [Formatus.paragraph, Formatus.anchor]);
+      expect(textNodes[0].text, 'Links ');
+      expect(textNodes[1].formats, [Formatus.paragraph]);
+      expect(textNodes[1].text, 'are cool!');
     });
   });
 
@@ -122,24 +123,23 @@ void main() {
       controller.selection = TextSelection(baseOffset: 10, extentOffset: 10);
 
       //--- when
+      FormatusDocument doc = controller.document;
+      TreeHelper.printAll(doc, 'no image yet');
       controller.imageAtCursor = image;
+      TreeHelper.printAll(doc, 'image appended');
 
       //--- then
-      expect(controller.document.textNodes.length, 2);
       expect(
-        controller.document.results.formattedText,
-        '<p>Our logo: <img src="logo.png" aria-label="Djarjo Logo"></img></p>',
+        doc.results.formatted,
+        '<p>Our logo: <img src="logo.png" aria-label="Djarjo Logo"/></p>',
       );
-      expect(controller.document.results.plainText, 'Our logo:  ');
-      expect(controller.document.textNodes.length, 2);
-      expect(controller.document.textNodes[0].formats, [Formatus.paragraph]);
-      expect(controller.document.textNodes[0].text, 'Our logo: ');
-      expect(controller.document.textNodes[1].formats, [
-        Formatus.paragraph,
-        Formatus.image,
-      ]);
-      expect(controller.document.textNodes[1].attribute, 'logo.png');
-      expect(controller.document.textNodes[1].text, '');
+      expect(doc.results.plainText, 'Our logo: $imagePlaceholderChar');
+
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 2);
+      expect(textNodes[0].formats, <Formatus>{.paragraph});
+      expect(textNodes[0].text, 'Our logo: ');
+      expect(textNodes[1].formats, <Formatus>{.paragraph, .image});
     });
 
     test('Insert Image in the middle of text', () async {
@@ -160,32 +160,30 @@ void main() {
       controller.imageAtCursor = image;
 
       //--- then
-      expect(controller.document.textNodes.length, 3);
+      FormatusDocument doc = controller.document;
+
       expect(
-        controller.document.results.formattedText,
-        '<p>This <img src="logo.png" aria-label="Djarjo Logo"></img>is a logo</p>',
+        doc.results.formatted,
+        '<p>This <img src="logo.png" aria-label="Djarjo Logo"/>is a logo</p>',
       );
       expect(
-        controller.document.results.plainText,
-        'This  is a logo',
-        reason: 'plainText inserts a space at image position',
+        doc.results.plainText,
+        'This ${imagePlaceholderChar}is a logo',
+        reason: 'plainText inserts $imagePlaceholderChar at image position',
       );
-      expect(controller.document.textNodes.length, 3);
-      expect(controller.document.textNodes[0].formats, [Formatus.paragraph]);
-      expect(controller.document.textNodes[0].text, 'This ');
-      expect(controller.document.textNodes[1].formats, [
-        Formatus.paragraph,
-        Formatus.image,
-      ]);
-      expect(controller.document.textNodes[1].attribute, 'logo.png');
-      expect(controller.document.textNodes[1].text, '');
-      expect(controller.document.textNodes[2].formats, [Formatus.paragraph]);
-      expect(controller.document.textNodes[2].text, 'is a logo');
+
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 3);
+      expect(textNodes[0].formats, [Formatus.paragraph]);
+      expect(textNodes[0].text, 'This ');
+      expect(textNodes[1].formats, <Formatus>[.paragraph, .image]);
+      expect(textNodes[2].formats, [Formatus.paragraph]);
+      expect(textNodes[2].text, 'is a logo');
     });
 
-    test('Insert Image at the start of text', () async {
+    test('Insert Image at start of text', () async {
       //--- given
-      String formatted = '<p>Our logo</p>';
+      String formatted = '<p> Our logo</p>';
       FormatusControllerImpl controller = FormatusControllerImpl(
         formattedText: formatted,
       );
@@ -201,25 +199,23 @@ void main() {
       controller.imageAtCursor = image;
 
       //--- then
-      expect(controller.document.textNodes.length, 2);
+      FormatusDocument doc = controller.document;
+      TreeHelper.printAll(doc, 'image prefixed to text');
+
       expect(
-        controller.document.results.formattedText,
-        '<p><img src="logo.png" aria-label="Djarjo Logo"></img>Our logo</p>',
+        doc.results.formatted,
+        '<p><img src="logo.png" aria-label="Djarjo Logo"/> Our logo</p>',
       );
       expect(
-        controller.document.results.plainText,
-        ' Our logo',
-        reason: 'plainText inserts a space at image position',
+        doc.results.plainText,
+        '$imagePlaceholderChar Our logo',
+        reason: 'plainText inserts a placeholder at image position',
       );
-      expect(controller.document.textNodes.length, 2);
-      expect(controller.document.textNodes[0].formats, [
-        Formatus.paragraph,
-        Formatus.image,
-      ]);
-      expect(controller.document.textNodes[0].attribute, 'logo.png');
-      expect(controller.document.textNodes[0].text, '');
-      expect(controller.document.textNodes[1].formats, [Formatus.paragraph]);
-      expect(controller.document.textNodes[1].text, 'Our logo');
+
+      List<FormatusNode> textNodes = doc.collectAllNodesWithText;
+      expect(textNodes.length, 1);
+      expect(textNodes[0].formats, [Formatus.paragraph]);
+      expect(textNodes[0].text, ' Our logo');
     });
   });
 }
