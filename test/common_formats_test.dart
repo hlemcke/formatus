@@ -13,10 +13,10 @@ void main() {
   group('commonFormatsAndColor with cursor position', () {
     test('move cursor over multiple nodes', () {
       //--- given
-      String formatted =
+      final html =
           '<h1>head1</h1><p>para<ul>'
           '<li>One</li><li>Two <b>bold</b></li></ul>tail</p>';
-      FormatusDocument doc = FormatusDocument(formatted: formatted);
+      FormatusDocument doc = FormatusDocument(formatted: html);
       List<FormatusNode> textNodes = doc.collectAllNodesWithText;
       //--- text excl. key-index. plainText = "head1¶para¶• One¶• Two bold¶tail"
       Map<int, String> texts = {
@@ -35,7 +35,7 @@ void main() {
         doc.results.plainText,
         'head1\npara${prefix}One${prefix}Two bold\ntail',
       );
-      print('breaks at = $breakPoints');
+      debugPrint('breaks at = $breakPoints');
       TreeHelper.printAll(doc, 'setup');
 
       //--- when / then
@@ -53,139 +53,129 @@ void main() {
   });
   group('commonFormatsAndColor with selection-range', () {
     test('returns correct formats and color for a single unformatted node', () {
-      final doc = FormatusDocument(formatted: '<p>Hello World</p>');
-      doc.results.range = TextSelection(baseOffset: 0, extentOffset: 5);
+      //--- given
+      final html = '<p>Hello World</p>';
+      final doc = FormatusDocument(formatted: html);
+      final range = TextRange(start: 0, end: 5);
 
-      doc.commonFormatsAndColor(doc.results);
+      FormatusCommons commons = doc.commonColorAndFormats(range);
 
-      expect(doc.results.formats, <Formatus>{.paragraph});
-      expect(doc.results.color, Colors.transparent);
+      expect(commons.formats, <Formatus>{.paragraph});
+      expect(commons.color, Colors.transparent);
     });
 
     test('selection is within a single formatted node', () {
       //--- given
-      final doc = FormatusDocument(
-        formatted: '<p>${blueDiv}Hello</div> World</p>',
-      );
+      final html = '<p>${blueDiv}Hello</div> World</p>';
+      final doc = FormatusDocument(formatted: html);
+      final range = TextRange(start: 0, end: 4);
 
       //--- when
-      doc.results.range = TextSelection(baseOffset: 0, extentOffset: 4);
-      doc.commonFormatsAndColor(doc.results);
+      FormatusCommons commons = doc.commonColorAndFormats(range);
 
       //--- then
-      expect(doc.results.formats, <Formatus>{.paragraph, .color});
-      expect(doc.results.color, blue);
+      expect(commons.formats, <Formatus>{.paragraph, .color});
+      expect(commons.color, blue);
     });
 
     test('color shared across multiple nodes', () {
       // <b><i style="color: #ff0000ff;">Hello </i><i style="color: #ff0000ff;">World</i></b>
-      final doc = FormatusDocument(
-        formatted: '<p>$redDiv<i>Hello </i><i>World</i></div></p>',
-      );
+      final html = '<p>$redDiv<i>Hello </i><i>World</i></div></p>';
+      final doc = FormatusDocument(formatted: html);
+      final TextRange range = TextRange(start: 0, end: 11);
 
       // Select "Hello World" spanning both <i> nodes inside <b>
-      doc.results.range = TextSelection(baseOffset: 0, extentOffset: 11);
+      FormatusCommons commons = doc.commonColorAndFormats(range);
 
-      doc.commonFormatsAndColor(doc.results);
-
-      expect(doc.results.formats, <Formatus>{.paragraph, .color, .italic});
-      expect(doc.results.color, red);
+      expect(commons.formats, <Formatus>{.paragraph, .color, .italic});
+      expect(commons.color, red);
     });
 
     test('nodes have partially overlapping formats', () {
-      final doc = FormatusDocument(
-        formatted: '<p><b>Hello </b><i>World</i></p>',
-      );
+      final html = '<p><b>Hello </b><i>World</i></p>';
+      final doc = FormatusDocument(formatted: html);
+      final range = TextRange(start: 0, end: 11);
 
-      // Selection covers "Hello " (bold) and "World" (italic)
-      doc.results.range = TextSelection(baseOffset: 0, extentOffset: 11);
-
-      doc.commonFormatsAndColor(doc.results);
+      FormatusCommons commons = doc.commonColorAndFormats(range);
 
       // Intersection of {bold} and {italic} should be empty
-      expect(doc.results.formats, <Formatus>{.paragraph});
-      expect(doc.results.color, Colors.transparent);
+      expect(commons.formats, <Formatus>{.paragraph});
+      expect(commons.color, Colors.transparent);
     });
 
     test('retains only shared formats across nodes', () {
       // <b><i>Hello </i></b><b>World</b>
-      final doc = FormatusDocument(
-        formatted: '<p><b><i>Hello </i></b><b>World</b></p>',
-      );
+      final html = '<p><b><i>Hello </i></b><b>World</b></p>';
+      final doc = FormatusDocument(formatted: html);
       TreeHelper.printAll(doc, 'optimized');
 
       // Selection covers "Hello " (bold + italic) and "World" (bold)
-      doc.results.range = TextSelection(baseOffset: 0, extentOffset: 11);
-
-      doc.commonFormatsAndColor(doc.results);
+      final range = TextRange(start: 0, end: 11);
+      FormatusCommons commons = doc.commonColorAndFormats(range);
 
       // Only bold is common to both
-      expect(doc.results.formats, <Formatus>{.paragraph, .bold});
-      expect(doc.results.color, Colors.transparent);
+      expect(commons.formats, <Formatus>{.paragraph, .bold});
+      expect(commons.color, Colors.transparent);
     });
 
-    test('returns Colors.transparent when selecting across different colors', () {
-      // Red "Hello " and Blue "World"
-      final doc = FormatusDocument(
-        formatted:
-            '<p><span style="color: #ff0000ff;">Hello </span><span style="color: #0000ffff;">World</span></p>',
-      );
+    test(
+      'returns Colors.transparent when selecting across different colors',
+      () {
+        // Red "Hello " and Blue "World"
+        final html =
+            '<p><span style="color: #ff0000ff;">Hello </span>'
+            '<span style="color: #0000ffff;">World</span></p>';
+        final doc = FormatusDocument(formatted: html);
+        final range = TextRange(start: 0, end: 11);
+        FormatusCommons commons = doc.commonColorAndFormats(range);
 
-      doc.results.range = TextSelection(baseOffset: 0, extentOffset: 11);
-
-      doc.commonFormatsAndColor(doc.results);
-
-      expect(doc.results.color, Colors.transparent);
-    });
+        expect(commons.color, Colors.transparent);
+      },
+    );
 
     test(
       'returns Colors.transparent if one node in selection has no color',
       () {
         // Red "Hello " and Default "World"
-        final doc = FormatusDocument(
-          formatted:
-              '<p><span style="color: #ff0000ff;">Hello </span>World</p>',
-        );
+        final html =
+            '<p><span style="color: #ff0000ff;">Hello </span>World</p>';
+        final doc = FormatusDocument(formatted: html);
+        final range = TextRange(start: 0, end: 11);
 
-        doc.results.range = TextSelection(baseOffset: 0, extentOffset: 11);
+        FormatusCommons commons = doc.commonColorAndFormats(range);
 
-        doc.commonFormatsAndColor(doc.results);
-
-        expect(doc.results.color, Colors.transparent);
+        expect(commons.color, Colors.transparent);
       },
     );
 
-    test('handles multi-paragraph selection spanning multiple block elements', () {
-      // <h1><b style="color: #0000ffff;">Heading</b></h1><p><b style="color: #0000ffff;">Paragraph</b></p>
-      final doc = FormatusDocument(
-        formatted:
-            '<h1><b style="color: #0000ffff;">Heading</b></h1><p><b style="color: #0000ffff;">Paragraph</b></p>',
-      );
+    test(
+      'handles multi-paragraph selection spanning multiple block elements',
+      () {
+        // <h1><b style="color: #0000ffff;">Heading</b></h1><p><b style="color: #0000ffff;">Paragraph</b></p>
+        final html =
+            '<h1><b style="color: #0000ffff;">Heading</b></h1>'
+            '<p><b style="color: #0000ffff;">Paragraph</b></p>';
+        final doc = FormatusDocument(formatted: html);
+        // Select from "Heading" across paragraph break to "Paragraph"
+        final range = TextRange(start: 0, end: 16);
 
-      // Select from "Heading" across paragraph break to "Paragraph"
-      doc.results.range = TextSelection(baseOffset: 0, extentOffset: 16);
+        FormatusCommons commons = doc.commonColorAndFormats(range);
 
-      doc.commonFormatsAndColor(doc.results);
-
-      expect(doc.results.formats, contains(Formatus.bold));
-      expect(doc.results.color, blue);
-    });
+        expect(commons.formats, contains(Formatus.bold));
+        expect(commons.color, blue);
+      },
+    );
 
     test('handles cursor-like collapsed selection gracefully', () {
-      final doc = FormatusDocument(
-        formatted: '<p><b><i style="color: #ff0000ff;">Test</i></b></p>',
-      );
-
+      final html = '<p><b><i style="color: #ff0000ff;">Test</i></b></p>';
+      final doc = FormatusDocument(formatted: html);
       // Selection at offset 2 (collapsed cursor)
-      doc.results.range = TextSelection(baseOffset: 2, extentOffset: 2);
+      final range = TextRange.collapsed(2);
 
-      final result = doc.commonFormatsAndColor(doc.results);
+      FormatusCommons commons = doc.commonColorAndFormats(range);
 
-      expect(
-        doc.results.formats,
-        containsAll([Formatus.bold, Formatus.italic]),
-      );
-      expect(doc.results.color, red);
+      expect(commons.formats, containsAll([Formatus.bold, Formatus.italic]));
+      expect(commons.color, red);
     });
   });
 }

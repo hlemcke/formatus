@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:formatus/src/formatus/formatus_document.dart';
 
 import 'formatus_model.dart';
 import 'formatus_node.dart';
 
 ///
+/// Helper class for [FormatusDocument] to parse a HTML string into a tree
+/// of [FormatusNode]. Both are given by `source`.
+///
 class FormatusParser {
-  /// Gets root node of parsing result
-  FormatusNode get root => _root;
-  FormatusNode _root = FormatusNode.root();
-
-  /// Parses 'html' into a tree of [FormatusNode].
-  /// Provides getter with _root_ node of the tree.
-  FormatusParser({required String formatted}) {
-    formatted = _cleanUpFormatted(formatted);
-    if (!formatted.startsWith('<')) {
-      formatted = '<p>$formatted </p>';
+  ///
+  /// Parses 'html' from field `formatted` into `root` node of tree.
+  ///
+  FormatusParser({required String formatted, required FormatusNode target}) {
+    String html = _cleanUpFormatted(formatted);
+    if (!html.startsWith('<')) {
+      html = '<p>$formatted </p>';
     }
-    _root = _parseHtml(formatted);
+    target = _parseHtml(html, target);
   }
 
   /// Cleanup given text:
@@ -24,7 +25,7 @@ class FormatusParser {
   /// * remove cr
   /// * remove lf
   /// * replace tab with space
-  /// * replace multiple spaces with one space
+  /// * replace multiple spaces with single space
   ///
   String _cleanUpFormatted(String formatted) => formatted
       .replaceAll('\r', '')
@@ -69,8 +70,7 @@ class FormatusParser {
   }
 
   ///
-  FormatusNode _parseHtml(String html) {
-    final root = FormatusNode.root();
+  FormatusNode _parseHtml(String html, FormatusNode root) {
     final stack = <FormatusNode>[root];
 
     final buffer = StringBuffer();

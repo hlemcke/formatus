@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:formatus/formatus.dart';
-import 'package:formatus/src/formatus/formatus_controller_impl.dart';
 import 'package:formatus/src/formatus/formatus_document.dart';
-
-import 'test_helper.dart';
 
 void main() {
   ///
@@ -18,9 +15,9 @@ void main() {
       String prevText = doc.results.plainText;
       DeltaText deltaText = DeltaText(
         prevText: prevText,
-        prevSelection: TextSelection(baseOffset: 0, extentOffset: 0),
+        prevRange: TextSelection(baseOffset: 0, extentOffset: 0),
         nextText: prevText.substring(1),
-        nextSelection: TextSelection(baseOffset: 0, extentOffset: 0),
+        nextRange: TextSelection(baseOffset: 0, extentOffset: 0),
       );
 
       //--- when

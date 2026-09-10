@@ -4,48 +4,51 @@ import '../../formatus.dart';
 import 'formatus_node.dart';
 
 ///
-/// Computes `formatted`, `plainText`, `textSpan4Editor`, `textSpan4Viewer`
-/// and `segments` from a [FormatusNode] tree (`output.root`), writing all
-/// of them directly into the given [FormatusOutput]. Range, formats and
-/// color on `output` are left untouched -- [FormatusDocument] fills those
-/// in separately via `commonFormatsAndColor`.
+/// Computes output fields from tree.
 ///
 class FormatusResults {
   static const String lineFeed = '\n';
 
-  /// The output being populated in place
-  final FormatusOutput output;
+  /// Formatted text for persistency
+  String formatted = '';
 
-  FormatusResults({required this.output});
+  /// Plain text with line-breaks for Flutter [TextField]
+  String plainText = '';
 
-  /// Running write-position into `output.plainText` while [_computeNode]
-  /// walks the tree. Reset at the start of every [compute] call.
-  int _position = 0;
+  /// Segments laid out exactly as `plainText`. Maps to nodes with text
+  List<FormatusSegment> segments = [];
+
+  /// [TextSpan] for [TextField]. Children are sections separated by `\n`
+  TextSpan textSpan4Editor = TextSpan(text: '');
+
+  /// [TextSpan] for [FormatusViewer]. Children are sections separated by `\n`
+  TextSpan textSpan4Viewer = TextSpan(text: '');
 
   ///
-  /// Recomputes [output] from `output.root` in a single tree walk:
-  /// `formatted` / `plainText` / `textSpan4Editor` / `textSpan4Viewer` and
-  /// `segments` (the position map used by `findNodeAtCursor` and
-  /// `collectNodesWithTextInRange`) are all built together in
-  /// [_computeNode], so a leaf's cursor indices are reset and its segment
-  /// is recorded at the exact moment its text is appended -- both always
-  /// agree on position by construction.
+  /// Computes multiple output fields from given `tree`:
   ///
-  void compute() {
-    _position = 0;
-    output.plainText = '';
-    output.formatted = '';
-    output.textSpan4Editor = const TextSpan(text: '');
-    output.textSpan4Viewer = const TextSpan(text: '');
+  /// * `formatted` → HTML string for persistency
+  /// * `plainText` → text with line-breaks for Flutter [TextField]
+  /// * `segments` → internally used to find nodes with text
+  /// * `textSpan4Editor` → rendered input for Flutter [TextField]
+  /// * `textSpan4Viewer` → rendered input for [FormatusViewer]
+  /// and `textSpan4Viewer` from a [FormatusNode] tree.
+  ///
+  FormatusResults({required FormatusNode tree}) {
+    compute(tree);
+  }
 
-    final segments = <FormatusSegment>[];
+  ///
+  /// Computes output fields from in a single tree walk:
+  ///
+  void compute(FormatusNode tree) {
     final editorChildren = <InlineSpan>[];
     final viewerChildren = <InlineSpan>[];
-    _computeNode(output.root, editorChildren, viewerChildren, segments);
 
-    output.textSpan4Editor = TextSpan(children: editorChildren);
-    output.textSpan4Viewer = TextSpan(children: viewerChildren);
-    output.segments = segments;
+    _computeNode(tree, editorChildren, viewerChildren);
+
+    textSpan4Editor = TextSpan(children: editorChildren);
+    textSpan4Viewer = TextSpan(children: viewerChildren);
   }
 
   ///
@@ -109,31 +112,26 @@ class FormatusResults {
     return segments;
   }
 
+  /// Recursive tree walker depth-first
   void _computeNode(
     FormatusNode node,
     List<InlineSpan> editorOut,
     List<InlineSpan> viewerOut,
-    List<FormatusSegment> segments,
   ) {
-    //--- Leaf nodes (text / anchor / image) are the only ones that
-    //--- directly consume plainText positions -- reset their cursor
-    //--- indices and record their segment right here, at the exact spot
-    //--- their content is written, instead of in two separate passes.
+    //--- Leaf nodes: text / anchor / image
     if (node.isLeaf) {
       node.textIndex0 = -1;
       node.textIndex1 = -1;
-      final int start = _position;
 
+      final int start = plainText.length;
       if (node.tag == .image) {
         _handleImage(node, editorOut, viewerOut);
       } else if (node.tag == .text) {
         _handleText(node, editorOut, viewerOut);
       } else {
-        _handleInline(node, editorOut, viewerOut, segments); // anchor
+        _handleInline(node, editorOut, viewerOut); // anchor
       }
-
       segments.add(FormatusSegment.leaf(node, start, start + node.length));
-      _position += node.length;
       return;
     }
 
@@ -142,20 +140,23 @@ class FormatusResults {
       case .header2:
       case .header3:
       case .paragraph:
-        return _handleSection(node, editorOut, viewerOut, segments);
+        return _handleSection(node, editorOut, viewerOut);
+
+      case .anchor:
+        return _handleAnchor(node, editorOut, viewerOut);
 
       case .color:
-        return _handleColor(node, editorOut, viewerOut, segments);
+        return _handleColor(node, editorOut, viewerOut);
 
       case .listItem:
-        return _handleListItem(node, editorOut, viewerOut, segments);
+        return _handleListItem(node, editorOut, viewerOut);
 
       case .orderedList:
       case .unorderedList:
-        return _handleList(node, editorOut, viewerOut, segments);
+        return _handleList(node, editorOut, viewerOut);
 
       case .root:
-        return _handleRoot(node, editorOut, viewerOut, segments);
+        return _handleRoot(node, editorOut, viewerOut);
 
       case .subscript:
         return _handleSubscript(node, editorOut, viewerOut);
@@ -164,22 +165,35 @@ class FormatusResults {
         return _handleSuperscript(node, editorOut, viewerOut);
 
       default:
-        _handleInline(node, editorOut, viewerOut, segments);
+        _handleInline(node, editorOut, viewerOut);
         break;
     }
+  }
+
+  /// Handles anchor tag (contains text)
+  void _handleAnchor(
+    FormatusNode node,
+    List<InlineSpan> editorOut,
+    List<InlineSpan> viewerOut,
+  ) {
+    formatted += node.toOpening;
+    int start = plainText.length;
+    editorOut.add(TextSpan(text: node.text));
+    viewerOut.add(TextSpan(text: node.text));
+    segments.add(FormatusSegment.leaf(node, start, start + node.length));
+    formatted += node.toClosing;
   }
 
   void _handleColor(
     FormatusNode node,
     List<InlineSpan> editorOut,
     List<InlineSpan> viewerOut,
-    List<FormatusSegment> segments,
   ) {
-    output.formatted += node.toOpening;
+    formatted += node.toOpening;
     final editorChildren = <InlineSpan>[];
     final viewerChildren = <InlineSpan>[];
     for (final child in node.children) {
-      _computeNode(child, editorChildren, viewerChildren, segments);
+      _computeNode(child, editorChildren, viewerChildren);
     }
 
     Color color = node.color;
@@ -195,7 +209,7 @@ class FormatusResults {
         children: viewerChildren,
       ),
     );
-    output.formatted += node.toClosing;
+    formatted += node.toClosing;
   }
 
   void _handleImage(
@@ -204,8 +218,8 @@ class FormatusResults {
     List<InlineSpan> viewerOut,
   ) {
     String src = node.attribute;
-    output.formatted += node.toOpening;
-    output.plainText += imagePlaceholderChar;
+    formatted += node.toOpening;
+    plainText += imagePlaceholderChar;
     editorOut.add(
       TextSpan(
         text: imagePlaceholderChar,
@@ -219,54 +233,47 @@ class FormatusResults {
     FormatusNode node,
     List<InlineSpan> editorOut,
     List<InlineSpan> viewerOut,
-    List<FormatusSegment> segments,
   ) {
-    output.formatted += node.toOpening;
+    formatted += node.toOpening;
     final editorChildren = <InlineSpan>[];
     final viewerChildren = <InlineSpan>[];
     for (final child in node.children) {
-      _computeNode(child, editorChildren, viewerChildren, segments);
+      _computeNode(child, editorChildren, viewerChildren);
     }
     editorOut.add(TextSpan(style: node.tag.style, children: editorChildren));
     viewerOut.add(TextSpan(style: node.tag.style, children: viewerChildren));
-    output.formatted += node.toClosing;
-    //--- No-op for wrapper nodes (bold/italic/...) whose own `text` is
-    //--- empty; for anchor (no children) this is what actually appends
-    //--- its content -- the enclosing leaf branch in [_computeNode]
-    //--- accounts for exactly this many characters via `node.length`.
-    output.plainText += node.text;
+    formatted += node.toClosing;
+    plainText += node.text;
   }
 
-  /// Handle opening ordered or unordered list
+  /// Handle opening of ordered or unordered list
   void _handleList(
     FormatusNode node,
     List<InlineSpan> editorOut,
     List<InlineSpan> viewerOut,
-    List<FormatusSegment> segments,
   ) {
-    output.formatted += node.toOpening;
+    formatted += node.toOpening;
     //--- Do not build 2 consecutive LFs. Only emit a separator segment
     //--- when a '\n' was actually written, so segments and plainText
     //--- can never drift apart here.
-    if (!output.plainText.endsWith('\n')) {
-      output.plainText += '\n';
+    if (!plainText.endsWith('\n')) {
+      final int start = plainText.length;
+      plainText += '\n';
       editorOut.add(const TextSpan(text: '\n'));
       viewerOut.add(const TextSpan(text: '\n'));
-      segments.add(FormatusSegment.separator(_position));
-      _position++;
+      segments.add(FormatusSegment.separator(start));
     }
     node.orderedListNumber = 0;
     for (final child in node.children) {
-      _computeNode(child, editorOut, viewerOut, segments);
+      _computeNode(child, editorOut, viewerOut);
     }
-    output.formatted += node.toClosing;
+    formatted += node.toClosing;
   }
 
   void _handleListItem(
     FormatusNode node,
     List<InlineSpan> editorOut,
     List<InlineSpan> viewerOut,
-    List<FormatusSegment> segments,
   ) {
     final editorChildren = <InlineSpan>[];
     final viewerChildren = <InlineSpan>[];
@@ -277,49 +284,46 @@ class FormatusResults {
       node.parent.orderedListNumber++;
       node.text = '${node.parent.orderedListNumber}. ';
     }
-    output.formatted += node.toOpening;
+    formatted += node.toOpening;
 
     //--- prefix ("• " / "12. ") occupies its own span but is never
     //--- itself a leaf
-    final int prefixStart = _position;
-    output.plainText += node.text;
-    _position += node.text.length;
-    segments.add(FormatusSegment.prefix(node, prefixStart, _position));
+    int start = plainText.length;
+    plainText += node.text;
+    segments.add(FormatusSegment.prefix(node, start, start + node.text.length));
 
     for (final child in node.children) {
-      _computeNode(child, editorChildren, viewerChildren, segments);
+      _computeNode(child, editorChildren, viewerChildren);
     }
-    output.formatted += node.toClosing;
-
-    //--- trailing '\n' after this item's content
-    output.plainText += '\n';
-    segments.add(FormatusSegment.separator(_position));
-    _position++;
-
     editorOut.add(TextSpan(text: node.text));
     editorOut.add(TextSpan(children: editorChildren));
+    editorOut.add(TextSpan(text: '\n'));
     viewerOut.add(TextSpan(text: node.text));
     viewerOut.add(TextSpan(children: viewerChildren));
-    editorOut.add(const TextSpan(text: '\n'));
-    viewerOut.add(const TextSpan(text: '\n'));
+    viewerOut.add(TextSpan(text: '\n'));
+
+    //--- trailing '\n' after this item's content
+    formatted += node.toClosing;
+    start = plainText.length;
+    plainText += '\n';
+    segments.add(FormatusSegment.separator(start));
   }
 
   void _handleRoot(
     FormatusNode node,
     List<InlineSpan> editorOut,
     List<InlineSpan> viewerOut,
-    List<FormatusSegment> segments,
   ) {
     for (int i = 0; i < node.children.length; i++) {
-      _computeNode(node.children[i], editorOut, viewerOut, segments);
+      _computeNode(node.children[i], editorOut, viewerOut);
       // Insert line feed only between section children, never after the
       // final one or root
       if (i < node.children.length - 1) {
-        output.plainText += '\n';
+        final int start = plainText.length;
+        plainText += '\n';
         editorOut.add(const TextSpan(text: '\n'));
         viewerOut.add(const TextSpan(text: '\n'));
-        segments.add(FormatusSegment.separator(_position));
-        _position++;
+        segments.add(FormatusSegment.separator(start));
       }
     }
   }
@@ -328,18 +332,17 @@ class FormatusResults {
     FormatusNode node,
     List<InlineSpan> editorOut,
     List<InlineSpan> viewerOut,
-    List<FormatusSegment> segments,
   ) {
-    output.formatted += '<${node.tag.key}>';
+    formatted += node.toOpening;
     final editorChildren = <InlineSpan>[];
     final viewerChildren = <InlineSpan>[];
     for (final child in node.children) {
-      _computeNode(child, editorChildren, viewerChildren, segments);
+      _computeNode(child, editorChildren, viewerChildren);
     }
 
     editorOut.add(TextSpan(style: node.tag.style, children: editorChildren));
     viewerOut.add(TextSpan(style: node.tag.style, children: viewerChildren));
-    output.formatted += '</${node.tag.key}>';
+    formatted += node.toClosing;
   }
 
   void _handleSubscript(
@@ -347,9 +350,10 @@ class FormatusResults {
     List<InlineSpan> editorOut,
     List<InlineSpan> viewerOut,
   ) {
+    String text = _buildScript(node);
     editorOut.add(
       TextSpan(
-        text: node.text,
+        text: text,
         style: const TextStyle(fontFeatures: [FontFeature.subscripts()]),
       ),
     );
@@ -358,12 +362,13 @@ class FormatusResults {
         child: Transform.translate(
           offset: const Offset(0, 4),
           child: Text(
-            node.text,
+            text,
             textScaler: TextScaler.linear(node.parent.tag.scaleFactor * 0.7),
           ),
         ),
       ),
     );
+    formatted += node.toClosing;
   }
 
   void _handleSuperscript(
@@ -371,9 +376,10 @@ class FormatusResults {
     List<InlineSpan> editorOut,
     List<InlineSpan> viewerOut,
   ) {
+    String text = _buildScript(node);
     editorOut.add(
       TextSpan(
-        text: node.text,
+        text: text,
         style: const TextStyle(fontFeatures: [FontFeature.superscripts()]),
       ),
     );
@@ -382,12 +388,23 @@ class FormatusResults {
         child: Transform.translate(
           offset: const Offset(0, -4),
           child: Text(
-            node.text,
+            text,
             textScaler: TextScaler.linear(node.parent.tag.scaleFactor * 0.7),
           ),
         ),
       ),
     );
+    formatted += node.toClosing;
+  }
+
+  String _buildScript(FormatusNode node) {
+    formatted += node.toOpening;
+    FormatusNode textChild = node.children[0];
+    String text = textChild.text;
+    plainText += text;
+    int start = plainText.length;
+    segments.add(FormatusSegment.leaf(textChild, start, start + node.length));
+    return text;
   }
 
   void _handleText(
@@ -395,8 +412,8 @@ class FormatusResults {
     List<InlineSpan> editorOut,
     List<InlineSpan> viewerOut,
   ) {
-    output.plainText += node.text;
-    output.formatted += node.text;
+    plainText += node.text;
+    formatted += node.text;
     editorOut.add(TextSpan(text: node.text));
     viewerOut.add(TextSpan(text: node.text));
   }

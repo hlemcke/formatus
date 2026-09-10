@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:formatus/formatus.dart';
-import 'package:formatus/src/formatus/formatus_controller_impl.dart';
 import 'package:formatus/src/formatus/formatus_document.dart';
 import 'package:formatus/src/formatus/formatus_node.dart';
 
@@ -92,7 +91,7 @@ void main() {
       };
       List<int> breakPoints = texts.keys.toList();
       breakPoints.sort();
-      print('breaks at = $breakPoints');
+      debugPrint('breaks at = $breakPoints');
       TreeHelper.printAll(doc, 'move cursor through list');
 
       //--- when / then
@@ -129,9 +128,9 @@ void main() {
       String nextText = 'Ordered\n\n1. First\n2. Second\n';
       DeltaText deltaText = DeltaText(
         prevText: doc.results.plainText,
-        prevSelection: const TextSelection(baseOffset: 8, extentOffset: 8),
+        prevRange: const TextSelection(baseOffset: 8, extentOffset: 8),
         nextText: nextText,
-        nextSelection: const TextSelection(baseOffset: 9, extentOffset: 9),
+        nextRange: const TextSelection(baseOffset: 9, extentOffset: 9),
       );
 
       //--- when

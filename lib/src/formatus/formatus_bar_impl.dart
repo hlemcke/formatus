@@ -232,7 +232,9 @@ class FormatusBarState extends State<FormatusBarImpl>
             ),
   ];
 
-  void _deactivateActions() => _selectedFormats.clear();
+  void _deactivateActions() {
+    if (mounted) setState(() {});
+  }
 
   void _deactivateSectionActions() {
     for (Formatus action in widget.actions) {
@@ -273,7 +275,7 @@ class FormatusBarState extends State<FormatusBarImpl>
     final FormatusAnchor? result = await _trackOverlay(
       widget.onEditAnchor!(context, _ctrl.anchorAtCursor ?? FormatusAnchor()),
     );
-    if (result != null) _ctrl.applyAnchor(result);
+    _ctrl.anchorAtCursor = result;
   }
 
   Future<void> _onSelectImage() async {
@@ -281,7 +283,7 @@ class FormatusBarState extends State<FormatusBarImpl>
     final FormatusImage? result = await _trackOverlay(
       widget.onSelectImage!(context, _ctrl.imageAtCursor ?? FormatusImage()),
     );
-    if (result != null) _ctrl.applyImage(result);
+    _ctrl.imageAtCursor = result;
   }
 
   ///
@@ -312,7 +314,6 @@ class FormatusBarState extends State<FormatusBarImpl>
     }
     if (mounted) {
       widget.textFieldFocus?.requestFocus();
-      _ctrl.value = _ctrl.value.copyWith(selection: currentSelection);
       setState(() {});
     }
   }
@@ -328,7 +329,7 @@ class FormatusBarState extends State<FormatusBarImpl>
     final ColorSelector colorSelector =
         widget.onSelectColor ?? (context, current) => _showColorDialog();
     Color? color = await _trackOverlay(colorSelector(context, _selectedColor));
-    _ctrl.applySelectedColor(color);
+    _ctrl.updateColor(color);
   }
 
   Map<ShortcutActivator, VoidCallback> get _shortcutBindings => {

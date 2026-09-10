@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:formatus/formatus.dart';
-import 'package:formatus/src/formatus/formatus_controller_impl.dart';
 import 'package:formatus/src/formatus/formatus_document.dart';
 import 'package:formatus/src/formatus/formatus_node.dart';
-
-import 'test_helper.dart';
 
 void main() {
   /// Flutter color ARGB
@@ -23,9 +20,9 @@ void main() {
       String nextText = '${doc.results.plainText}X';
       DeltaText deltaText = DeltaText(
         prevText: doc.results.plainText,
-        prevSelection: TextSelection(baseOffset: 10, extentOffset: 10),
+        prevRange: TextSelection(baseOffset: 10, extentOffset: 10),
         nextText: nextText,
-        nextSelection: TextSelection(baseOffset: 11, extentOffset: 11),
+        nextRange: TextSelection(baseOffset: 11, extentOffset: 11),
       );
 
       //--- when

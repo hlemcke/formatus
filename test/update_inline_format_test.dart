@@ -4,8 +4,6 @@ import 'package:formatus/formatus.dart';
 import 'package:formatus/src/formatus/formatus_document.dart';
 import 'package:formatus/src/formatus/formatus_node.dart';
 
-import 'test_helper.dart';
-
 void main() {
   group('FormatusDocument.updateInlineFormat', () {
     test('split second word in nested subtree', () {

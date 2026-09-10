@@ -1,11 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:formatus/formatus.dart';
-import 'package:formatus/src/formatus/formatus_controller_impl.dart';
 import 'package:formatus/src/formatus/formatus_document.dart';
 import 'package:formatus/src/formatus/formatus_node.dart';
-
-import 'test_helper.dart';
 
 void main() {
   group('Line-Break - Insertions - Sections only', () {
@@ -16,9 +13,9 @@ void main() {
       String nextText = '\nabc';
       DeltaText deltaText = DeltaText(
         prevText: doc.results.plainText,
-        prevSelection: const TextSelection(baseOffset: 0, extentOffset: 0),
+        prevRange: const TextSelection(baseOffset: 0, extentOffset: 0),
         nextText: nextText,
-        nextSelection: const TextSelection(baseOffset: 1, extentOffset: 1),
+        nextRange: const TextSelection(baseOffset: 1, extentOffset: 1),
       );
       expect(deltaText.type, DeltaTextType.insert);
       expect(deltaText.textAdded, '\n');
@@ -39,9 +36,9 @@ void main() {
       String nextText = 'abc\n';
       DeltaText deltaText = DeltaText(
         prevText: doc.results.plainText,
-        prevSelection: const TextSelection(baseOffset: 3, extentOffset: 3),
+        prevRange: const TextSelection(baseOffset: 3, extentOffset: 3),
         nextText: nextText,
-        nextSelection: const TextSelection(baseOffset: 4, extentOffset: 4),
+        nextRange: const TextSelection(baseOffset: 4, extentOffset: 4),
       );
       expect(deltaText.type, DeltaTextType.insert);
 
@@ -62,9 +59,9 @@ void main() {
       String nextText = 'abc\n\ndef';
       DeltaText deltaText = DeltaText(
         prevText: doc.results.plainText,
-        prevSelection: const TextSelection(baseOffset: 3, extentOffset: 3),
+        prevRange: const TextSelection(baseOffset: 3, extentOffset: 3),
         nextText: nextText,
-        nextSelection: const TextSelection(baseOffset: 4, extentOffset: 4),
+        nextRange: const TextSelection(baseOffset: 4, extentOffset: 4),
       );
       expect(deltaText.type, DeltaTextType.insert);
       expect(deltaText.textAdded, '\n');
@@ -85,9 +82,9 @@ void main() {
       String nextText = 'abc\n\ndef';
       DeltaText deltaText = DeltaText(
         prevText: doc.results.plainText,
-        prevSelection: const TextSelection(baseOffset: 4, extentOffset: 4),
+        prevRange: const TextSelection(baseOffset: 4, extentOffset: 4),
         nextText: nextText,
-        nextSelection: const TextSelection(baseOffset: 5, extentOffset: 5),
+        nextRange: const TextSelection(baseOffset: 5, extentOffset: 5),
       );
       expect(deltaText.type, DeltaTextType.insert);
 
@@ -108,9 +105,9 @@ void main() {
       String nextText = 'ab\nc\ndef';
       DeltaText deltaText = DeltaText(
         prevText: doc.results.plainText,
-        prevSelection: const TextSelection(baseOffset: 2, extentOffset: 2),
+        prevRange: const TextSelection(baseOffset: 2, extentOffset: 2),
         nextText: nextText,
-        nextSelection: const TextSelection(baseOffset: 3, extentOffset: 3),
+        nextRange: const TextSelection(baseOffset: 3, extentOffset: 3),
       );
       expect(deltaText.type, DeltaTextType.insert);
       expect(deltaText.textAdded, '\n');
@@ -136,9 +133,9 @@ void main() {
       String nextText = '\nabc def';
       DeltaText deltaText = DeltaText(
         prevText: doc.results.plainText,
-        prevSelection: const TextSelection(baseOffset: 0, extentOffset: 0),
+        prevRange: const TextSelection(baseOffset: 0, extentOffset: 0),
         nextText: nextText,
-        nextSelection: const TextSelection(baseOffset: 1, extentOffset: 1),
+        nextRange: const TextSelection(baseOffset: 1, extentOffset: 1),
       );
       expect(deltaText.type, DeltaTextType.insert);
 
@@ -160,9 +157,9 @@ void main() {
       String nextText = 'abc\n def';
       DeltaText deltaText = DeltaText(
         prevText: doc.results.plainText,
-        prevSelection: const TextSelection(baseOffset: 3, extentOffset: 3),
+        prevRange: const TextSelection(baseOffset: 3, extentOffset: 3),
         nextText: nextText,
-        nextSelection: const TextSelection(baseOffset: 4, extentOffset: 4),
+        nextRange: const TextSelection(baseOffset: 4, extentOffset: 4),
       );
       expect(deltaText.type, DeltaTextType.insert);
 
@@ -184,9 +181,9 @@ void main() {
       String nextText = 'ab\nc def';
       DeltaText deltaText = DeltaText(
         prevText: doc.results.plainText,
-        prevSelection: const TextSelection(baseOffset: 2, extentOffset: 2),
+        prevRange: const TextSelection(baseOffset: 2, extentOffset: 2),
         nextText: nextText,
-        nextSelection: const TextSelection(baseOffset: 3, extentOffset: 3),
+        nextRange: const TextSelection(baseOffset: 3, extentOffset: 3),
       );
       expect(deltaText.type, DeltaTextType.insert);
 
@@ -208,9 +205,9 @@ void main() {
       String nextText = 'abcdef';
       DeltaText deltaText = DeltaText(
         prevText: doc.results.plainText,
-        prevSelection: const TextSelection(baseOffset: 3, extentOffset: 3),
+        prevRange: const TextSelection(baseOffset: 3, extentOffset: 3),
         nextText: nextText,
-        nextSelection: const TextSelection(baseOffset: 3, extentOffset: 3),
+        nextRange: const TextSelection(baseOffset: 3, extentOffset: 3),
       );
       expect(deltaText.type, DeltaTextType.delete);
 
@@ -233,9 +230,9 @@ void main() {
       String nextText = 'abcdef';
       DeltaText deltaText = DeltaText(
         prevText: doc.results.plainText,
-        prevSelection: const TextSelection(baseOffset: 4, extentOffset: 4),
+        prevRange: const TextSelection(baseOffset: 4, extentOffset: 4),
         nextText: nextText,
-        nextSelection: const TextSelection(baseOffset: 3, extentOffset: 3),
+        nextRange: const TextSelection(baseOffset: 3, extentOffset: 3),
       );
       expect(deltaText.type, DeltaTextType.delete);
 
@@ -255,9 +252,9 @@ void main() {
       String nextText = 'abef';
       DeltaText deltaText = DeltaText(
         prevText: doc.results.plainText,
-        prevSelection: const TextSelection(baseOffset: 2, extentOffset: 5),
+        prevRange: const TextSelection(baseOffset: 2, extentOffset: 5),
         nextText: nextText,
-        nextSelection: const TextSelection(baseOffset: 2, extentOffset: 2),
+        nextRange: const TextSelection(baseOffset: 2, extentOffset: 2),
       );
       expect(deltaText.type, DeltaTextType.delete);
 

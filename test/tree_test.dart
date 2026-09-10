@@ -1,8 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:formatus/src/formatus/formatus_document.dart';
 
-import 'test_helper.dart';
-
 void main() {
   //---
   group('Node identification test', () {

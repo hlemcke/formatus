@@ -8,17 +8,15 @@ import 'package:formatus/src/formatus/formatus_controller_impl.dart';
 import 'package:formatus/src/formatus/formatus_document.dart';
 import 'package:formatus/src/formatus/formatus_node.dart';
 
-import 'test_helper.dart';
-
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   group('Insert FormatusAnchor in text', () {
     //---
     test('Append anchor to end of text', () {
       //--- given
-      String formatted = '<p>This is a </p>';
+      String html = '<p>This is a </p>';
       FormatusControllerImpl controller = FormatusControllerImpl(
-        formattedText: formatted,
+        formattedText: html,
       );
 
       FormatusAnchor anchor = FormatusAnchor(href: 'www.abc.de', name: 'link');
@@ -213,9 +211,10 @@ void main() {
       );
 
       List<FormatusNode> textNodes = doc.collectAllNodesWithText;
-      expect(textNodes.length, 1);
-      expect(textNodes[0].formats, [Formatus.paragraph]);
-      expect(textNodes[0].text, ' Our logo');
+      expect(textNodes.length, 2);
+      expect(textNodes[0].formats, <Formatus>{.paragraph, .image});
+      expect(textNodes[0].text, imagePlaceholderChar);
+      expect(textNodes[1].text, ' Our logo');
     });
   });
 }

@@ -4,21 +4,20 @@ import 'package:formatus/formatus.dart';
 import 'package:formatus/src/formatus/formatus_controller_impl.dart';
 import 'package:formatus/src/formatus/formatus_document.dart';
 
-import 'test_helper.dart';
-
 void main() {
   final Color yellow = Color(0xFFffeb3b);
   final String yellowDiv = '<div style="color: #ffeb3bff;">';
 
   testWidgets('Make "sunny" yellow', (WidgetTester tester) async {
     //--- given
-    final String input = '<h1>Title</h1><p>A sunny day</p>';
+    final String html = '<h1>Title</h1><p>A sunny day</p>';
     String formatted = '';
     FormatusControllerImpl controller = FormatusControllerImpl(
-      formattedText: input,
+      formattedText: html,
       onChanged: (f) => formatted = f,
     );
-    expect(controller.formattedText, input);
+    expect(controller.formattedText, html);
+    TreeHelper.printAll(controller.document, 'controller');
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(body: TextField(controller: controller)),

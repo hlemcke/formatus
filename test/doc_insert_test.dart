@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:formatus/formatus.dart';
-import 'package:formatus/src/formatus/formatus_controller_impl.dart';
 import 'package:formatus/src/formatus/formatus_document.dart';
 
 void main() {
@@ -13,9 +12,9 @@ void main() {
       String prevText = doc.results.plainText;
       DeltaText deltaText = DeltaText(
         prevText: prevText,
-        prevSelection: TextSelection(baseOffset: 0, extentOffset: 0),
+        prevRange: TextSelection(baseOffset: 0, extentOffset: 0),
         nextText: 'X',
-        nextSelection: TextSelection(baseOffset: 1, extentOffset: 1),
+        nextRange: TextSelection(baseOffset: 1, extentOffset: 1),
       );
 
       //--- when
@@ -36,9 +35,9 @@ void main() {
       String prevText = doc.results.plainText;
       DeltaText deltaText = DeltaText(
         prevText: prevText,
-        prevSelection: TextSelection(baseOffset: 0, extentOffset: 0),
+        prevRange: TextSelection(baseOffset: 0, extentOffset: 0),
         nextText: 'X$prevText',
-        nextSelection: TextSelection(baseOffset: 1, extentOffset: 1),
+        nextRange: TextSelection(baseOffset: 1, extentOffset: 1),
       );
 
       //--- when
@@ -60,9 +59,9 @@ void main() {
       String nextText = 'abcX\ndef';
       DeltaText deltaText = DeltaText(
         prevText: prevText,
-        prevSelection: TextSelection(baseOffset: 3, extentOffset: 3),
+        prevRange: TextSelection(baseOffset: 3, extentOffset: 3),
         nextText: nextText,
-        nextSelection: TextSelection(baseOffset: 4, extentOffset: 4),
+        nextRange: TextSelection(baseOffset: 4, extentOffset: 4),
       );
 
       //--- when
@@ -84,9 +83,9 @@ void main() {
       String nextText = 'abc\ndefX';
       DeltaText deltaText = DeltaText(
         prevText: prevText,
-        prevSelection: TextSelection(baseOffset: 7, extentOffset: 7),
+        prevRange: TextSelection(baseOffset: 7, extentOffset: 7),
         nextText: nextText,
-        nextSelection: TextSelection(baseOffset: 8, extentOffset: 8),
+        nextRange: TextSelection(baseOffset: 8, extentOffset: 8),
       );
 
       //--- when
@@ -108,9 +107,9 @@ void main() {
       String nextText = 'abXc\ndef';
       DeltaText deltaText = DeltaText(
         prevText: prevText,
-        prevSelection: TextSelection(baseOffset: 2, extentOffset: 2),
+        prevRange: TextSelection(baseOffset: 2, extentOffset: 2),
         nextText: nextText,
-        nextSelection: TextSelection(baseOffset: 3, extentOffset: 3),
+        nextRange: TextSelection(baseOffset: 3, extentOffset: 3),
       );
 
       //--- when
@@ -132,9 +131,9 @@ void main() {
       String nextText = 'abc boXld\ndef';
       DeltaText deltaText = DeltaText(
         prevText: prevText,
-        prevSelection: TextSelection(baseOffset: 6, extentOffset: 6),
+        prevRange: TextSelection(baseOffset: 6, extentOffset: 6),
         nextText: nextText,
-        nextSelection: TextSelection(baseOffset: 7, extentOffset: 7),
+        nextRange: TextSelection(baseOffset: 7, extentOffset: 7),
       );
 
       //--- when
@@ -159,9 +158,9 @@ void main() {
       String nextText = 'abc boXld\ndef';
       DeltaText deltaText = DeltaText(
         prevText: prevText,
-        prevSelection: TextSelection(baseOffset: 6, extentOffset: 6),
+        prevRange: TextSelection(baseOffset: 6, extentOffset: 6),
         nextText: nextText,
-        nextSelection: TextSelection(baseOffset: 7, extentOffset: 7),
+        nextRange: TextSelection(baseOffset: 7, extentOffset: 7),
       );
 
       //--- when

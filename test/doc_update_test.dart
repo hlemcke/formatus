@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:formatus/formatus.dart';
-import 'package:formatus/src/formatus/formatus_controller_impl.dart';
 import 'package:formatus/src/formatus/formatus_document.dart';
-
-import 'test_helper.dart';
 
 void main() {
   group('Document - update text in selected range', () {
@@ -16,15 +13,9 @@ void main() {
       String prevText = doc.results.plainText;
       DeltaText deltaText = DeltaText(
         prevText: prevText,
-        prevSelection: TextSelection(
-          baseOffset: 0,
-          extentOffset: prevText.length,
-        ),
+        prevRange: TextSelection(baseOffset: 0, extentOffset: prevText.length),
         nextText: newText,
-        nextSelection: TextSelection(
-          baseOffset: 0,
-          extentOffset: newText.length,
-        ),
+        nextRange: TextSelection(baseOffset: 0, extentOffset: newText.length),
       );
 
       //--- when
@@ -50,15 +41,9 @@ void main() {
       String prevText = doc.results.plainText;
       DeltaText deltaText = DeltaText(
         prevText: prevText,
-        prevSelection: TextSelection(
-          baseOffset: 0,
-          extentOffset: prevText.length,
-        ),
+        prevRange: TextSelection(baseOffset: 0, extentOffset: prevText.length),
         nextText: newText,
-        nextSelection: TextSelection(
-          baseOffset: 0,
-          extentOffset: newText.length,
-        ),
+        nextRange: TextSelection(baseOffset: 0, extentOffset: newText.length),
       );
 
       //--- when

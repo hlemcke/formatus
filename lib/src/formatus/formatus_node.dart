@@ -3,6 +3,30 @@ import 'package:flutter/material.dart';
 import 'formatus_model.dart';
 
 ///
+/// Input from [FormatusBar] and [TextField]
+///
+/// * `color` → selected by user in [FormatusBar]
+/// * `formats` → selected by user in [FormatusBar]
+/// * 'fieldText` → input from Flutter [TextField]
+///
+class FormatusInput {
+  /// Color of [FormatusBar]
+  Color color = Colors.transparent;
+
+  /// Formats
+  Set<Formatus> formats = {};
+
+  /// Plain text of [TextEditingController]
+  String fieldText = '';
+
+  /// Cursor position. Collapsed or a range
+  TextRange range = TextSelection.collapsed(offset: 0);
+
+  /// Returns `true` if cursor position is collapsed
+  bool get isCollapsed => range.isCollapsed;
+}
+
+///
 /// A [FormatusNode] is one node in the tree. It contains the [Formatus] tag
 /// which must be different from its predecessor or successor.
 /// It also contains an optional sequence of characters and optional attributes.
@@ -147,7 +171,7 @@ class FormatusNode {
 
   bool get isImage => tag == .image;
 
-  /// Returns `true` if this node is a link, an image or just text
+  /// Returns `true` if this node is an anchor, an image or just text
   bool get isLeaf => isText || isAnchor || isImage;
 
   bool get isRoot => tag == .root;
@@ -251,61 +275,18 @@ class FormatusNode {
 }
 
 ///
-/// Base state of a Formatus point in time.
+/// Common color and formats of text-nodes within range or at bare cursor
+/// position.
 ///
-/// TODO implement undo / redo based on this class
-///
-/// * `formatted` → string for persistency
-/// * `range` → start and end of selected text
-///
-class FormatusBaseState {
-  /// Formatted text for persistency
-  String formatted = '';
-
-  /// Cursor position. Collapsed or a range
-  TextSelection range = TextSelection.collapsed(offset: 0);
-
-  /// Returns `true` if cursor position is collapsed
-  bool get isCollapsed => range.isCollapsed;
-}
-
-///
-/// Input from [FormatusBar] and [TextField]
-///
-/// * `color` → selected by user in [FormatusBar]
-/// * `formats` → selected by user in [FormatusBar]
-/// * 'plainText` → input for Flutter [TextField]
-///
-class FormatusInput extends FormatusBaseState {
-  /// Color of [FormatusBar]
+class FormatusCommons {
+  /// Common color to set in [FormatusBar]
   Color color = Colors.transparent;
 
-  /// Formats
+  /// Common formats to set in [FormatusBar]
   Set<Formatus> formats = {};
 
-  /// Plain text of [TextEditingController]
-  String plainText = '';
-}
-
-///
-/// Output used to compute colors, formats, selection
-///
-/// * `root` → like &lt;body> of HTML content
-/// * `textSpan4Editor` → rendered input for Flutter [TextField]
-/// * `textSpan4Viewer` → rendered input for [FormatusViewer]
-///
-class FormatusOutput extends FormatusInput {
-  /// Root node of tree computed from [FormatusBaseState.formatted]
-  FormatusNode root = FormatusNode(tag: .placeHolder);
-
-  /// Segments laid out exactly as `plainText`
-  List<FormatusSegment> segments = [];
-
-  /// [TextSpan] for [TextField]. Children are sections separated by `\n`
-  TextSpan textSpan4Editor = TextSpan(text: '');
-
-  /// [TextSpan] for [FormatusViewer]. Children are sections separated by `\n`
-  TextSpan textSpan4Viewer = TextSpan(text: '');
+  /// Range of selected text or bare cursor position
+  TextRange range = TextRange.collapsed(0);
 }
 
 ///
@@ -331,6 +312,26 @@ class FormatusSegment {
       prefixOwner = null,
       start = pos,
       end = pos;
+}
+
+///
+/// State of a Formatus point in time.
+/// Output can be produced from this state.
+///
+/// TODO implement undo / redo based on this class
+///
+/// * `formatted` → string for persistency
+/// * `range` → start and end of selected text
+///
+class FormatusState {
+  /// Formatted text for persistency
+  String formatted = '';
+
+  /// Cursor position. Collapsed or a range
+  TextSelection range = TextSelection.collapsed(offset: 0);
+
+  /// Returns `true` if cursor position is collapsed
+  bool get isCollapsed => range.isCollapsed;
 }
 
 /// Specifies insert of a split node

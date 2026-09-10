@@ -14,7 +14,7 @@ import 'formatus_node.dart';
 /// 1. [_onListen] → text edited, or cursor moved / range selected
 /// 2. [updateInlineFormat] → inline format toggled
 /// 3. [updateSectionFormat] → section format toggled
-/// 3. [applySelectedColor] → color changed
+/// 3. [updateColor] → color changed
 ///
 /// `document.results` is passed as both the document's own live state
 /// *and* the `previous` snapshot `compute()` diffs against. That's safe
@@ -32,7 +32,10 @@ class FormatusControllerImpl extends TextEditingController
 
   final Map<String, FormatusImage> _imageMap = {};
 
+  /// Colors selected by user or computed from text range
   Color selectedColor = Colors.transparent;
+
+  /// Formates selected by user or computed from text range
   Set<Formatus> selectedFormats = {};
 
   final ValueChanged<String>? onChanged;
@@ -44,9 +47,9 @@ class FormatusControllerImpl extends TextEditingController
   }) {
     images.map((i) => _imageMap[i.src] = i);
     document = FormatusDocument(formatted: formattedText ?? '');
-    //--- '' as the "old" value mirrors the pre-refactor behaviour: a
-    //--- non-empty initial document does fire onChanged once.
-    _syncFromResults(oldFormatted: '');
+    //--- Force initial sync
+    document.needsUpdate = true;
+    _syncFromResults();
     addListener(_onListen);
   }
 
@@ -54,6 +57,45 @@ class FormatusControllerImpl extends TextEditingController
   void dispose() {
     removeListener(_onListen);
     super.dispose();
+  }
+
+  /// Finds the segment that contains `offset`, using half-open [start, end).
+  /// Returns null if `offset` sits exactly on a zero-width separator boundary
+  /// or past the end of the segment list.
+  FormatusSegment? _segmentAt(List<FormatusSegment> segments, int offset) {
+    for (final seg in segments) {
+      if (offset >= seg.start && offset < seg.end) return seg;
+    }
+    return null;
+  }
+
+  int _segmentIndex(List<FormatusSegment> segments, FormatusSegment seg) =>
+      segments.indexOf(
+        seg,
+      ); // identity match is fine, segments aren't rebuilt mid-comparison
+
+  /// Skips the list-item prefix span, redirecting based on travel direction.
+  TextSelection adjustForListPrefix({
+    required TextSelection prev,
+    required TextSelection next,
+    required List<FormatusSegment> segments,
+  }) {
+    if (!next.isCollapsed) return next;
+
+    final seg = _segmentAt(segments, next.start);
+    if (seg == null || seg.prefixOwner == null) return next;
+
+    final movingForward = next.start >= prev.start;
+
+    if (movingForward) {
+      return TextSelection.collapsed(offset: seg.end);
+    }
+
+    final index = _segmentIndex(segments, seg);
+    if (index > 0) {
+      return TextSelection.collapsed(offset: segments[index - 1].end);
+    }
+    return const TextSelection.collapsed(offset: 0);
   }
 
   /// Returns anchor element at cursor position or `null` if there is none
@@ -66,30 +108,8 @@ class FormatusControllerImpl extends TextEditingController
 
   /// Inserts or updates anchor at cursor position. Deletes it if empty
   set anchorAtCursor(FormatusAnchor? anchor) {
-    final String oldFormatted = document.results.formatted;
     document.updateAnchorAtCursor(anchor, selection.baseOffset);
-    _syncFromResults(oldFormatted: oldFormatted);
-  }
-
-  void applyAnchor(FormatusAnchor? anchor) {
-    anchorAtCursor = anchor;
-  }
-
-  void applyImage(FormatusImage? image) {
-    imageAtCursor = image;
-  }
-
-  /// Color changed in [FormatusBar] -> build the desired formats/color
-  /// and let [FormatusDocument.compute] apply the diff.
-  void applySelectedColor(Color? color) {
-    final Color newColor = color ?? Colors.transparent;
-    final Set<Formatus> newFormats = Set.of(selectedFormats);
-    if (newColor == Colors.transparent) {
-      newFormats.remove(Formatus.color);
-    } else {
-      newFormats.add(Formatus.color);
-    }
-    _applyFormatChange(formats: newFormats, color: newColor);
+    _syncFromResults();
   }
 
   /// Returns image element at cursor position or `null` if there is none
@@ -101,9 +121,8 @@ class FormatusControllerImpl extends TextEditingController
   }
 
   set imageAtCursor(FormatusImage? image) {
-    final String oldFormatted = document.results.formatted;
     document.updateImageAtCursor(image, selection.baseOffset);
-    _syncFromResults(oldFormatted: oldFormatted);
+    _syncFromResults();
   }
 
   ///
@@ -129,13 +148,14 @@ class FormatusControllerImpl extends TextEditingController
   /// Replaces current text with `formatted`
   @override
   set formattedText(String formatted) {
-    final String oldFormatted = document.results.formatted;
     document = FormatusDocument(formatted: formatted);
-    TreeHelper.printAll(document, '=== Text Selection ===');
-    _syncFromResults(oldFormatted: oldFormatted);
+    _syncFromResults();
   }
 
-  /// Replaces current selection (or inserts at cursor) with [newText]
+  ///
+  /// Replaces current selection (or inserts at cursor) with [newText].
+  /// Used by [FormatusBar] to insert an Emoji
+  ///
   void replaceText(String newText) {
     final String oldText = text;
 
@@ -145,6 +165,7 @@ class FormatusControllerImpl extends TextEditingController
 
     final String updatedText = oldText.replaceRange(start, end, newText);
 
+    //--- Fires _onListen
     value = TextEditingValue(
       text: updatedText,
       selection: TextSelection.collapsed(offset: start + newText.length),
@@ -152,228 +173,118 @@ class FormatusControllerImpl extends TextEditingController
   }
 
   ///
-  /// After selecting a text range the user has activated (apply = true) or
-  /// cleared (apply = false) an inline format in [FormatusBar].
+  /// Invoked by [FormatusBar] when user has selected a color
+  ///
+  void updateColor(Color? color) {
+    final Color newColor = color ?? Colors.transparent;
+    if (selectedColor == newColor) return;
+    selectedColor = newColor;
+
+    //--- insert or remove (if transparent) new color from formats
+    if (newColor == Colors.transparent) {
+      selectedFormats.remove(Formatus.color);
+    } else {
+      selectedFormats.add(Formatus.color);
+    }
+    _computeAndSync();
+  }
+
+  ///
+  /// Invoked by [FormatusBar] when user has activated (apply = true) or
+  /// cleared (apply = false) an inline format and there is a text-range.
   ///
   void updateInlineFormat(Formatus format, bool apply) {
+    apply ? selectedFormats.add(format) : selectedFormats.remove(format);
     if (selection.isCollapsed) return;
-    final Set<Formatus> newFormats = Set.of(selectedFormats);
-    apply ? newFormats.add(format) : newFormats.remove(format);
-    _applyFormatChange(formats: newFormats, color: selectedColor);
+    _computeAndSync();
   }
 
   ///
-  /// After positioning the cursor the user has activated a section format
-  /// in [FormatusBar].
+  /// Invoked by [FormatusBar] when user has activated a section format.
   ///
-  void updateSectionFormat(Formatus formatus) {
-    final Set<Formatus> newFormats = Set.of(selectedFormats)
-      ..removeWhere((f) => f.isSection)
-      ..add(formatus);
-    _applyFormatChange(formats: newFormats, color: selectedColor);
-  }
-
-  /// Builds a [FormatusInput] carrying the current text/range unchanged
-  /// but the newly desired `formats`/`color`, and lets the document diff
-  /// it against its own current state.
-  void _applyFormatChange({
-    required Set<Formatus> formats,
-    required Color color,
-  }) {
-    final FormatusOutput results = document.results;
-    final int len = results.plainText.length;
-    final TextSelection range = TextSelection(
-      baseOffset: selection.start.clamp(0, len),
-      extentOffset: selection.end.clamp(0, len),
+  /// Activating a section format clears the current one at cursor position
+  /// (or start of range selection) and applies the new one.
+  ///
+  void updateSectionFormat(Formatus newSectionFormat) {
+    Formatus currentSectionFormat = selectedFormats.firstWhere(
+      (f) => f.isSection,
     );
-    final FormatusInput input = FormatusInput()
-      ..plainText = results.plainText
-      ..range = range
-      ..formats = formats
-      ..color = color;
-
-    _computeAndSync(input);
+    if (currentSectionFormat == newSectionFormat) return;
+    selectedFormats
+      ..removeWhere((f) => f.isSection)
+      ..add(newSectionFormat);
+    _computeAndSync();
   }
 
   @visibleForTesting
   void onListen() => _onListen();
 
+  ///
   /// Text edited, or cursor moved / range selected -- both funnel through
   /// [FormatusDocument.compute], which tells the two apart internally.
+  ///
   void _onListen() {
-    final FormatusOutput results = document.results;
-    final int len = text.length;
-    final TextSelection range = TextSelection(
-      baseOffset: selection.start.clamp(0, len),
-      extentOffset: selection.end.clamp(0, len),
-    );
+    final bool textChanged = text != document.results.plainText;
 
-    final bool textChanged = text != results.plainText;
-    final bool selectionChanged = _areSelectionsDifferent(range, results.range);
-
-    if (!textChanged && !selectionChanged) return;
-
-    if (textChanged && text.isEmpty) {
-      final String oldFormatted = results.formatted;
-      document.clear();
-      _syncFromResults(oldFormatted: oldFormatted);
-      return;
+    //--- Pure cursor move / range selection: skip over list-item prefixes.
+    //--- Segments are stale here if text was edited, so only do this when
+    //--- the plainText itself hasn't changed.
+    if (!textChanged) {
+      final TextSelection prevSelection = TextSelection(
+        baseOffset: document.commons.range.start,
+        extentOffset: document.commons.range.end,
+      );
+      final TextSelection adjusted = adjustForListPrefix(
+        prev: prevSelection,
+        next: selection,
+        segments: document.results.segments,
+      );
+      if (adjusted != selection) {
+        selection =
+            adjusted; // re-enters _onListen; lands past the prefix, so it settles there
+        return;
+      }
     }
 
-    final FormatusInput input = FormatusInput()
-      ..plainText = text
-      ..range = range
-      ..formats = selectedFormats
-      ..color = selectedColor;
-
-    _computeAndSync(input);
+    _computeAndSync();
   }
 
   /// Calls [FormatusDocument.compute] with `document.results` doubling as
   /// `previous`, capturing `formatted` beforehand purely to know whether
   /// to fire [onChanged] afterwards.
-  void _computeAndSync(FormatusInput input) {
-    final String oldFormatted = document.results.formatted;
-    document.compute(input, document.results);
-    _syncFromResults(oldFormatted: oldFormatted);
+  void _computeAndSync() {
+    FormatusInput input = FormatusInput()
+      ..color = selectedColor
+      ..fieldText = text
+      ..formats = selectedFormats
+      ..range = selection;
+
+    //--- Remember old formatted to decide if calling onChanged
+    document.compute(input);
+    _syncFromResults();
   }
 
-  /// Applies the freshly computed `document.results`: syncs
-  /// `selectedFormats`/`selectedColor`, pushes text+selection back into
-  /// the field if the document changed them (e.g. list-item prefixes),
-  /// and fires [onChanged] if `formatted` actually changed relative to
-  /// `oldFormatted`.
-  void _syncFromResults({required String oldFormatted}) {
-    final FormatusOutput results = document.results;
-    selectedColor = results.color;
-    selectedFormats = results.formats;
+  ///
+  /// Applies the freshly computed `document.results`:
+  ///
+  /// * syncs `selectedFormats`/`selectedColor`
+  /// * pushes text+selection back into the field if the document changed them (e.g. list-item prefixes)
+  /// * fires [onChanged] if `formatted` actually changed relative to `oldFormatted`
+  ///
+  void _syncFromResults() {
+    //--- Update [FormatusBar] display
+    selectedColor = document.commons.color;
+    selectedFormats = Set<Formatus>.from(document.commons.formats);
 
-    if (text != results.plainText ||
-        _areSelectionsDifferent(selection, results.range)) {
+    //--- Fire onChanged and update TextField if formatted was modified
+    if (document.needsUpdate) {
+      onChanged?.call(document.results.formatted);
+      int start = document.commons.range.start;
+      int end = document.commons.range.end;
       value = TextEditingValue(
-        text: results.plainText,
-        selection: results.range,
+        text: document.results.plainText,
+        selection: TextSelection(baseOffset: start, extentOffset: end),
       );
     }
-
-    if ((oldFormatted != results.formatted) && (onChanged != null)) {
-      onChanged!(results.formatted);
-    }
   }
-
-  bool _areSelectionsDifferent(TextSelection a, TextSelection b) =>
-      a.baseOffset != b.baseOffset || a.extentOffset != b.extentOffset;
 }
-
-///
-/// Delta between previous and current text
-///
-class DeltaText {
-  /// Returns `true` if all text is selected
-  bool get isAll => _isAll;
-  bool _isAll = false;
-
-  bool get isAtEnd => _tailLength == 0;
-
-  bool get isAtStart => _headLength == 0;
-
-  bool get isInsert => type == DeltaTextType.insert;
-
-  bool get isModified => type == DeltaTextType.none;
-
-  /// Length of leading text in front of modification
-  int get headLength => _headLength;
-  int _headLength = -1;
-
-  /// Current selection
-  final TextSelection nextSelection;
-
-  /// Length of previous text
-  int get prevLength => _prevLength;
-  int _prevLength = -1;
-
-  /// Previous selection before change
-  final TextSelection prevSelection;
-
-  TextSelection get removedRange => TextSelection(
-    baseOffset: headLength,
-    extentOffset: headLength + textRemoved.length,
-  );
-
-  /// Length of trailing text behind modification
-  int get tailLength => _tailLength;
-  int _tailLength = -1;
-
-  /// Offset into previous text to start of tail
-  int get tailOffset => _tailOffset;
-  int _tailOffset = -1;
-
-  /// Text which is added
-  String get textAdded => _textAdded;
-  String _textAdded = '';
-
-  /// Text which is removed
-  String get textRemoved => _textRemoved;
-  String _textRemoved = '';
-
-  /// Type of modification
-  DeltaTextType type = DeltaTextType.none;
-
-  ///
-  /// Computes unmodifiable delta text
-  ///
-  DeltaText({
-    required String prevText,
-    required this.prevSelection,
-    required String nextText,
-    required this.nextSelection,
-  }) {
-    _prevLength = prevText.length;
-    //--- Text is unchanged
-    if (prevText == nextText) {
-      type = DeltaTextType.none;
-      return;
-    }
-
-    //--- All text deleted
-    if (nextText.isEmpty) {
-      _isAll = true;
-      type = DeltaTextType.delete;
-      return;
-    }
-
-    //--- Computations
-    _headLength = (nextSelection.start < 0)
-        ? 0
-        : (prevSelection.start < nextSelection.start)
-        ? prevSelection.start
-        : nextSelection.start;
-    int nextLen = nextText.length;
-    int prevTailLen =
-        _prevLength - (prevSelection.end < 0 ? 0 : prevSelection.end);
-    int nextTailLen = nextLen - nextSelection.end;
-    _tailLength = (prevTailLen < nextTailLen) ? prevTailLen : nextTailLen;
-    _tailOffset = _prevLength - _tailLength;
-    _isAll = (prevSelection.start == 0) && (prevSelection.end >= _prevLength);
-
-    //--- Insert
-    if (_headLength + _tailLength == _prevLength) {
-      type = DeltaTextType.insert;
-      _textAdded = nextText.substring(_headLength, nextLen - _tailLength);
-      return;
-    }
-
-    _textAdded = nextText.substring(_headLength, nextLen - _tailLength);
-    _textRemoved = prevText.substring(_headLength, _prevLength - _tailLength);
-    type = textAdded.isEmpty ? DeltaTextType.delete : DeltaTextType.update;
-  }
-
-  @override
-  String toString() => isAll
-      ? '${type.name} at all => added: "${textAdded.replaceAll('\n', '\\n')}"'
-      : '${type.name} [$_headLength..${_prevLength - _tailLength}]'
-            ' => ${textAdded.isEmpty ? '' : 'added: "${textAdded.replaceAll('\n', '\\n')}"'}'
-            '${textRemoved.isEmpty ? '' : ' removed: "${textRemoved.replaceAll('\n', '\\n')}"'}';
-}
-
-enum DeltaTextType { delete, insert, none, update }

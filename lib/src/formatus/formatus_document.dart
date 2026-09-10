@@ -10,22 +10,31 @@ import 'formatus_results.dart';
 ///
 /// HTML formatted document parsed into a tree-like structure.
 ///
-/// This document represents the `body` tag of an html text.
-/// All children are section elements like `h1` or `p`.
+/// This document holds and manages an HTML tree in `root`.
+/// All children of _root_ are section elements like `h1` or `p`.
 /// Section elements cannot contain other section elements.
 ///
-/// Does **not** extend [FormatusNode] anymore. The tree's root node lives
-/// in [results] (`results.root` / [FormatusOutput.root]) so that document
-/// and output always share the exact same object graph instead of the
-/// document duplicating itself as an extra node.
-///
 class FormatusDocument {
+  /// Common color and formats in selected range of text
+  FormatusCommons commons = FormatusCommons();
+
+  /// Set `true` by [compute] if formatted was modified
+  bool needsUpdate = false;
+
+  /// Results from tree as computed by [FormatusResults]
+  late FormatusResults results;
+
+  /// Root node of the mutable tree
+  FormatusNode get root => _root;
+  final FormatusNode _root = FormatusNode(tag: .root);
+
   /// Internal constructor
   FormatusDocument._();
 
+  /// Factory constructor creates a tree-root with one paragraph
   factory FormatusDocument.empty() {
     FormatusDocument doc = FormatusDocument._();
-    doc.results.root = FormatusNode.root();
+    doc._setupEmptyRoot();
     return doc;
   }
 
@@ -34,25 +43,19 @@ class FormatusDocument {
   ///
   factory FormatusDocument({required String formatted}) {
     FormatusDocument doc = FormatusDocument._();
-    doc.results.root = FormatusParser(formatted: formatted).root;
-    doc.computeResultsAt(0);
+    FormatusParser(formatted: formatted, target: doc._root);
+    doc.computeResults();
     return doc;
   }
 
   // TODO factory FormatusDocument.fromMarkdown({ required String markdownBody, })
 
-  /// Root node of the tree. Delegates to `results.root`.
-  FormatusNode get root => results.root;
-
-  /// Return child of root-node at index
+  /// Return section at index
   FormatusNode operator [](int index) => root.children[index];
 
-  /// Set child of root-node at index
+  /// Set section at index
   void operator []=(int index, FormatusNode node) =>
       root.children[index] = node;
-
-  /// Updated by [computeResults] / [computeResultsAt] / [compute]
-  final FormatusOutput results = FormatusOutput();
 
   /// Check if all `nodes` have the same `format` anywhere up the tree
   bool allHaveFormat(List<FormatusNode> nodes, Formatus format) =>
@@ -66,33 +69,37 @@ class FormatusDocument {
   ///
   void clear() {
     _setupEmptyRoot();
-    computeResultsAt(0);
+    computeResults();
   }
 
   @visibleForTesting
   List<FormatusNode> get collectAllNodesWithText => collectNodesWithTextInRange(
-    TextSelection(baseOffset: 0, extentOffset: results.plainText.length),
+    TextRange(start: 0, end: results.plainText.length),
   );
 
-  List<FormatusNode> collectNodesWithTextInRange(TextSelection selection) {
-    //--- Fresh position map reflecting the tree as it stands right now.
-    //--- Stale textIndex0/1 from earlier lookups are cleared globally by
-    //--- FormatusResults.compute(), not here -- see class doc there.
-    final segments = FormatusResults.buildSegments(root);
+  ///
+  List<FormatusNode> collectNodesWithTextInRange(TextRange range) {
+    //--- Returns single node at cursor position if no range
+    if (range.isCollapsed) return [findNodeAtCursor(range.start)];
+
     final int textLength = results.plainText.length;
-    final int selStart = selection.start.clamp(0, textLength);
-    final int selEnd = selection.end.clamp(0, textLength);
+    final int selStart = range.start.clamp(0, textLength);
+    final int selEnd = range.end.clamp(0, textLength);
     final found = <FormatusNode>[];
     FormatusNode lastLeaf = FormatusNode.placeHolder;
 
-    for (final seg in segments) {
-      if (seg.leaf != null) lastLeaf = seg.leaf!;
-
+    for (final seg in results.segments) {
       final int nodeStart = seg.start;
       final int nodeEnd = seg.end;
 
-      if (nodeEnd <= selStart) continue; // before selection -> skip
-      if (nodeStart > selEnd) break; // past selection -> done
+      //--- past selection -> done; lastLeaf untouched
+      if (nodeStart > selEnd) break;
+
+      //--- only leaves not yet past selEnd
+      if (seg.leaf != null) lastLeaf = seg.leaf!;
+
+      //--- before selection -> skip
+      if (nodeEnd <= selStart) continue;
 
       if (seg.leaf != null) {
         final leaf = seg.leaf!;
@@ -105,7 +112,6 @@ class FormatusDocument {
           found.add(seg.prefixOwner!);
         }
       }
-      //--- separators carry no node, nothing to collect
     }
 
     if (found.isEmpty) {
@@ -119,26 +125,25 @@ class FormatusDocument {
 
   ///
   /// Compute common color and formats of text-nodes in the selected range
-  /// (`output.rangeBegin`..`output.rangeEnd`) and write them directly into
-  /// `output.formats` / `output.color`.
   ///
-  void commonFormatsAndColor(FormatusOutput output) {
-    List<FormatusNode> textNodes = collectNodesWithTextInRange(output.range);
-    Color color = textNodes[0].findColor;
-    Set<Formatus> formats = textNodes[0].formats;
+  FormatusCommons commonColorAndFormats(TextRange range) {
+    FormatusCommons commons = FormatusCommons();
+    List<FormatusNode> textNodes = collectNodesWithTextInRange(range);
+    commons.color = textNodes[0].findColor;
+    commons.formats = textNodes[0].formats;
+    commons.range = range;
 
     //--- remove formats which do not exist in following node-paths
     for (int i = 1; i < textNodes.length; i++) {
       Set<Formatus> nodeFormats = textNodes[i].formats;
-      formats.retainWhere((f) => nodeFormats.contains(f));
-      color = (color == Colors.transparent)
+      commons.formats.retainWhere((f) => nodeFormats.contains(f));
+      commons.color = (commons.color == Colors.transparent)
           ? Colors.transparent
-          : (color == textNodes[i].findColor)
-          ? color
+          : (commons.color == textNodes[i].findColor)
+          ? commons.color
           : Colors.transparent;
     }
-    output.formats = formats;
-    output.color = color;
+    return commons;
   }
 
   ///
@@ -150,52 +155,57 @@ class FormatusDocument {
   /// * otherwise                       -> cursor moved / range selected
   ///
   /// Mutates the tree accordingly (or not at all, for a pure selection
-  /// change), then returns [results] with range/formats/color refreshed
-  /// to reflect `input`'s selection.
+  /// change), then returns color/formats to reflect `input`'s selection.
   ///
-  FormatusOutput compute(FormatusInput input, FormatusOutput previous) {
-    if (input.plainText != previous.plainText) {
-      _applyTextInput(input, previous);
-    } else if (input.formats.length != previous.formats.length ||
-        !input.formats.containsAll(previous.formats) ||
-        input.color != previous.color) {
-      _applyFormatInput(input, previous);
+  FormatusCommons compute(FormatusInput input) {
+    needsUpdate = false;
+
+    //--- User has modified the text
+    if (input.fieldText != results.plainText) {
+      _applyTextInput(input);
+      needsUpdate = true;
     }
-    //--- else: pure cursor repositioning / range selection -> tree is
-    //--- untouched, results.* from the last mutation are still current
-    results.range = input.range;
-    commonFormatsAndColor(results);
-    return results;
+    //--- User has modified color or format
+    else if (input.formats.length != commons.formats.length ||
+        !input.formats.containsAll(commons.formats) ||
+        input.color != commons.color) {
+      _applyFormatInput(input);
+      needsUpdate = true;
+    }
+
+    //--- else: pure cursor repositioning / range selection
+    commons = commonColorAndFormats(input.range);
+    return commons;
   }
 
   /// Text was edited: derive the classic [DeltaText] from previous/next
   /// plainText + selection and feed it into the existing insert/delete/
   /// update logic, unchanged.
-  void _applyTextInput(FormatusInput input, FormatusOutput previous) {
+  void _applyTextInput(FormatusInput input) {
     final DeltaText deltaText = DeltaText(
-      prevText: previous.plainText,
-      prevSelection: previous.range,
-      nextText: input.plainText,
-      nextSelection: input.range,
+      prevRange: commons.range,
+      prevText: results.plainText,
+      nextRange: input.range,
+      nextText: input.fieldText,
     );
     updateText(deltaText, input.formats, color: input.color);
   }
 
-  /// A format or color was toggled: diff `input.formats`/`input.color`
-  /// against `previous` and apply/remove exactly what changed. Section
-  /// formats (header/paragraph) replace rather than wrap.
-  void _applyFormatInput(FormatusInput input, FormatusOutput previous) {
-    if (input.color != previous.color) {
+  /// A color or format was toggled.
+  /// Section formats (header/paragraph) replace rather than wrap.
+  void _applyFormatInput(FormatusInput input) {
+    if (input.color != commons.color) {
       updateInlineFormat(
         input.range,
         Formatus.color,
         input.color != Colors.transparent,
         color: input.color,
       );
+      return;
     }
 
-    final Set<Formatus> added = input.formats.difference(previous.formats);
-    final Set<Formatus> removed = previous.formats.difference(input.formats);
+    final Set<Formatus> added = input.formats.difference(commons.formats);
+    final Set<Formatus> removed = commons.formats.difference(input.formats);
 
     for (final Formatus format in added) {
       if (format == Formatus.color) continue; // handled above
@@ -217,18 +227,7 @@ class FormatusDocument {
   ///
   void computeResults() {
     condenseTree(root);
-    FormatusResults(output: results).compute();
-  }
-
-  /// Convenience for callers that mutate via a bare cursor position
-  /// (anchor/image insertion, initial parse, clear) rather than a full
-  /// [FormatusInput]: recomputes [results] with a collapsed selection at
-  /// `curPos` and its common format/color.
-  FormatusOutput computeResultsAt(int curPos) {
-    computeResults();
-    results.range = TextSelection.collapsed(offset: curPos);
-    commonFormatsAndColor(results);
-    return results;
+    results = FormatusResults(tree: _root);
   }
 
   ///
@@ -320,9 +319,7 @@ class FormatusDocument {
     }
 
     //--- attach any replacement text to prefixing node
-    FormatusNode prefixNode = findNodeAtCursor(
-      deltaText.prevSelection.baseOffset - 1,
-    );
+    FormatusNode prefixNode = findNodeAtCursor(deltaText.prevRange.start - 1);
     prefixNode.text += deltaText.textAdded;
   }
 
@@ -409,7 +406,7 @@ class FormatusDocument {
   }
 
   /// Insert (no anchor-node at `curPos`), modify or remove (`anchor == null`)
-  /// image at cursor index `curPos`.
+  /// anchor at cursor index `curPos`.
   void updateAnchorAtCursor(FormatusAnchor? anchor, int curPos) {
     FormatusNode node = findNodeAtCursor(curPos);
 
@@ -431,7 +428,8 @@ class FormatusDocument {
       );
       _insertChild(child: anchorNode, nodeAtCursor: node);
     }
-    computeResultsAt(curPos);
+    computeResults();
+    needsUpdate = true;
   }
 
   /// Insert (no image-node at `curPos`), modify or remove (`image == null`)
@@ -453,12 +451,14 @@ class FormatusDocument {
     else {
       FormatusNode imageNode = FormatusNode(
         tag: .image,
+        text: imagePlaceholderChar,
         ariaLabel: image.aria,
         attribute: image.src,
       );
       _insertChild(child: imageNode, nodeAtCursor: node);
     }
-    computeResultsAt(curPos);
+    computeResults();
+    needsUpdate = true;
   }
 
   ///
@@ -466,15 +466,15 @@ class FormatusDocument {
   /// on selected text-range.
   ///
   void updateInlineFormat(
-    TextSelection selection,
+    TextRange range,
     Formatus format,
     bool apply, {
     Color color = Colors.transparent,
   }) {
-    if (selection.isCollapsed) return;
+    if (range.isCollapsed) return;
 
     //--- collect all text-nodes in selected range
-    final affected = collectNodesWithTextInRange(selection);
+    final affected = collectNodesWithTextInRange(range);
     if (affected.isEmpty) return;
     affected[0].split(.head, insert: .ifNotEmpty);
     affected.last.split(.tail, insert: .ifNotEmpty);
@@ -491,12 +491,12 @@ class FormatusDocument {
   }
 
   ///
-  /// Entrypoint to update format of section or list based on selection-start
+  /// Update format of section or list based on selection-start
   ///
-  void updateSectionFormat(TextSelection selection, Formatus format) {
+  void updateSectionFormat(TextRange range, Formatus format) {
     //--- Determine first and last text-node from selection
-    FormatusNode first = findNodeAtCursor(selection.start);
-    FormatusNode last = findNodeAtCursor(selection.end);
+    FormatusNode first = findNodeAtCursor(range.start);
+    FormatusNode last = findNodeAtCursor(range.end);
     int from = first.section.indexInParent;
     int to = last.section.indexInParent;
 
@@ -515,7 +515,7 @@ class FormatusDocument {
     Color color = Colors.transparent,
   }) {
     if (deltaText.textRemoved == '\n') {
-      _handleLineBreakDelete(deltaText.nextSelection.start);
+      _handleLineBreakDelete(deltaText.nextRange.start);
       return computeResults();
     }
 
@@ -532,7 +532,6 @@ class FormatusDocument {
     }
 
     FormatusNode node = findNodeAtCursor(deltaText.headLength);
-    debugPrint('isInsert=${deltaText.isInsert}, node=$node');
 
     //--- Handle text insertion
     if (deltaText.isInsert) {
@@ -559,7 +558,6 @@ class FormatusDocument {
     } else {
       _insertTextWithDifferentFormat(node, text, formats, color);
     }
-    return computeResults();
   }
 
   /// `true` if `a` and `b` are adjacent siblings that can be merged into one
@@ -794,6 +792,118 @@ class FormatusDocument {
     return leftBranch;
   }
 }
+
+///
+/// Delta between previous and current text
+///
+class DeltaText {
+  /// Returns `true` if all text is selected
+  bool get isAll => _isAll;
+  bool _isAll = false;
+
+  bool get isAtEnd => _tailLength == 0;
+
+  bool get isAtStart => _headLength == 0;
+
+  bool get isInsert => type == DeltaTextType.insert;
+
+  bool get isModified => type == DeltaTextType.none;
+
+  /// Length of leading text in front of modification
+  int get headLength => _headLength;
+  int _headLength = -1;
+
+  /// Current selection
+  final TextRange nextRange;
+
+  /// Length of previous text
+  int get prevLength => _prevLength;
+  int _prevLength = -1;
+
+  /// Previous selection before change
+  final TextRange prevRange;
+
+  TextSelection get removedRange => TextSelection(
+    baseOffset: headLength,
+    extentOffset: headLength + textRemoved.length,
+  );
+
+  /// Length of trailing text behind modification
+  int get tailLength => _tailLength;
+  int _tailLength = -1;
+
+  /// Offset into previous text to start of tail
+  int get tailOffset => _tailOffset;
+  int _tailOffset = -1;
+
+  /// Text which is added
+  String get textAdded => _textAdded;
+  String _textAdded = '';
+
+  /// Text which is removed
+  String get textRemoved => _textRemoved;
+  String _textRemoved = '';
+
+  /// Type of modification
+  DeltaTextType type = DeltaTextType.none;
+
+  ///
+  /// Computes unmodifiable delta text
+  ///
+  DeltaText({
+    required String prevText,
+    required this.prevRange,
+    required String nextText,
+    required this.nextRange,
+  }) {
+    _prevLength = prevText.length;
+    //--- Text is unchanged
+    if (prevText == nextText) {
+      type = DeltaTextType.none;
+      return;
+    }
+
+    //--- All text deleted
+    if (nextText.isEmpty) {
+      _isAll = true;
+      type = DeltaTextType.delete;
+      return;
+    }
+
+    //--- Computations
+    _headLength = (nextRange.start < 0)
+        ? 0
+        : (prevRange.start < nextRange.start)
+        ? prevRange.start
+        : nextRange.start;
+    int nextLen = nextText.length;
+    int prevTailLen = _prevLength - (prevRange.end < 0 ? 0 : prevRange.end);
+    int nextTailLen = nextLen - nextRange.end;
+    _tailLength = (prevTailLen < nextTailLen) ? prevTailLen : nextTailLen;
+    _tailOffset = _prevLength - _tailLength;
+    _isAll = (prevRange.start == 0) && (prevRange.end >= _prevLength);
+
+    //--- Insert
+    if (_headLength + _tailLength == _prevLength) {
+      type = DeltaTextType.insert;
+      _textAdded = nextText.substring(_headLength, nextLen - _tailLength);
+      return;
+    }
+
+    _textAdded = nextText.substring(_headLength, nextLen - _tailLength);
+    _textRemoved = prevText.substring(_headLength, _prevLength - _tailLength);
+    type = textAdded.isEmpty ? DeltaTextType.delete : DeltaTextType.update;
+  }
+
+  @override
+  String toString() => isAll
+      ? '${type.name} at all => added: "${textAdded.replaceAll('\n', '\\n')}"'
+      : '${type.name} [$_headLength..${_prevLength - _tailLength}]'
+            ' => ${textAdded.isEmpty ? '' : 'added: "${textAdded.replaceAll('\n', '\\n')}"'}'
+            '${textRemoved.isEmpty ? '' : ' removed: "${textRemoved.replaceAll('\n', '\\n')}"'}';
+}
+
+enum DeltaTextType { delete, insert, none, update }
 
 ///
 /// static helper methods
