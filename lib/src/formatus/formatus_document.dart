@@ -206,7 +206,7 @@ class FormatusDocument {
 
     final Set<Formatus> added = input.formats.difference(commons.formats);
     final Set<Formatus> removed = commons.formats.difference(input.formats);
-
+    debugPrint('_applyFormatInput added=$added, removed=$removed');
     for (final Formatus format in added) {
       if (format == Formatus.color) continue; // handled above
       if (format.isSection) {

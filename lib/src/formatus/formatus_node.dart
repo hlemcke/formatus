@@ -215,7 +215,8 @@ class FormatusNode {
   }
 
   /// Get section of this node by moving up the tree
-  FormatusNode get section => isSection ? this : parent.section;
+  FormatusNode get section =>
+      (isSection || identical(parent, this)) ? this : parent.section;
 
   /// Split this node by moving either its `head` (0 to `textIndex0`)
   /// or its `tail` (`textIndex1` to end) to a new node.
