@@ -26,6 +26,9 @@ const String linkPlaceholderChar = '\u221E';
 /// Not a valid char. Used to separate words invisibly
 const String noneChar = '\uFFFF';
 
+/// Starting character of a HTML tag
+const String tagStart = '\u{003c}';
+
 /// Prefix used for list-items inside &lt;ul>
 const String unorderedListPrefix = '• ';
 
@@ -319,7 +322,9 @@ class FormatusActionText extends StatelessWidget {
 }
 
 ///
+/// Used for [FormatusBar] callback `onEditAnchor`.
 ///
+/// If returned empty (no name) then the anchor will be deleted from the rich text.
 ///
 class FormatusAnchor {
   String href;

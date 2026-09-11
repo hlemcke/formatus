@@ -34,23 +34,27 @@ typedef ImageSelector =
 ///
 abstract class FormatusBar extends StatefulWidget {
   ///
-  /// Creates action bar to format text in a [TextField] or [TextFormField].
-  /// The same [FormatusController] must be supplied both to the [TextField]
-  /// and to this `FormatusBar`.
+  /// Creates a [FormatusBar] instance linked to a [controller].
   ///
-  /// To automatically switch back the focus from this `FormatusBar` the
-  /// same [FocusNode] must be supplied both to the [TextField]
-  /// and to this [FormatusBar].
-  ///
-  /// Supplying `null` for `actions` will use [defaultActions].
+  /// * [controller] → The active controller managing the document state
+  /// * [actions] → Optional list of formatting actions to display. If null, displays default actions.
+  /// * [alignment] → Defines how action buttons are aligned in the toolbar.
+  /// * [hideInactive] → When `true`, hides inactive or unavailable format buttons.
+  /// * [direction] → Layout direction of the toolbar ([Axis.horizontal] or [Axis.vertical]).
+  /// * [onEditAnchor] → Callback triggered when editing or inserting a link ([FormatusAnchor]).
+  /// * [onSelectColor] → Callback triggered when opening the color picker.
+  /// * [onSelectEmoji] → Callback triggered when selecting an emoji.
+  /// * [onSelectImage] → Callback triggered when inserting or editing an image ([FormatusImage]).
+  /// * [textFieldFocus] → Focus node of the attached [TextField] to preserve focus state when tapping buttons.
+  /// * [tooltipBuilder] → Custom builder for formatting button tooltips
   ///
   factory FormatusBar({
     Key? key,
     required FormatusController controller,
     List<Formatus>? actions,
-    WrapAlignment alignment = WrapAlignment.start,
-    bool hideInactive = true,
-    Axis direction = Axis.horizontal,
+    WrapAlignment alignment = .start,
+    bool hideInactive = false,
+    Axis direction = .horizontal,
     AnchorEditor? onEditAnchor,
     ColorSelector? onSelectColor,
     EmojiSelector? onSelectEmoji,

@@ -120,19 +120,7 @@ class FormatusResults {
   ) {
     //--- Leaf nodes: text / anchor / image
     if (node.isLeaf) {
-      node.textIndex0 = -1;
-      node.textIndex1 = -1;
-
-      final int start = plainText.length;
-      if (node.tag == .image) {
-        _handleImage(node, editorOut, viewerOut);
-      } else if (node.tag == .text) {
-        _handleText(node, editorOut, viewerOut);
-      } else {
-        _handleInline(node, editorOut, viewerOut); // anchor
-      }
-      segments.add(FormatusSegment.leaf(node, start, start + node.length));
-      return;
+      return _handleLeaf(node, editorOut, viewerOut);
     }
 
     switch (node.tag) {
@@ -141,9 +129,6 @@ class FormatusResults {
       case .header3:
       case .paragraph:
         return _handleSection(node, editorOut, viewerOut);
-
-      case .anchor:
-        return _handleAnchor(node, editorOut, viewerOut);
 
       case .color:
         return _handleColor(node, editorOut, viewerOut);
@@ -168,20 +153,6 @@ class FormatusResults {
         _handleInline(node, editorOut, viewerOut);
         break;
     }
-  }
-
-  /// Handles anchor tag (contains text)
-  void _handleAnchor(
-    FormatusNode node,
-    List<InlineSpan> editorOut,
-    List<InlineSpan> viewerOut,
-  ) {
-    formatted += node.toOpening;
-    int start = plainText.length;
-    editorOut.add(TextSpan(text: node.text));
-    viewerOut.add(TextSpan(text: node.text));
-    segments.add(FormatusSegment.leaf(node, start, start + node.length));
-    formatted += node.toClosing;
   }
 
   void _handleColor(
@@ -218,8 +189,6 @@ class FormatusResults {
     List<InlineSpan> viewerOut,
   ) {
     String src = node.attribute;
-    formatted += node.toOpening;
-    plainText += imagePlaceholderChar;
     editorOut.add(
       TextSpan(
         text: imagePlaceholderChar,
@@ -244,6 +213,33 @@ class FormatusResults {
     viewerOut.add(TextSpan(style: node.tag.style, children: viewerChildren));
     formatted += node.toClosing;
     plainText += node.text;
+  }
+
+  /// Handles leaves: anchor, image, text
+  void _handleLeaf(
+    FormatusNode node,
+    List<InlineSpan> editorOut,
+    List<InlineSpan> viewerOut,
+  ) {
+    node.textIndex0 = -1;
+    node.textIndex1 = -1;
+    formatted += node.toOpening;
+    final int start = plainText.length;
+    if (node.tag == .anchor) {
+      editorOut.add(TextSpan(text: node.text, style: node.tag.style));
+      viewerOut.add(TextSpan(text: node.text, style: node.tag.style));
+    } else if (node.tag == .image) {
+      _handleImage(node, editorOut, viewerOut);
+    } else if (node.tag == .text) {
+      editorOut.add(TextSpan(text: node.text));
+      viewerOut.add(TextSpan(text: node.text));
+    } else {
+      _handleInline(node, editorOut, viewerOut);
+    }
+    formatted += node.text;
+    formatted += node.toClosing;
+    plainText += node.text;
+    segments.add(FormatusSegment.leaf(node, start, start + node.length));
   }
 
   /// Handle opening of ordered or unordered list
@@ -405,16 +401,5 @@ class FormatusResults {
     int start = plainText.length;
     segments.add(FormatusSegment.leaf(textChild, start, start + node.length));
     return text;
-  }
-
-  void _handleText(
-    FormatusNode node,
-    List<InlineSpan> editorOut,
-    List<InlineSpan> viewerOut,
-  ) {
-    plainText += node.text;
-    formatted += node.text;
-    editorOut.add(TextSpan(text: node.text));
-    viewerOut.add(TextSpan(text: node.text));
   }
 }

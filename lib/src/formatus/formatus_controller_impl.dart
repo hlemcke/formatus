@@ -108,6 +108,7 @@ class FormatusControllerImpl extends TextEditingController
 
   /// Inserts or updates anchor at cursor position. Deletes it if empty
   set anchorAtCursor(FormatusAnchor? anchor) {
+    debugPrint('Anchor = $anchor');
     document.updateAnchorAtCursor(anchor, selection.baseOffset);
     _syncFromResults();
   }

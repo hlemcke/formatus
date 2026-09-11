@@ -65,8 +65,8 @@ class FormatusBarImpl extends StatefulWidget implements FormatusBar {
     super.key,
     required this.controller,
     List<Formatus>? actions,
-    this.alignment = WrapAlignment.start,
-    this.direction = Axis.horizontal,
+    this.alignment = .start,
+    this.direction = .horizontal,
     this.hideInactive = false,
     this.onEditAnchor,
     this.onSelectColor,
@@ -292,7 +292,6 @@ class FormatusBarState extends State<FormatusBarImpl>
   /// Only one section format may be active at any time.
   ///
   void _onToggleAction(Formatus formatus) async {
-    final TextSelection currentSelection = _ctrl.selection;
     if (formatus == Formatus.anchor) {
       await _onEditAnchor();
     } else if (formatus == Formatus.color) {

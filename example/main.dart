@@ -85,15 +85,28 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
   }
 
-  PreferredSizeWidget _buildAppBar() =>
-      AppBar(title: const Text('Formatus Rich-Text-Editor'));
+  PreferredSizeWidget _buildAppBar() => AppBar(
+    title: const Text('Formatus Rich-Text-Editor'),
+    actions: [_buildTextPreselection()],
+  );
 
   Widget _buildBody() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     mainAxisAlignment: MainAxisAlignment.start,
     children: [
-      Align(alignment: Alignment.centerRight, child: _buildTextPreselection()),
+      _buildEditor(),
       const Divider(color: Colors.deepPurpleAccent),
+      SizedBox(height: 16),
+      _buildFormattedText(),
+      SizedBox(height: 16),
+      _buildFormatusViewer(),
+    ],
+  );
+
+  Widget _buildEditor() => Column(
+    mainAxisAlignment: .start,
+    mainAxisSize: .min,
+    children: [
       FormatusBar(
         controller: controller,
         onEditAnchor: (context, anchor) => _onEditAnchor(context, anchor),
@@ -111,14 +124,9 @@ class _MyHomePageState extends State<MyHomePage> {
         decoration: const InputDecoration(focusedBorder: OutlineInputBorder()),
         focusNode: _formatusFocus,
         minLines: 3,
-        maxLines: 7,
+        maxLines: 5,
         showCursor: true,
       ),
-      const Divider(color: Colors.deepPurpleAccent),
-      SizedBox(height: 16),
-      _buildFormattedText(),
-      SizedBox(height: 16),
-      _buildFormatusViewer(),
     ],
   );
 
@@ -164,34 +172,46 @@ class _MyHomePageState extends State<MyHomePage> {
     FormatusAnchor anchor,
   ) => showAdaptiveDialog<FormatusAnchor>(
     context: context,
-    builder: (BuildContext context) => AlertDialog(
-      title: Row(
-        children: [
-          IconButton(
-            icon: Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context, anchor),
-          ),
-          Text(anchor.name.isEmpty ? 'Create Anchor' : 'Edit Anchor'),
-          IconButton(
-            icon: Icon(Icons.delete_outline),
-            onPressed: () => Navigator.pop(context, anchor.clear()),
-          ),
-        ],
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            decoration: InputDecoration(label: Text('Name')),
-            onChanged: (v) => anchor.name = v,
-          ),
-          TextField(
-            decoration: InputDecoration(label: Text('URL')),
-            onChanged: (v) => anchor.href = v,
-          ),
-        ],
-      ),
-    ),
+    builder: (BuildContext context) {
+      bool isNew = anchor.name.isEmpty;
+      return AlertDialog(
+        title: Row(
+          children: [
+            IconButton(
+              icon: Icon(Icons.arrow_back),
+              onPressed: () => Navigator.pop(context, anchor),
+            ),
+
+            Text(isNew ? 'Create Anchor' : 'Edit Anchor'),
+
+            //--- Explicit delete (abort on create)
+            if (isNew)
+              IconButton(
+                icon: Icon(Icons.cancel_outlined),
+                onPressed: () => Navigator.pop(context),
+              ),
+            if (!isNew)
+              IconButton(
+                icon: Icon(Icons.delete_outline),
+                onPressed: () => Navigator.pop(context, anchor.clear()),
+              ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              decoration: InputDecoration(label: Text('Name')),
+              onChanged: (v) => anchor.name = v,
+            ),
+            TextField(
+              decoration: InputDecoration(label: Text('URL')),
+              onChanged: (v) => anchor.href = v,
+            ),
+          ],
+        ),
+      );
+    },
   );
 }
 

@@ -248,13 +248,16 @@ class FormatusNode {
   FormatusNode get topNode =>
       isSection || tag == .listItem ? this : parent.topNode;
 
-  /// Get closing tag. Image is already self-closed
-  String get toClosing => tag == .image ? '' : '</${tag.key}>';
+  /// Get closing tag. Image is already self-closed and text has none
+  String get toClosing {
+    if (tag == .image || tag == .text) return '';
+    return '</${tag.key}>';
+  }
 
   String get toOpening {
     if (tag == .text) return '';
     String open = '<${tag.key}';
-    if (tag == .anchor) return '$open href="$attribute">$text';
+    if (tag == .anchor) return '$open href="$attribute">';
     if (tag == .color) open += ' style="color: ${colorToHex(color)};"';
     if (tag == .image) {
       String aria = ariaLabel.isEmpty ? '' : ' aria-label="$ariaLabel"';
