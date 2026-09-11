@@ -150,6 +150,7 @@ class FormatusControllerImpl extends TextEditingController
   @override
   set formattedText(String formatted) {
     document = FormatusDocument(formatted: formatted);
+    document.needsUpdate = true;
     _syncFromResults();
   }
 

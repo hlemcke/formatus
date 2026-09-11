@@ -85,6 +85,13 @@ class FormatusParser {
       if (stack.last == root) return;
 
       final parent = stack.last;
+
+      //--- Anchor is a leaf: its content lives directly in `text`
+      if (parent.tag == Formatus.anchor) {
+        parent.text += text;
+        return;
+      }
+
       parent.appendChild(FormatusNode(tag: Formatus.text, text: text));
     }
 

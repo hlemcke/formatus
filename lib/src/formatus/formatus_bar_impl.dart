@@ -182,7 +182,7 @@ class FormatusBarState extends State<FormatusBarImpl>
     widget.textFieldFocus?.addListener(_handleFocusChange);
 
     //--- Initial State: If field has focus, show immediately
-    if (widget.textFieldFocus?.hasFocus ?? false) {
+    if ((widget.textFieldFocus?.hasFocus ?? false) || !widget.hideInactive) {
       _animCtrl.value = 1.0;
     }
   }
@@ -258,7 +258,7 @@ class FormatusBarState extends State<FormatusBarImpl>
 
     if (widget.textFieldFocus?.hasFocus ?? false) {
       _animCtrl.forward();
-    } else {
+    } else if (widget.hideInactive) {
       //--- Debounce hide
       Future.delayed(const Duration(milliseconds: 150), () {
         if (mounted &&

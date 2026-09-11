@@ -252,6 +252,9 @@ class FormatusDocument {
 
     //--- Step 3: merge adjacent siblings
     _mergeAdjacentChildren(node);
+    if (node.isStructural && node.isEmpty) {
+      node.appendChild(FormatusNode.text());
+    }
   }
 
   /// Merges adjacent mergeable children of `node` in a single pass.
