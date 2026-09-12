@@ -198,12 +198,21 @@ class FormatusNode {
         findColor == color;
   }
 
+  /// Get sibling of this node to its right side or `null`
+  FormatusNode? get nextSibling => (parent.children.length > indexInParent + 1)
+      ? parent.children[indexInParent + 1]
+      : null;
+
   /// List of nodes starting with section below root until this node (excluded)
   List<FormatusNode> get path => (tag == .root)
       ? []
       : (tag == .text)
       ? parent.path
       : [...parent.path, this];
+
+  /// Get sibling of this node to its left side or `null`
+  FormatusNode? get previousSibling =>
+      (indexInParent > 0) ? parent.children[indexInParent - 1] : null;
 
   void replaceChild({required FormatusNode prev, required FormatusNode next}) {
     int index = children.indexOf(prev);

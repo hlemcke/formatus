@@ -168,7 +168,6 @@ class FormatusBarState extends State<FormatusBarImpl>
     BarThemeConfig();
     _ctrl = widget.controller;
     _ctrl.addListener(_updateActionsDisplay);
-    _deactivateActions();
 
     //--- Setup Animation to hide / show the toolbar
     _animCtrl = AnimationController(
@@ -232,27 +231,6 @@ class FormatusBarState extends State<FormatusBarImpl>
             ),
   ];
 
-  void _deactivateActions() {
-    if (mounted) setState(() {});
-  }
-
-  void _deactivateSectionActions() {
-    for (Formatus action in widget.actions) {
-      if (action.isSection || action.isList) {
-        _selectedFormats.remove(action);
-      }
-    }
-    List<Formatus>? collapsedSections =
-        widget.actionGroups[Formatus.collapseSections];
-    if (collapsedSections != null) {
-      for (Formatus action in collapsedSections) {
-        if (action.isSection || action.isList) {
-          _selectedFormats.remove(action);
-        }
-      }
-    }
-  }
-
   void _handleFocusChange() {
     if (!mounted) return;
 
@@ -300,9 +278,9 @@ class FormatusBarState extends State<FormatusBarImpl>
       return _selectAndInsertEmoji();
     } else if (formatus == Formatus.image) {
       await _onSelectImage();
-    } else if (formatus.isSection || formatus.isList) {
-      _deactivateSectionActions();
-      _selectedFormats.add(formatus);
+    } else if (formatus.isList) {
+      _ctrl.updateListFormat(formatus);
+    } else if (formatus.isSection) {
       _ctrl.updateSectionFormat(formatus);
     } else if (_selectedFormats.contains(formatus)) {
       _selectedFormats.remove(formatus);

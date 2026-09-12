@@ -202,19 +202,30 @@ class FormatusControllerImpl extends TextEditingController
   }
 
   ///
+  /// Invoked by [FormatusBar] when user has activated a list format.
+  /// Toggling the currently-active list off, switching list type, or
+  /// starting a new list are all decided by [FormatusDocument.updateListFormat]
+  /// itself from the current tree state -- no add/remove diffing needed here.
+  ///
+  void updateListFormat(Formatus format) {
+    document.updateListFormat(selection, format);
+    _syncFromResults();
+  }
+
+  ///
   /// Invoked by [FormatusBar] when user has activated a section format.
   ///
   /// Activating a section format clears the current one at cursor position
   /// (or start of range selection) and applies the new one.
   ///
-  void updateSectionFormat(Formatus newSectionFormat) {
+  void updateSectionFormat(Formatus format) {
     Formatus currentSectionFormat = selectedFormats.firstWhere(
       (f) => f.isSection,
     );
-    if (currentSectionFormat == newSectionFormat) return;
+    if (currentSectionFormat == format) return;
     selectedFormats
       ..removeWhere((f) => f.isSection)
-      ..add(newSectionFormat);
+      ..add(format);
     _computeAndSync();
   }
 
@@ -280,6 +291,7 @@ class FormatusControllerImpl extends TextEditingController
 
     //--- Fire onChanged and update TextField if formatted was modified
     if (document.needsUpdate) {
+      print(TreeHelper.printPlainText(document));
       onChanged?.call(document.results.formatted);
       int start = document.commons.range.start;
       int end = document.commons.range.end;

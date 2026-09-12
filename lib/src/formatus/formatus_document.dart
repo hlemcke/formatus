@@ -18,8 +18,8 @@ class FormatusDocument {
   /// Common color and formats in selected range of text
   FormatusCommons commons = FormatusCommons();
 
-  /// Set `true` by [compute] if formatted was modified
-  bool needsUpdate = false;
+  /// Set to `false` on start of [compute], to `true` by [computeResults]
+  bool needsUpdate = true;
 
   /// Results from tree as computed by [FormatusResults]
   late FormatusResults results;
@@ -163,14 +163,12 @@ class FormatusDocument {
     //--- User has modified the text
     if (input.fieldText != results.plainText) {
       _applyTextInput(input);
-      needsUpdate = true;
     }
     //--- User has modified color or format
     else if (input.formats.length != commons.formats.length ||
         !input.formats.containsAll(commons.formats) ||
         input.color != commons.color) {
       _applyFormatInput(input);
-      needsUpdate = true;
     }
 
     //--- else: pure cursor repositioning / range selection
@@ -206,9 +204,9 @@ class FormatusDocument {
 
     final Set<Formatus> added = input.formats.difference(commons.formats);
     final Set<Formatus> removed = commons.formats.difference(input.formats);
-    debugPrint('_applyFormatInput added=$added, removed=$removed');
+
     for (final Formatus format in added) {
-      if (format == Formatus.color) continue; // handled above
+      if (format == Formatus.color) continue; // already handled above
       if (format.isSection) {
         updateSectionFormat(input.range, format);
       } else {
@@ -223,11 +221,11 @@ class FormatusDocument {
 
   ///
   /// Condense tree and (re)compute [results] from the tree.
-  /// Range, formats and color on [results] are left as-is.
   ///
   void computeResults() {
     condenseTree(root);
     results = FormatusResults(tree: _root);
+    needsUpdate = true;
   }
 
   ///
@@ -361,18 +359,54 @@ class FormatusDocument {
     return lastLeaf;
   }
 
+  /// Returns the top-node (section or list-item) that immediately follows
+  /// [node] in document order -- a sibling list-item if there is one,
+  /// otherwise escalating past the enclosing list to whatever follows it,
+  /// and so on up to root.
+  FormatusNode? _nextTopNode(FormatusNode node) {
+    FormatusNode? sibling = node.nextSibling;
+    if (sibling != null) {
+      //--- Root's next child might be a list itself -> descend to its first item
+      return (node.parent.isRoot &&
+              (sibling.tag == .orderedList || sibling.tag == .unorderedList))
+          ? sibling[0]
+          : sibling;
+    }
+    if (node.parent.isRoot) return null; // nothing follows
+    return _nextTopNode(node.parent); // escalate past the enclosing list
+  }
+
+  /// Mirror of [_nextTopNode], walking backwards.
+  FormatusNode? _prevTopNode(FormatusNode node) {
+    FormatusNode? sibling = node.previousSibling;
+    if (sibling != null) {
+      return (node.parent.isRoot &&
+              (sibling.tag == .orderedList || sibling.tag == .unorderedList))
+          ? sibling.children.last
+          : sibling;
+    }
+    if (node.parent.isRoot) return null;
+    return _prevTopNode(node.parent);
+  }
+
   /// Delete line-break between sections or behind a list-item
   void _handleLineBreakDelete(int cursorOffset) {
     FormatusNode node = findNodeAtCursor(cursorOffset);
     FormatusNode top = node.topNode;
-    int leftIndex = (node.textIndex0 == 0)
-        ? top.indexInParent + 1
-        : top.indexInParent;
-    FormatusNode topLeft = top.parent[leftIndex];
-    FormatusNode topRight = top.parent[leftIndex + 1];
+
+    FormatusNode? topLeft;
+    FormatusNode? topRight;
+    if (node.textIndex0 == 0) {
+      topLeft = _prevTopNode(top);
+      topRight = top;
+    } else {
+      topLeft = top;
+      topRight = _nextTopNode(top);
+    }
+    if (topLeft == null || topRight == null) return; // nothing to merge
 
     //--- Move children of right top to left one
-    for (FormatusNode child in topRight.children) {
+    for (FormatusNode child in List<FormatusNode>.from(topRight.children)) {
       topLeft.appendChild(child);
     }
     topRight.parent.children.removeAt(topRight.indexInParent);
@@ -494,7 +528,113 @@ class FormatusDocument {
   }
 
   ///
-  /// Update format of section or list based on selection-start
+  /// Wraps the content of the section at the cursor into a single
+  /// list-item inside a new list, nested inside the existing section.
+  ///
+  /// * If the cursor is already inside a list-item of the *same* type as
+  ///   [listFormat], the list is toggled off: replaced -- in its own
+  ///   position among any sibling content of its enclosing section -- by
+  ///   one paragraph per list-item, plus one paragraph each for any
+  ///   leading/trailing content the section had alongside the list.
+  /// * If already inside a list-item of a *different* type, the enclosing
+  ///   list is retagged in place (ul <-> ol).
+  /// * Otherwise, the section's content is wrapped into a new list.
+  ///
+  /// The cursor is repositioned afterwards to stay with the same text node
+  /// it started in, at the same local offset within that node's text.
+  ///
+  void updateListFormat(TextRange range, Formatus listFormat) {
+    FormatusNode anchor = findNodeAtCursor(range.start);
+    int localOffset = anchor.textIndex0;
+    FormatusNode top = anchor.topNode;
+
+    if (top.tag == .listItem) {
+      FormatusNode listNode = top.parent;
+      if (listNode.tag == listFormat) {
+        _unwrapList(listNode);
+      } else {
+        listNode.tag = listFormat;
+      }
+    } else {
+      _wrapIntoList(top, listFormat);
+    }
+
+    computeResults();
+
+    //--- Reposition cursor to follow the same text node through the mutation
+    int newOffset = _offsetOfNode(anchor, localOffset);
+    commons = commonColorAndFormats(TextRange.collapsed(newOffset));
+  }
+
+  /// Wraps `section`'s current children into a single list-item of a new list.
+  void _wrapIntoList(FormatusNode section, Formatus listFormat) {
+    FormatusNode listItem = FormatusNode(tag: .listItem);
+    for (final child in List<FormatusNode>.from(section.children)) {
+      listItem.appendChild(child);
+    }
+    if (listItem.isEmpty) {
+      listItem.appendChild(FormatusNode.text());
+    }
+    FormatusNode listNode = FormatusNode(tag: listFormat)
+      ..appendChild(listItem);
+    section.clearChildren();
+    section.appendChild(listNode);
+  }
+
+  /// Replaces `listNode` -- in place among any sibling content of its
+  /// enclosing section -- with one paragraph per list-item, plus one
+  /// paragraph each for any content the section had before/after the list.
+  void _unwrapList(FormatusNode listNode) {
+    FormatusNode section = listNode.section;
+    Formatus sectionTag = section.tag;
+    FormatusNode rootNode = section.parent;
+    int rootIndex = section.indexInParent;
+
+    int idx = listNode.indexInParent;
+    List<FormatusNode> before = section.children.sublist(0, idx);
+    List<FormatusNode> after = section.children.sublist(idx + 1);
+    List<FormatusNode> items = List<FormatusNode>.from(listNode.children);
+
+    FormatusNode buildPara(List<FormatusNode> content) {
+      FormatusNode para = FormatusNode(tag: sectionTag);
+      for (final child in content) {
+        para.appendChild(child);
+      }
+      if (para.isEmpty) para.appendChild(FormatusNode.text());
+      return para;
+    }
+
+    List<FormatusNode> newParas = [];
+    if (before.isNotEmpty) newParas.add(buildPara(before));
+    for (final item in items) {
+      newParas.add(buildPara(List<FormatusNode>.from(item.children)));
+    }
+    if (after.isNotEmpty) newParas.add(buildPara(after));
+    if (newParas.isEmpty) newParas.add(buildPara(const []));
+
+    rootNode.children.removeAt(rootIndex);
+    int insertAt = rootIndex;
+    for (final para in newParas) {
+      rootNode.insertChildAt(para, insertAt);
+      insertAt++;
+    }
+  }
+
+  /// Returns the absolute plainText offset of [node] (matched by identity)
+  /// after a tree mutation + [computeResults], offset by [localOffset] and
+  /// clamped to the node's own length. Falls back to 0 if the node can no
+  /// longer be found (e.g. it got merged into a sibling during condensing).
+  int _offsetOfNode(FormatusNode node, int localOffset) {
+    for (final seg in results.segments) {
+      if (identical(seg.leaf, node)) {
+        return seg.start + localOffset.clamp(0, node.length);
+      }
+    }
+    return 0;
+  }
+
+  ///
+  /// Update format of section based on selection
   ///
   void updateSectionFormat(TextRange range, Formatus format) {
     //--- Determine first and last text-node from selection

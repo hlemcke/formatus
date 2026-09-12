@@ -163,8 +163,8 @@ enum Formatus {
     ),
   ),
 
-  /// Linefeed are automatically inserted between sections
-  lineFeed('', FormatusType.section, null, null),
+  /// Linefeed is automatically inserted between sections
+  lineFeed('', FormatusType.none, null, null),
 
   /// Item of an ordered or unordered list
   listItem('li', FormatusType.none, null, null),
