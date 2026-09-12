@@ -267,7 +267,7 @@ class FormatusDocument {
         continue;
       }
 
-      if (child.isText) {
+      if (child.isText || child.isAnchor) {
         child.text += nextSibling.text;
       } else {
         for (final grandChild in List<FormatusNode>.from(
@@ -706,6 +706,7 @@ class FormatusDocument {
   /// `true` if `a` and `b` are adjacent siblings that can be merged into one
   bool _canMerge(FormatusNode a, FormatusNode b) {
     if (a.isStructural || b.isStructural) return false;
+    if (a.isImage || b.isImage) return false;
     if (a.isText && b.isText) return true;
     return a.tag == b.tag && a.attribute == b.attribute && a.color == b.color;
   }

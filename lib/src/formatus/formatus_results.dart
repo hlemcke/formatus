@@ -226,17 +226,19 @@ class FormatusResults {
     formatted += node.toOpening;
     final int start = plainText.length;
     if (node.tag == .anchor) {
+      formatted += node.text;
       editorOut.add(TextSpan(text: node.text, style: node.tag.style));
       viewerOut.add(TextSpan(text: node.text, style: node.tag.style));
     } else if (node.tag == .image) {
       _handleImage(node, editorOut, viewerOut);
     } else if (node.tag == .text) {
+      formatted += node.text;
       editorOut.add(TextSpan(text: node.text));
       viewerOut.add(TextSpan(text: node.text));
     } else {
+      formatted += node.text;
       _handleInline(node, editorOut, viewerOut);
     }
-    formatted += node.text;
     formatted += node.toClosing;
     plainText += node.text;
     segments.add(FormatusSegment.leaf(node, start, start + node.length));
