@@ -1,10 +1,15 @@
 name: formatus
 description: Formatus - The plain Flutter Rich-Text-Editor for all platforms
-version: 2.1.1
+version: 2.2.0
 
 homepage: https://www.djarjo.com/formatus
 issue_tracker: https://github.com/hlemcke/formatus/issues
 repository: https://github.com/hlemcke/formatus
+topics:
+  - editor
+  - rich-text-editor
+  - html-viewer
+  - viewer
 
 environment:
   sdk: ^3.10.0

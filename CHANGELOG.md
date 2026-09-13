@@ -1,3 +1,10 @@
+## 2.2.0
+
+* complete rework of internal structure now uses a tree
+* output `formattedText` is now optimized by tree reductions
+* added factory method `fromController` to [FormatusViewer] to automatically
+  update the viewer on editor changes
+
 ## 2.1.1
 
 * fixed bug on empty Flutter `Selection` (start = end = -1)

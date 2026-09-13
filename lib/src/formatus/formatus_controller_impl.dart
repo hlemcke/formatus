@@ -174,6 +174,10 @@ class FormatusControllerImpl extends TextEditingController
     );
   }
 
+  /// Direct access for [FormatusViewer] to `TextSpan`
+  @override
+  TextSpan get textSpan4Viewer => document.results.textSpan4Viewer;
+
   ///
   /// Invoked by [FormatusBar] when user has selected a color
   ///
@@ -291,7 +295,6 @@ class FormatusControllerImpl extends TextEditingController
 
     //--- Fire onChanged and update TextField if formatted was modified
     if (document.needsUpdate) {
-      print(TreeHelper.printPlainText(document));
       onChanged?.call(document.results.formatted);
       int start = document.commons.range.start;
       int end = document.commons.range.end;

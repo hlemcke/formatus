@@ -144,14 +144,18 @@ class _MyHomePageState extends State<MyHomePage> {
     child: SingleChildScrollView(
       child: SizedBox(
         height: 150,
-        child: FormatusViewer(formattedText: controller.formattedText),
+        child: FormatusViewer.fromController(controller: controller),
       ),
     ),
   );
 
   Widget _buildFormattedText() => Frame(
     label: 'Formatted Text',
-    child: SelectableText(controller.formattedText, showCursor: true),
+    child: ListenableBuilder(
+      listenable: controller,
+      builder: (context, _) =>
+          SelectableText(controller.formattedText, showCursor: true),
+    ),
   );
 
   Widget _buildTextPreselection() => DropdownMenu<String>(

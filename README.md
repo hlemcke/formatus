@@ -1,6 +1,6 @@
 # FORMATUS
 
-A plain Flutter Rich-Text-Editor without any dependencies
+A plain Flutter Rich-Text-Editor without any dependencies and a HTML display
 
 ## Features
 
@@ -9,8 +9,8 @@ A plain Flutter Rich-Text-Editor without any dependencies
 * Directly integrates into `TextField` and `TextFormField`
 * No dependencies to other packages to keep it small and lightweight
 * Supports multiple section and inline formats
-* Includes a viewer for the formatted text
 * `FormatusBar` provides multiple callbacks to integrate your favorite packages
+* `FormatusViewer` to display formatted text provided as HTML
 
 ## Getting started
 
@@ -18,14 +18,14 @@ Add the latest version of *Formatus* to the `pubspec.yaml` file:
 
 ```yaml
 flutter:
-  formatus: ^2.1.1
+  formatus: ^2.2.0
 ```
 
 Follow these steps:
 
-1. create a `FormatusController`
-2. create a `FocusNode`
-3. supply both `FormatusController` and `FocusNode` to the `FormatusBar` and the `TextField`
+1. create a `FocusNode`
+2. create a `FormatusController`
+3. supply both `FormatusController` and `FocusNode` to `FormatusBar` and `TextField`
 
 ## Usage
 
@@ -122,7 +122,7 @@ Future<String?> showEmojiSelector() async =>
 
 * implement undo / redo functionality
 * parse Markdown format as input
-* optimize formatting tree by reshaking
+
 
 For an additional enhancement request please open an issue.
 

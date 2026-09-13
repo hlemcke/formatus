@@ -27,4 +27,7 @@ abstract class FormatusController extends TextEditingController {
 
   /// Replaces current text with the parsed `html`
   set formattedText(String html);
+
+  /// Direct access for [FormatusViewer] to `TextSpan`
+  TextSpan get textSpan4Viewer;
 }
