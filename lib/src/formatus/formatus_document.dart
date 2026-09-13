@@ -1,4 +1,3 @@
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 
 import 'formatus_controller_impl.dart';
@@ -412,6 +411,16 @@ class FormatusDocument {
     topRight.parent.children.removeAt(topRight.indexInParent);
   }
 
+  Formatus? firstWhereOrNull(
+    Iterable<Formatus> list,
+    bool Function(Formatus element) test,
+  ) {
+    for (var element in list) {
+      if (test(element)) return element;
+    }
+    return null;
+  }
+
   void removeNode(FormatusNode node) {
     if (node.isRoot) return;
     int childIndex = node.indexInParent;
@@ -666,7 +675,7 @@ class FormatusDocument {
     if (deltaText.isAll) {
       FormatusNode firstTextNode = findNodeAtCursor(0);
       Formatus sectionFormat =
-          formats.firstWhereOrNull((f) => f.isSection) ??
+          firstWhereOrNull(formats, (f) => f.isSection) ??
           firstTextNode.section.tag;
       _setupEmptyRoot();
       root[0].tag = sectionFormat;

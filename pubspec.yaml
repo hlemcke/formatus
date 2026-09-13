@@ -15,7 +15,6 @@ environment:
   sdk: ^3.10.0
 
 dependencies:
-  collection: ^1.19.1
   flutter:
     sdk: flutter
 
