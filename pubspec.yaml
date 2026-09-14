@@ -1,6 +1,6 @@
 name: formatus
 description: Formatus - The plain Flutter Rich-Text-Editor for all platforms
-version: 2.2.0
+version: 2.3.0
 
 homepage: https://www.djarjo.com/formatus
 issue_tracker: https://github.com/hlemcke/formatus/issues
@@ -22,6 +22,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  url_launcher: ^6.3.2
 
 flutter:
   uses-material-design: true

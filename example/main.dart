@@ -205,10 +205,12 @@ class _MyHomePageState extends State<MyHomePage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
+              controller: TextEditingController(text: anchor.name),
               decoration: InputDecoration(label: Text('Name')),
               onChanged: (v) => anchor.name = v,
             ),
             TextField(
+              controller: TextEditingController(text: anchor.href),
               decoration: InputDecoration(label: Text('URL')),
               onChanged: (v) => anchor.href = v,
             ),

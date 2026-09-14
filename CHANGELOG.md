@@ -1,3 +1,9 @@
+## 2.3.0
+
+* Added optional callback method `onRenderAnchor` to [FormatusViewer]
+* Added attribute `selectable` (default _false_) to [FormatusViewer]
+* New example `main_anchor.dart` to show a clickable URL
+
 ## 2.2.0
 
 * complete rework of internal structure now uses a tree

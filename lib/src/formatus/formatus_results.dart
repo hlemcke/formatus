@@ -155,6 +155,22 @@ class FormatusResults {
     }
   }
 
+  void _handleAnchor(
+    FormatusNode node,
+    List<InlineSpan> editorOut,
+    List<InlineSpan> viewerOut,
+  ) {
+    formatted += node.text;
+    editorOut.add(TextSpan(text: node.text, style: node.tag.style));
+    viewerOut.add(
+      FormatusAnchorSpan(
+        anchor: FormatusAnchor(href: node.attribute, name: node.text),
+        style: node.tag.style,
+        text: node.text,
+      ),
+    );
+  }
+
   void _handleColor(
     FormatusNode node,
     List<InlineSpan> editorOut,
@@ -226,9 +242,7 @@ class FormatusResults {
     formatted += node.toOpening;
     final int start = plainText.length;
     if (node.tag == .anchor) {
-      formatted += node.text;
-      editorOut.add(TextSpan(text: node.text, style: node.tag.style));
-      viewerOut.add(TextSpan(text: node.text, style: node.tag.style));
+      _handleAnchor(node, editorOut, viewerOut);
     } else if (node.tag == .image) {
       _handleImage(node, editorOut, viewerOut);
     } else if (node.tag == .text) {
