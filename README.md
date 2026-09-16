@@ -60,6 +60,12 @@ void dispose() {
 }
 ```
 
+
+### Colors
+
+The integrated color chooser can be replaced by supplying a custom chooser to the callback
+method `onSelectColor` in [FormatusBar]. See example `main_color` about how to use it.
+
 ### Emojis
 
 `Formatus` has an action `emoji`. The button will become available as soon as an
@@ -87,10 +93,28 @@ Future<String?> showEmojiSelector() async =>
     Dialog( child: EmojiPicker(textEditingController: controller, ), ), );
 ```
 
+### Tooltips
+
+In web or on desktop it could be helpful to users to show a tooltip on each
+formatting action. To allow integration of any localizer this can be applied
+by using the callback `tooltipBuilder` in [FormatusBar].
+See example `main_mini.dart` about how to use it.
+
 ## FAQ
 
-- **Q**: I can only enter one line of text. Enter does not work.
-  **A**: Supply `minLines: 2` or a larger value to `TextFormField`
+**Q: I can only enter one line of text. Enter does not work**
+
+**A**: Supply `minLines: 2` or a larger value to `TextFormField`
+
+**Q: Text is not visible in dark mode**
+
+**A**: Set background color of Flutter `TextField` to white:
+  `TextField( ..., decoration: InputDecoration( fillColor: Colors.white), ...);`
+
+**Q: `FormatusBar` is centered instead of left aligned**
+
+**A:** This happens if the bar has a smaller width then the available space.
+  Solution: wrap `FormatusBar` with `IntrinsicWidth` to keep it aligned. 
 
 
 ## Supported Formats
@@ -103,11 +127,13 @@ Future<String?> showEmojiSelector() async =>
 * __UL__ → Unordered list
 * __B__ → bold text
 * __I__ → italicized text
-* __U__ → underlined text
 * __S__ → strike-through text
-* __sub__ → subscript text
-* __sup__ → superscript text
-* __color__ → text coloring
+* __U__ → underlined text
+* __SUB__ → subscript text. Renders as normal text in the editor
+* __SUP__ → superscript text. Renders as normal text in the editor
+* __color__ → text coloring. Optional callback `FormatusBar.onSelectColor` allows setting another color chooser
+* __A__ → Anchor. Requires setting callback `FormatusBar.onEditAnchor`
+* __IMG__ → Image. Requires setting callback `FormatusBar.onSelectImage`
 
 
 ## 🔗 Project Links
@@ -122,18 +148,16 @@ Future<String?> showEmojiSelector() async =>
 
 * implement undo / redo functionality
 * parse Markdown format as input
-
+* implement a horizontal ruler (tag: HR)
 
 For an additional enhancement request please open an issue.
 
 
 ## Known Deficiencies
 
-1. Horizontal ruler not yet implemented
-2. Coloring is restricted to 19 included colors
-3. Line-breaks in pasted text are replaced by spaces
-4. Lists cannot be nested
-5. Subscript and superscript are displayed correctly only in [FormatusViewer] because Flutter
+1. Line-breaks in pasted text are replaced by spaces
+2. Lists cannot be nested
+3. Subscript and superscript are displayed correctly only in [FormatusViewer] because Flutter
    [TextField] and [TextFormField] do not support their editing
 
 ## User Manual
@@ -155,7 +179,7 @@ Section
 This section describes the use cases for `Formatus`.
 
 * Position caret → updates `FormatusBar` with formats at caret position
-* Select a text range → updates `FormatusBar` with formats from selection start
+* Select a text range → updates `FormatusBar` with formats common to all text in range
 * Activate another section-format in `FormatusBar`
   → the current section (defined by caret position or start of a selected text-range)
   will be changed to the activated section-format
@@ -165,8 +189,7 @@ This section describes the use cases for `Formatus`.
   will be inserted at caret position. Current format settings will be applied
 * Delete characters → if this includes one or more (requires a text-range)
   line-breaks then the text right of the deleted text will be integrated
-  into the top-level node at deletion start
-* Display the formatted text with `FormatusViewer`
+  into the node at deletion start
 
 
 ## Additional information

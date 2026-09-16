@@ -21,6 +21,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  colorus: ^1.2.1
   flutter_lints: ^6.0.0
   url_launcher: ^6.3.2
 
