@@ -18,7 +18,7 @@ Add the latest version of *Formatus* to the `pubspec.yaml` file:
 
 ```yaml
 flutter:
-  formatus: ^2.3.0
+  formatus: ^2.3.1
 ```
 
 Follow these steps:
@@ -74,11 +74,11 @@ of emojis is required then this approach is sufficient:
 
 ```
 FormatusBar( ...,
-          onSelectEmoji: (context) async => await showDialog<String>(
-            context: context, builder: (context) => Dialog(
-              child: Wrap( children: ['😀', '🚀', '✅'].map( (e) => IconButton(
-                        icon: Text(e), onPressed: () => Navigator.pop(context, e),
-                      ), ).toList(), ), ), ),
+  onSelectEmoji: (context) async => await showDialog<String>(
+    context: context, builder: (context) => Dialog(
+      child: Wrap( children: ['😀', '🚀', '✅'].map( (e) => IconButton(
+        icon: Text(e), onPressed: () => Navigator.pop(context, e),
+        ), ).toList(), ), ), ),
 ```
 
 A full emoji package like [emoji_picker_flutter](https://pub.dev/emoji_picker_flutter)

@@ -1,3 +1,7 @@
+## 2.3.1
+
+* Fixed missing section display (P) on initially empty text
+
 ## 2.3.0
 
 * Added optional callback method `onRenderAnchor` to [FormatusViewer]

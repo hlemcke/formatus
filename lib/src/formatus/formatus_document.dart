@@ -126,11 +126,15 @@ class FormatusDocument {
   /// Compute common color and formats of text-nodes in the selected range
   ///
   FormatusCommons commonColorAndFormats(TextRange range) {
+    TextRange clampedRange = TextRange(
+      start: range.start.clamp(0, 9999),
+      end: range.end.clamp(0, 9999),
+    );
     FormatusCommons commons = FormatusCommons();
-    List<FormatusNode> textNodes = collectNodesWithTextInRange(range);
+    List<FormatusNode> textNodes = collectNodesWithTextInRange(clampedRange);
     commons.color = textNodes[0].findColor;
     commons.formats = textNodes[0].formats;
-    commons.range = range;
+    commons.range = clampedRange;
 
     //--- remove formats which do not exist in following node-paths
     for (int i = 1; i < textNodes.length; i++) {

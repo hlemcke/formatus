@@ -49,6 +49,9 @@ class FormatusControllerImpl extends TextEditingController
     document = FormatusDocument(formatted: formattedText ?? '');
     //--- Force initial sync
     document.needsUpdate = true;
+    document.commons = document.commonColorAndFormats(TextRange.empty);
+    //--- Force initial sync
+    document.needsUpdate = true;
     _syncFromResults();
     addListener(_onListen);
   }
@@ -151,6 +154,7 @@ class FormatusControllerImpl extends TextEditingController
   set formattedText(String formatted) {
     document = FormatusDocument(formatted: formatted);
     document.needsUpdate = true;
+    document.commons = document.commonColorAndFormats(TextRange.empty);
     _syncFromResults();
   }
 
