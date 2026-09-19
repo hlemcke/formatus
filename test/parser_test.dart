@@ -15,7 +15,7 @@ void main() {
       FormatusNode root = FormatusNode(tag: .root);
 
       //--- when
-      FormatusParser parser = FormatusParser(formatted: html, target: root);
+      FormatusParser(formatted: html, target: root);
 
       //--- then
       expect(root.childCount, 1, reason: 'only h1 expected: ');

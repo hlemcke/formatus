@@ -1,3 +1,8 @@
+## 2.3.2
+
+* Replaced Future by Timer used for debouncing displaying and hiding [FormatusBar]
+  if `hideInactive: true`
+
 ## 2.3.1
 
 * Fixed missing section display (P) on initially empty text

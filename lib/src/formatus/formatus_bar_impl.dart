@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:core';
 
 import 'package:flutter/foundation.dart';
@@ -149,6 +150,7 @@ class FormatusBarState extends State<FormatusBarImpl>
   late AnimationController _animCtrl;
   late Animation<double> _heightFactor;
   bool _isOverlayOpen = false; // track if in sub-menu or dialog
+  Timer? _hideTimer;
 
   Color get _selectedColor => _ctrl.selectedColor;
 
@@ -157,6 +159,7 @@ class FormatusBarState extends State<FormatusBarImpl>
   @override
   void dispose() {
     widget.textFieldFocus?.removeListener(_handleFocusChange);
+    _hideTimer?.cancel();
     _ctrl.removeListener(_updateActionsDisplay);
     _animCtrl.dispose();
     super.dispose();
@@ -233,15 +236,15 @@ class FormatusBarState extends State<FormatusBarImpl>
 
   void _handleFocusChange() {
     if (!mounted) return;
-
+    _hideTimer?.cancel();
     if (widget.textFieldFocus?.hasFocus ?? false) {
       _animCtrl.forward();
     } else if (widget.hideInactive) {
       //--- Debounce hide
-      Future.delayed(const Duration(milliseconds: 150), () {
+      _hideTimer = Timer(const Duration(milliseconds: 150), () {
         if (mounted &&
-            !(widget.textFieldFocus?.hasFocus ?? false) &&
-            !_isOverlayOpen) {
+            !_isOverlayOpen &&
+            !(widget.textFieldFocus?.hasFocus ?? false)) {
           _animCtrl.reverse();
         }
       });
@@ -381,16 +384,17 @@ class FormatusBarState extends State<FormatusBarImpl>
 
   /// Wrapper for any action that opens a new Route (Dialog, Menu, Picker)
   Future<T?> _trackOverlay<T>(Future<T?> overlayFuture) async {
-    final TextSelection currentSelection = _ctrl.selection;
     _isOverlayOpen = true;
+    _hideTimer?.cancel();
+    final TextSelection currentSelection = _ctrl.selection;
     final result = await overlayFuture;
-    _isOverlayOpen = false;
 
     //--- Return focus to text field so bar stays open after overlay is dismissed
     if (mounted) {
       widget.textFieldFocus?.requestFocus();
       _ctrl.value = _ctrl.value.copyWith(selection: currentSelection);
     }
+    _isOverlayOpen = false;
     return result;
   }
 
