@@ -1,3 +1,8 @@
+## 2.3.3
+
+* Changed the semaphore to keep focus inside bar, text and any overlay like
+  color chooser to a counting semaphore
+
 ## 2.3.2
 
 * Replaced Future by Timer used for debouncing displaying and hiding [FormatusBar]

@@ -149,7 +149,8 @@ class FormatusBarState extends State<FormatusBarImpl>
   late final FormatusControllerImpl _ctrl;
   late AnimationController _animCtrl;
   late Animation<double> _heightFactor;
-  bool _isOverlayOpen = false; // track if in sub-menu or dialog
+  int _overlayDepth = 0; // count of nested overlays (menu / dialog) open
+  bool get _isOverlayOpen => _overlayDepth > 0;
   Timer? _hideTimer;
 
   Color get _selectedColor => _ctrl.selectedColor;
@@ -254,7 +255,10 @@ class FormatusBarState extends State<FormatusBarImpl>
   Future<void> _onEditAnchor() async {
     if (widget.onEditAnchor == null) return;
     final FormatusAnchor? result = await _trackOverlay(
-      widget.onEditAnchor!(context, _ctrl.anchorAtCursor ?? FormatusAnchor()),
+      () => widget.onEditAnchor!(
+        context,
+        _ctrl.anchorAtCursor ?? FormatusAnchor(),
+      ),
     );
     _ctrl.anchorAtCursor = result;
   }
@@ -262,7 +266,10 @@ class FormatusBarState extends State<FormatusBarImpl>
   Future<void> _onSelectImage() async {
     if (widget.onSelectImage == null) return;
     final FormatusImage? result = await _trackOverlay(
-      widget.onSelectImage!(context, _ctrl.imageAtCursor ?? FormatusImage()),
+      () => widget.onSelectImage!(
+        context,
+        _ctrl.imageAtCursor ?? FormatusImage(),
+      ),
     );
     _ctrl.imageAtCursor = result;
   }
@@ -300,7 +307,9 @@ class FormatusBarState extends State<FormatusBarImpl>
 
   void _selectAndInsertEmoji() async {
     if (widget.onSelectEmoji == null) return;
-    final String? emoji = await _trackOverlay(widget.onSelectEmoji!(context));
+    final String? emoji = await _trackOverlay(
+      () => widget.onSelectEmoji!(context),
+    );
     if (emoji != null) _ctrl.replaceText(emoji);
   }
 
@@ -308,7 +317,9 @@ class FormatusBarState extends State<FormatusBarImpl>
   void _selectAndRememberColor() async {
     final ColorSelector colorSelector =
         widget.onSelectColor ?? (context, current) => _showColorDialog();
-    Color? color = await _trackOverlay(colorSelector(context, _selectedColor));
+    Color? color = await _trackOverlay(
+      () => colorSelector(context, _selectedColor),
+    );
     _ctrl.updateColor(color);
   }
 
@@ -382,19 +393,29 @@ class FormatusBarState extends State<FormatusBarImpl>
     ),
   );
 
-  /// Wrapper for any action that opens a new Route (Dialog, Menu, Picker)
-  Future<T?> _trackOverlay<T>(Future<T?> overlayFuture) async {
-    _isOverlayOpen = true;
+  /// Wrapper for any action that opens a new Route (Dialog, Menu, Picker).
+  ///
+  /// Takes a builder rather than an already-started [Future] so the overlay
+  /// depth counter is incremented *before* the overlay is opened (opening it
+  /// -- e.g. `showMenu` / `showDialog` -- can itself trigger a focus change).
+  ///
+  /// Uses a depth counter rather than a bool because overlays can nest in
+  /// time: picking an item from a [FormatusGroupButton] menu can immediately
+  /// open a further overlay (e.g. the color dialog) before the menu's own
+  /// `_trackOverlay` call has finished unwinding. A bool would get reset to
+  /// `false` by the outer call while the inner overlay is still open.
+  Future<T?> _trackOverlay<T>(Future<T?> Function() overlayBuilder) async {
+    _overlayDepth++;
     _hideTimer?.cancel();
     final TextSelection currentSelection = _ctrl.selection;
-    final result = await overlayFuture;
+    final result = await overlayBuilder();
 
     //--- Return focus to text field so bar stays open after overlay is dismissed
     if (mounted) {
       widget.textFieldFocus?.requestFocus();
       _ctrl.value = _ctrl.value.copyWith(selection: currentSelection);
     }
-    _isOverlayOpen = false;
+    if (_overlayDepth > 0) _overlayDepth--;
     return result;
   }
 
@@ -543,7 +564,8 @@ class FormatusGroupButton extends StatelessWidget {
   final FormatusControllerImpl ctrl;
   final Formatus group;
   final ValueChanged<Formatus> onPressed;
-  final Future<T?> Function<T>(Future<T?> future) onTrackOverlay;
+  final Future<T?> Function<T>(Future<T?> Function() overlayBuilder)
+  onTrackOverlay;
   final TooltipBuilder? tooltipBuilder;
 
   const FormatusGroupButton({
@@ -620,7 +642,7 @@ class FormatusGroupButton extends StatelessWidget {
     final Offset offset = button.localToGlobal(Offset.zero);
     final Size size = button.size;
     onTrackOverlay(
-      showMenu(
+      () => showMenu(
         clipBehavior: Clip.hardEdge,
         constraints: BoxConstraints.tightFor(
           width: BarThemeConfig.instance.height + 8,

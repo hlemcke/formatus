@@ -254,9 +254,9 @@ class FormatusNode {
     return splitNode;
   }
 
-  /// Get list-item or section by moving up the tree
+  /// Get list-item or section by traversing up the tree
   FormatusNode get topNode =>
-      isSection || tag == .listItem ? this : parent.topNode;
+      (isSection || tag == .listItem || parent == this) ? this : parent.topNode;
 
   /// Get closing tag. Image is already self-closed and text has none
   String get toClosing {
