@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:core';
 
 import 'package:flutter/foundation.dart';
@@ -148,10 +147,12 @@ class FormatusBarState extends State<FormatusBarImpl>
     with SingleTickerProviderStateMixin {
   late final FormatusControllerImpl _ctrl;
   late AnimationController _animCtrl;
+  final FocusNode _barFocusNode = FocusNode(
+    debugLabel: 'formatus-bar',
+    skipTraversal: true,
+  );
   late Animation<double> _heightFactor;
-  int _overlayDepth = 0; // count of nested overlays (menu / dialog) open
-  bool get _isOverlayOpen => _overlayDepth > 0;
-  Timer? _hideTimer;
+  int _overlayDepth = 0;
 
   Color get _selectedColor => _ctrl.selectedColor;
 
@@ -160,7 +161,6 @@ class FormatusBarState extends State<FormatusBarImpl>
   @override
   void dispose() {
     widget.textFieldFocus?.removeListener(_handleFocusChange);
-    _hideTimer?.cancel();
     _ctrl.removeListener(_updateActionsDisplay);
     _animCtrl.dispose();
     super.dispose();
@@ -201,6 +201,7 @@ class FormatusBarState extends State<FormatusBarImpl>
         bindings: _shortcutBindings,
         child: Focus(
           // This allows the bar to be part of the focus group
+          focusNode: _barFocusNode,
           canRequestFocus: false,
           child: Padding(
             padding: const EdgeInsets.only(bottom: 8.0),
@@ -237,20 +238,22 @@ class FormatusBarState extends State<FormatusBarImpl>
 
   void _handleFocusChange() {
     if (!mounted) return;
-    _hideTimer?.cancel();
-    if (widget.textFieldFocus?.hasFocus ?? false) {
+    if (_showBar) {
       _animCtrl.forward();
-    } else if (widget.hideInactive) {
+    } else {
       //--- Debounce hide
-      _hideTimer = Timer(const Duration(milliseconds: 150), () {
-        if (mounted &&
-            !_isOverlayOpen &&
-            !(widget.textFieldFocus?.hasFocus ?? false)) {
+      Future.delayed(Duration(milliseconds: 200), () {
+        if (mounted && (_overlayDepth <= 0) && !_showBar) {
           _animCtrl.reverse();
         }
       });
     }
   }
+
+  bool get _showBar =>
+      !widget.hideInactive ||
+      (widget.textFieldFocus?.hasFocus ?? false) ||
+      _barFocusNode.hasFocus;
 
   Future<void> _onEditAnchor() async {
     if (widget.onEditAnchor == null) return;
@@ -406,7 +409,6 @@ class FormatusBarState extends State<FormatusBarImpl>
   /// `false` by the outer call while the inner overlay is still open.
   Future<T?> _trackOverlay<T>(Future<T?> Function() overlayBuilder) async {
     _overlayDepth++;
-    _hideTimer?.cancel();
     final TextSelection currentSelection = _ctrl.selection;
     final result = await overlayBuilder();
 

@@ -1,3 +1,7 @@
+## 2.3.4
+
+* Integrated named focus node into FormatusBar builder to keep focus inside widget group
+
 ## 2.3.3
 
 * Changed the semaphore to keep focus inside bar, text and any overlay like
